@@ -1,0 +1,17 @@
+{
+  "status": "success",
+  "amount": 2500000,
+  "currency": "VND",
+  "transactionId": "16000000001",
+  "timestamp": "2026-09-14T00:49:00.000Z",
+  "transferType": "intra_bank",
+  "fee": 0,
+  "senderAccount": "0123456789",
+  "senderName": "NGUYEN VAN A",
+  "recipient": {
+    "accountNumber": "9876543210",
+    "name": "TRAN THI B",
+    "bank": "Vietcombank",
+    "bankFullName": "Ngân hàng TMCP Ngoại Thương Việt Nam"
+  }
+}
