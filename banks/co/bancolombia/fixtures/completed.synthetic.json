@@ -1,0 +1,38 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic Bancolombia outgoing domestic COP transfer with invented account numbers; not a real payment.",
+  "input": {
+    "account": {
+      "accountNumber": "00001234567"
+    },
+    "transactions": [
+      {
+        "id": "bancolombia-mov-00001234",
+        "type": "domesticTransfer",
+        "direction": "debit",
+        "status": "completed",
+        "amount": "150000",
+        "currency": "COP",
+        "bookedAt": "2026-06-18T15:45:00Z",
+        "counterparty": {
+          "accountNumber": "00009876543",
+          "name": "Synthetic Example Payee"
+        },
+        "description": "Transferencia a terceros Bancolombia",
+        "memo": "SYNTHETIC EXAMPLE ONLY"
+      }
+    ]
+  },
+  "transactionId": "bancolombia-mov-00001234",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "00001234567",
+    "payeeId": "00009876543",
+    "amountMinor": "150000",
+    "currency": "COP",
+    "currencyExponent": 0,
+    "direction": "outgoing",
+    "status": "completed",
+    "timestamp": "2026-06-18T15:45:00Z"
+  }
+}
