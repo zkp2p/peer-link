@@ -46,6 +46,17 @@ class AcquisitionProcessTests(unittest.TestCase):
             self.assertEqual(fetch_source_isolated(POLICY, {'authorization': 'synthetic-secret'}),
                              {'synthetic': True})
 
+    def test_in_limit_bank_response_survives_canonical_reencoding(self):
+        # fetch_source accepts up to 1 MiB of bank JSON. ASCII-escaping accented names
+        # or memos in the worker frame must not turn that into a failed bank read.
+        build = "('{\"data\":\"' + chr(233) * 400000 + '\"}').encode()"
+        self.assertLessEqual(len(('{"data":"' + chr(233) * 400000 + '"}').encode()), 1048576)
+        setup = ('import verification.acquisition as a; from verification.common import strict_json; '
+                 'a.fetch_source = lambda p, c: strict_json(' + build + ', 1048576)')
+        with self.child(setup):
+            value = fetch_source_isolated(POLICY, {'authorization': 'synthetic-secret'})
+        self.assertEqual(value, {'data': '\u00e9' * 400000})
+
     def test_unapproved_policy_never_launches_worker(self):
         with patch('verification.acquisition_process.subprocess.run') as run:
             with self.assertRaisesRegex(Rejected, 'source_policy_not_approved'):

@@ -14,6 +14,11 @@ from urllib.parse import urlsplit
 
 from .common import Rejected, canonical, fields, require, strict_json
 
+MAX_RESPONSE = 1048576
+# The reader process re-encodes the accepted response canonically for its pipe.
+# ASCII escaping can turn one byte into six (e.g. U+00E9 or DEL -> \u00XX).
+MAX_WORKER_FRAME = 6 * MAX_RESPONSE + 1024
+
 
 class ReadDeadline:
     """Close the active socket at an absolute deadline, including slow TLS/headers.
@@ -167,10 +172,10 @@ def fetch_source(policy, credentials, *, source_context=None, socket_factory=pub
         require(response.getheader("Content-Encoding", "identity") == "identity", "compressed_response")
         require(response.getheader("Content-Type", "").split(";", 1)[0].strip() == "application/json",
                 "invalid_content_type")
-        body = response.read(1048577)
+        body = response.read(MAX_RESPONSE + 1)
         deadline.check()
-        require(len(body) <= 1048576, "bank_response_size")
-        return strict_json(body, 1048576)
+        require(len(body) <= MAX_RESPONSE, "bank_response_size")
+        return strict_json(body, MAX_RESPONSE)
     except Rejected:
         raise
     except Exception as error:
