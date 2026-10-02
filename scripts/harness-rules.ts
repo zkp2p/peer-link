@@ -37,3 +37,51 @@ export function summarize(result: Interpretation) {
     limitations: Array.isArray(p?.limitations) ? p.limitations.length : 0,
   };
 }
+
+const ENUM_KEY =
+  /(^|[_-])?(status|state|type|kind|direction|currency|category|method|channel|side)$/i;
+
+function describeString(value: string) {
+  const hints = [`length ${value.length}`];
+  if (/^\d{4}-\d{2}-\d{2}T[\d:.]+(Z|[+-]\d{2}:?\d{2})$/.test(value))
+    hints.push(`datetime ${value.endsWith("Z") ? "UTC" : "with offset"}`);
+  else if (/^\d{4}-\d{2}-\d{2}$/.test(value)) hints.push("date");
+  else if (/^-?\d+$/.test(value)) hints.push(`digits ${value.replace("-", "").length}`);
+  else if (/^-?\d+\.\d+$/.test(value)) hints.push(`decimal ${value.split(".")[1].length} places`);
+  if (/[*•x]{3,}/i.test(value)) hints.push("masked");
+  if (/@/.test(value)) hints.push("contains @");
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(value)) hints.push("uuid");
+  if (value.startsWith("-")) hints.push("negative");
+  return `<string ${hints.join(", ")}>`;
+}
+
+/**
+ * The structure of a saved response with values replaced by descriptions, so an agent can
+ * design synthetic fixtures without reading banking data. Short enum-like values of fields
+ * such as status, type, direction and currency are kept because they define semantics.
+ */
+export function shapeOf(value: unknown, key = "", depth = 0): unknown {
+  if (depth > 16) return "<nested too deep>";
+  if (Array.isArray(value)) {
+    const items = value.slice(0, 3).map((v) => shapeOf(v, key, depth + 1));
+    return value.length > 3 ? [...items, `<${value.length - 3} more items>`] : items;
+  }
+  if (value !== null && typeof value === "object") {
+    let hidden = 0;
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [
+        /\d{4,}|@/.test(k) ? `<id-like key ${++hidden}>` : k,
+        shapeOf(v, k, depth + 1),
+      ]),
+    );
+  }
+  if (typeof value === "string")
+    return ENUM_KEY.test(key) && /^[A-Za-z][A-Za-z_ -]{0,31}$/.test(value)
+      ? value
+      : describeString(value);
+  if (typeof value === "number") {
+    const decimals = String(value).split(".")[1]?.length ?? 0;
+    return `<number${value < 0 ? " negative" : ""}${decimals ? `, ${decimals} decimals` : ", integer"}>`;
+  }
+  return value;
+}

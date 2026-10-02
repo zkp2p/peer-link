@@ -1,34 +1,50 @@
 /**
- * Run one adapter against a locally saved response without publishing anything:
+ * Work with a locally saved bank response without publishing anything:
+ *   npm run try:bank -- --shape .local/<file>.json
+ *       prints the response structure with values replaced by descriptions, for designing
+ *       synthetic fixtures without reading banking data
  *   npm run try:bank -- <country>/<bank> .local/<file>.json <transactionId>
- * The input must stay under the Git-ignored .local/ directory. Output is a redacted summary
- * plus the exact revision to cite in a report. Delete the local file when you are done.
+ *       runs the adapter and prints a redacted summary plus the revision to cite in a report
+ * Inputs must stay under the Git-ignored .local/ directory. Delete them when you are done.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
-import { BANK_ID, summarize } from "./harness-rules";
+import { BANK_ID, shapeOf, summarize } from "./harness-rules";
 
 const die = (message: string): never => {
   console.error(message);
   process.exit(1);
 };
+const load = (input: string): unknown => {
+  const local = resolve(".local");
+  if (
+    !existsSync(input) ||
+    !existsSync(local) ||
+    !realpathSync(input).startsWith(`${realpathSync(local)}${sep}`)
+  )
+    die("Keep captured responses inside .local/ (Git-ignored); refusing other paths");
+  try {
+    return JSON.parse(readFileSync(input, "utf8"));
+  } catch {
+    return die("The saved response is not JSON (contents not shown)");
+  }
+};
 
-const [id = "", input = "", transactionId] = process.argv.slice(2);
+const args = process.argv.slice(2);
+if (args[0] === "--shape") {
+  console.log(JSON.stringify(shapeOf(load(args[1] ?? "")), null, 2));
+  process.exit(0);
+}
+const [id = "", input = "", transactionId] = args;
 if (!BANK_ID.test(id) || !existsSync(`banks/${id}/manifest.json`) || !transactionId)
-  die("Usage: npm run try:bank -- <country>/<bank> .local/<file>.json <transactionId>");
-const local = resolve(".local");
-if (!existsSync(input) || !realpathSync(input).startsWith(`${realpathSync(local)}${sep}`))
-  die("Keep captured responses inside .local/ (Git-ignored); refusing other paths");
+  die(
+    "Usage: npm run try:bank -- <country>/<bank> .local/<file>.json <transactionId>\n   or: npm run try:bank -- --shape .local/<file>.json",
+  );
+const response = load(input);
 const { entrypoint } = JSON.parse(readFileSync(`banks/${id}/manifest.json`, "utf8"));
 const adapter = await import(pathToFileURL(resolve(`banks/${id}/transformer.js`)).href);
-let response: unknown;
-try {
-  response = JSON.parse(readFileSync(input, "utf8"));
-} catch {
-  die("The saved response is not JSON (contents not shown)");
-}
 // Adapter error messages could quote banking data, so only the error type is printed.
 let result: unknown;
 try {

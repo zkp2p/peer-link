@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import fixture from "../banks/us/mercury/fixtures/sent.synthetic.json";
 import { interpretMercury } from "../banks/us/mercury/transformer.js";
 import type { Interpretation } from "../lib/types";
-import { BANK_ID, formatMinor, summarize } from "./harness-rules";
+import { BANK_ID, formatMinor, shapeOf, summarize } from "./harness-rules";
 
 it("summarizes a supported payment without full identifiers", () => {
   const summary = summarize(interpretMercury(fixture.input, fixture.transactionId));
@@ -56,4 +56,72 @@ it("accepts only country/bank identifiers", () => {
   expect(BANK_ID.test("ua/monobank")).toBe(true);
   for (const id of ["../x", "ua/../../x", "UA/monobank", "ua/mono_bank", "ua"])
     expect(BANK_ID.test(id)).toBe(false);
+});
+
+it("describes a response shape without values", () => {
+  const shape = shapeOf({
+    data: {
+      transactions: [
+        {
+          id: "txn-9f3a",
+          status: "sent",
+          kind: "outgoing Wire",
+          currency: "USD",
+          amount: -123.45,
+          count: 2,
+          postedAt: "2026-01-15T12:00:00.123Z",
+          bookedAt: "2026-01-15T12:00:00+07:00",
+          day: "2026-01-15",
+          accountNumber: "000123456789",
+          balance: "-10.50",
+          masked: "••••1234",
+          email: "someone@bank.example",
+          uuid: "123e4567-e89b-12d3-a456-426614174000",
+          ok: true,
+          note: null,
+        },
+        {},
+        {},
+        {},
+      ],
+      acct_12345678: { name: "Jane" },
+      "a@b": 1,
+    },
+  });
+  expect(shape).toEqual({
+    data: {
+      transactions: [
+        {
+          id: "<string length 8>",
+          status: "sent",
+          kind: "outgoing Wire",
+          currency: "USD",
+          amount: "<number negative, 2 decimals>",
+          count: "<number, integer>",
+          postedAt: "<string length 24, datetime UTC>",
+          bookedAt: "<string length 25, datetime with offset>",
+          day: "<string length 10, date>",
+          accountNumber: "<string length 12, digits 12>",
+          balance: "<string length 6, decimal 2 places, negative>",
+          masked: "<string length 8, masked>",
+          email: "<string length 20, contains @>",
+          uuid: "<string length 36, uuid>",
+          ok: true,
+          note: null,
+        },
+        {},
+        {},
+        "<1 more items>",
+      ],
+      "<id-like key 1>": { name: "<string length 4>" },
+      "<id-like key 2>": "<number, integer>",
+    },
+  });
+  expect(JSON.stringify(shape)).not.toMatch(/Jane|123\.45|000123456789|someone/);
+  expect(shapeOf({ status: "Jane Doe the third with a long name!" })).toEqual({
+    status: "<string length 36>",
+  });
+  let deep: unknown = 1;
+  for (let i = 0; i < 20; i++) deep = [deep];
+  expect(JSON.stringify(shapeOf(deep))).toContain("nested too deep");
 });
