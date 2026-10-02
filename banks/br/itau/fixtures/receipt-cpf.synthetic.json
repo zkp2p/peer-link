@@ -1,0 +1,7 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented completed Pix receipt using the documented all-zero CPF placeholder. R$ 7,05 independently converts to 705 centavos and 08:15:00 at -03:00 is 11:15:00 UTC.",
+  "input": { "receipts": [{ "id": "synthetic-local-cpf", "endToEndId": "synthetic-e2e-cpf", "type": "PIX", "direction": "SAIDA", "status": "CONCLUIDA", "amount": "R$ 7,05", "currency": "BRL", "completedAt": "2026-04-02T08:15:00-03:00", "payer": { "accountId": "synthetic-payer-account" }, "recipient": { "pixKey": { "type": "CPF", "value": "000.000.000-00" }, "name": "Synthetic Payee" } }] },
+  "transactionId": "synthetic-e2e-cpf",
+  "expected": { "outcome": "supported", "payerId": "synthetic-payer-account", "payerScheme": "itau-account-id", "payeeId": "000.000.000-00", "payeeScheme": "pix-cpf", "amountMinor": "705", "currency": "BRL", "currencyExponent": 2, "direction": "outgoing", "status": "CONCLUIDA", "timestamp": "2026-04-02T11:15:00.000Z", "timestampMeaning": "completedAt" }
+}

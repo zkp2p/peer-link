@@ -1,0 +1,7 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented completed Pix receipt using an all-zero UUID-shaped random key. R$ 100,00 independently converts to 10000 centavos and 21:45:10 at -03:00 is 00:45:10 UTC the next day.",
+  "input": { "receipts": [{ "id": "synthetic-local-random", "endToEndId": "synthetic-e2e-random", "type": "PIX", "direction": "SAIDA", "status": "CONCLUIDA", "amount": "R$ 100,00", "currency": "BRL", "completedAt": "2026-06-04T21:45:10-03:00", "payer": { "accountId": "synthetic-payer-account" }, "recipient": { "pixKey": { "type": "RANDOM", "value": "00000000-0000-4000-8000-000000000000" }, "name": "Synthetic Payee" } }] },
+  "transactionId": "synthetic-e2e-random",
+  "expected": { "outcome": "supported", "payerId": "synthetic-payer-account", "payerScheme": "itau-account-id", "payeeId": "00000000-0000-4000-8000-000000000000", "payeeScheme": "pix-random", "amountMinor": "10000", "currency": "BRL", "currencyExponent": 2, "direction": "outgoing", "status": "CONCLUIDA", "timestamp": "2026-06-05T00:45:10.000Z", "timestampMeaning": "completedAt" }
+}

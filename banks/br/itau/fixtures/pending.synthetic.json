@@ -1,0 +1,7 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented outgoing Pix receipt that is still processing and therefore cannot support a completed-payment claim.",
+  "input": { "receipts": [{ "id": "synthetic-local-003", "endToEndId": "synthetic-e2e-003", "type": "PIX", "direction": "SAIDA", "status": "PROCESSANDO", "amount": "R$ 10,00", "currency": "BRL", "completedAt": "2026-03-10T11:00:00-03:00", "payer": { "accountId": "synthetic-payer-account" }, "recipient": { "pixKey": { "type": "RANDOM", "value": "synthetic-random-pending" }, "name": "Synthetic Payee" } }] },
+  "transactionId": "synthetic-e2e-003",
+  "expected": { "outcome": "insufficient_evidence", "reason": "Transaction is not bank-reported CONCLUIDA" }
+}

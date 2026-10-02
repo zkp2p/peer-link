@@ -1,0 +1,7 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented completed Pix receipt using the documented all-zero CNPJ placeholder. R$ 42,10 independently converts to 4210 centavos and 17:05:30 at -03:00 is 20:05:30 UTC.",
+  "input": { "receipts": [{ "id": "synthetic-local-cnpj", "endToEndId": "synthetic-e2e-cnpj", "type": "PIX", "direction": "SAIDA", "status": "CONCLUIDA", "amount": "R$ 42,10", "currency": "BRL", "completedAt": "2026-05-03T17:05:30-03:00", "payer": { "accountId": "synthetic-payer-account" }, "recipient": { "pixKey": { "type": "CNPJ", "value": "00.000.000/0000-00" }, "name": "Synthetic Payee" } }] },
+  "transactionId": "synthetic-e2e-cnpj",
+  "expected": { "outcome": "supported", "payerId": "synthetic-payer-account", "payerScheme": "itau-account-id", "payeeId": "00.000.000/0000-00", "payeeScheme": "pix-cnpj", "amountMinor": "4210", "currency": "BRL", "currencyExponent": 2, "direction": "outgoing", "status": "CONCLUIDA", "timestamp": "2026-05-03T20:05:30.000Z", "timestampMeaning": "completedAt" }
+}

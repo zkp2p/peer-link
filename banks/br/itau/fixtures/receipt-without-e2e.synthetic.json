@@ -1,0 +1,7 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented completed Pix receipt whose surface omits the E2E ID. The local receipt ID is selected explicitly and absence is reported as a limitation.",
+  "input": { "receipts": [{ "id": "synthetic-local-002", "type": "PIX", "direction": "SAIDA", "status": "CONCLUIDA", "amount": "R$ 25,01", "currency": "BRL", "completedAt": "2026-02-16T10:20:30-03:00", "payer": { "accountId": "synthetic-payer-account" }, "recipient": { "pixKey": { "type": "EMAIL", "value": "payee@example.com" }, "name": "Synthetic Payee" } }] },
+  "transactionId": "synthetic-local-002",
+  "expected": { "outcome": "supported", "payerId": "synthetic-payer-account", "payerScheme": "itau-account-id", "payeeId": "payee@example.com", "payeeScheme": "pix-email", "amountMinor": "2501", "currency": "BRL", "currencyExponent": 2, "direction": "outgoing", "status": "CONCLUIDA", "timestamp": "2026-02-16T13:20:30.000Z", "timestampMeaning": "completedAt" }
+}

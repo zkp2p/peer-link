@@ -1,0 +1,7 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented completed Pix receipt. R$ 1.299,9 means 1,299 reais and 90 centavos; the explicit E2E ID selects the row. All parties and identifiers are synthetic.",
+  "input": { "receipts": [{ "id": "synthetic-local-001", "endToEndId": "synthetic-e2e-001", "type": "PIX", "direction": "SAIDA", "status": "CONCLUIDA", "amount": "R$ 1.299,9", "currency": "BRL", "completedAt": "2026-01-15T09:30:45-03:00", "payer": { "accountId": "synthetic-payer-account" }, "recipient": { "pixKey": { "type": "PHONE", "value": "+550000000001" }, "name": "Synthetic Payee" }, "memo": "SYNTHETIC EXAMPLE ONLY" }] },
+  "transactionId": "synthetic-e2e-001",
+  "expected": { "outcome": "supported", "payerId": "synthetic-payer-account", "payerScheme": "itau-account-id", "payeeId": "+550000000001", "payeeScheme": "pix-phone", "amountMinor": "129990", "currency": "BRL", "currencyExponent": 2, "direction": "outgoing", "status": "CONCLUIDA", "timestamp": "2026-01-15T12:30:45.000Z", "timestampMeaning": "completedAt" }
+}
