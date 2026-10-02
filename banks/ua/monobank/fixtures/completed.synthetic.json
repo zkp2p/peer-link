@@ -1,0 +1,44 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic Monobank domestic UAH transfer fixture with invented account numbers, IBANs, and amounts.",
+  "transactionId": "tx-mono-0001",
+  "input": {
+    "account": {
+      "id": "acc-synthetic-0001",
+      "iban": "UA213223130000026007233566001",
+      "holderName": "Synthetic Payer Account"
+    },
+    "transactions": [
+      {
+        "id": "tx-mono-0001",
+        "type": "transfer",
+        "time": 1790953200,
+        "timeIso": "2026-10-02T15:00:00.000Z",
+        "description": "Переказ на картку іншого банку",
+        "mcc": 4829,
+        "amount": -15000,
+        "operationAmount": -15000,
+        "currencyCode": 980,
+        "commissionRate": 0,
+        "cashbackAmount": 0,
+        "balance": 500000,
+        "hold": false,
+        "status": "completed",
+        "direction": "debit",
+        "counterparty": {
+          "iban": "UA003223130000026007233566002",
+          "name": "Example Beneficiary Entity"
+        }
+      }
+    ]
+  },
+  "expected": {
+    "outcome": "supported",
+    "amountMinor": "15000",
+    "currency": "UAH",
+    "status": "completed",
+    "payerId": "UA213223130000026007233566001",
+    "payeeId": "UA003223130000026007233566002",
+    "timestamp": "2026-10-02T15:00:00.000Z"
+  }
+}

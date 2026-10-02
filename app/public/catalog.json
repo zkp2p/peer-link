@@ -3,6 +3,34 @@
   "providers": [
     {
       "schemaVersion": "1",
+      "id": "ua/monobank",
+      "name": "Monobank",
+      "country": "UA",
+      "status": "experimental",
+      "version": "0.1.0",
+      "surface": "personal-api-statement",
+      "capability": "Completed outgoing domestic UAH transfer from Monobank personal API statement",
+      "maintainers": [
+        "Simultech369"
+      ],
+      "currencies": [
+        "UAH"
+      ],
+      "unsupported": [
+        "Incoming payments and top-ups",
+        "Merchant purchases and POS debits",
+        "Cash withdrawals and ATM operations",
+        "Utility bills and mobile top-ups",
+        "Pending authorizations and transactions with active hold",
+        "Non-UAH currency transfers"
+      ],
+      "fixtureProvenance": "synthetic",
+      "reportCount": 0,
+      "evidence": [],
+      "source": "https://github.com/zkp2p/peer-link/tree/main/banks/ua/monobank"
+    },
+    {
+      "schemaVersion": "1",
       "id": "us/mercury",
       "name": "Mercury",
       "country": "US",
