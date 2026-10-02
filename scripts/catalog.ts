@@ -1,10 +1,28 @@
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-// Filesystem discovery also works on deployment builders without Git metadata.
+// Filesystem discovery also works on deployment builders without Git metadata. Sort so the
+// published catalog is byte-identical on every filesystem (readdir order is unspecified).
 const files = readdirSync("banks", { recursive: true, withFileTypes: true })
   .filter((entry) => entry.isFile())
-  .map((entry) => join(entry.parentPath, entry.name).replaceAll("\\", "/"));
+  .map((entry) => join(entry.parentPath, entry.name).replaceAll("\\", "/"))
+  .sort();
+// Publish an explicit allowlist, never arbitrary manifest fields, on the public landing page.
+const PUBLIC_FIELDS = [
+  "schemaVersion",
+  "id",
+  "name",
+  "country",
+  "status",
+  "version",
+  "surface",
+  "capability",
+  "maintainers",
+  "currencies",
+  "unsupported",
+  "fixtureProvenance",
+  "logo",
+] as const;
 const providers = files
   .filter((f) => /^banks\/[^/]+\/[^/]+\/manifest.json$/.test(f))
   .map((file) => {
@@ -19,7 +37,8 @@ const providers = files
       const key = `${r.adapterRevision}:${r.harnessRevision}:${r.surface}:${r.capability}`;
       const reporters = scopes.get(key) ?? new Map();
       const old = reporters.get(r.reporter.toLowerCase());
-      if (!old || r.testedAt > old.testedAt) reporters.set(r.reporter.toLowerCase(), r);
+      if (!old || Date.parse(r.testedAt) > Date.parse(old.testedAt))
+        reporters.set(r.reporter.toLowerCase(), r);
       scopes.set(key, reporters);
     }
     const evidence = [...scopes.entries()].map(([scope, reporters]) => ({
@@ -32,8 +51,11 @@ const providers = files
       })),
       distinctReportingHandles: reporters.size,
     }));
+    const published = Object.fromEntries(
+      PUBLIC_FIELDS.filter((key) => key in manifest).map((key) => [key, manifest[key]]),
+    );
     return {
-      ...manifest,
+      ...published,
       reportCount: reports.length,
       evidence,
       source: `https://github.com/zkp2p/peer-link/tree/main/${bank}`,

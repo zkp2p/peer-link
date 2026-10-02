@@ -10,23 +10,23 @@ An MIT-licensed library of bank adapters, payment semantics, privacy-safe fixtur
 
 ## Start with your agent
 
-Give your browser-capable coding agent this prompt:
+Give your browser-capable coding agent this prompt (add the issue number if your bank has one):
 
-> Read AGENTS.md and skills/contribute-bank/SKILL.md in https://github.com/zkp2p/peer-link. Help me contribute my bank's payment integration. Keep raw captures and credentials local. Start by identifying the bank, supported transaction type and evidence needed to interpret the bank record’s payer, payee, amount, currency and status. Do not initiate payments.
+> Read AGENTS.md and skills/contribute-bank/SKILL.md in https://github.com/zkp2p/peer-link. Help me contribute my bank's payment integration. Keep raw captures and credentials local. Do not initiate payments.
 
-No extension is required. Your agent needs its own authorized browser tooling; this repository does not provide remote bank access. You sign into your own bank normally.
+The [contribute-bank skill](skills/contribute-bank/SKILL.md) walks the agent from claiming an issue to a pull request: scaffold the adapter, inspect your own session locally, write synthetic fixtures and negative tests, run a redacted live check, and submit a privacy-safe report. No extension is required. Your agent uses its own authorized browser tooling; this repository provides no remote bank access, and you sign into your bank normally. Developer docs: [docs.peer.xyz/developer/peer-link](https://docs.peer.xyz/developer/peer-link).
 
 ## Run locally
 
-Node 20.19+, npm, Python 3.11+ and OpenSSL. No secrets or bank account required for fixture tests.
+Node 20.19+ and npm. No secrets or bank account are required for fixture tests.
 
 ```sh
 git clone https://github.com/zkp2p/peer-link.git
 cd peer-link
 npm ci --ignore-scripts
-npm run verify:setup
-npm run check
-npm run dev
+npm run check:bank                     # adapter gates: types, lint, coverage, validation, privacy
+npm run verify:setup && npm run check  # full CI suite; needs Python 3.11+ and OpenSSL
+npm run dev                            # landing page
 ```
 
 `app/` contains the landing page. `banks/<country>/<bank>/` contains an adapter, manifest, tests, fixtures and reports. `lib/` defines a small shared observation format, not a published SDK.
@@ -60,8 +60,8 @@ CI publishes each builder's experimental unsigned `normalized.eif` with its meas
 
 ## Contribute
 
-- Add a bank adapter with meaningful negative tests.
-- Reproduce a provider against your own account and submit a privacy-safe report.
+- Add a bank adapter with meaningful negative tests ([skill](skills/contribute-bank/SKILL.md)).
+- Reproduce a provider against your own account and submit a privacy-safe report ([skill](skills/test-bank/SKILL.md)).
 - Add an edge case, fix a broken integration or improve acquisition instructions.
 - Sponsor a reviewed issue. Only issues labelled `Merit` with a funded amount carry a reward.
 

@@ -1,57 +1,108 @@
 import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { MAX_SCAN_BYTES, scanFile } from "./privacy-rules";
 
-const staged = process.argv.includes("--staged");
-const files = execFileSync(
-  "git",
-  staged
-    ? ["diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z"]
-    : ["ls-files", "--cached", "--others", "--exclude-standard", "-z"],
-  { encoding: "utf8" },
-)
-  .split("\0")
-  .filter(Boolean);
-const findings: string[] = [];
-for (const file of files) {
-  // The exception requires the exact public certificate, including in the index.
-  const publicTrustAnchor = file === "verification/trust/aws-nitro-root.pem";
-  if (!publicTrustAnchor && /(^|\/)(\.env[^/]*|\.local)(\/|$)|\.(har|pem|key)$/i.test(file)) {
-    findings.push(`${file}: raw capture/credential file`);
-    continue;
+/**
+ * Modes:
+ *   npm run privacy                       tracked and untracked (non-ignored) working-tree files
+ *   npm run privacy -- --staged           the exact index contents you are about to commit
+ *   npm run privacy -- --range A..B       every file version added or changed by each commit in
+ *                                         A..B, including ones a later commit deleted. Use
+ *                                         origin/main..HEAD before pushing a branch.
+ */
+const args = process.argv.slice(2);
+const rangeIndex = args.indexOf("--range");
+const range =
+  rangeIndex >= 0 ? args[rangeIndex + 1] : args.find((a) => a.startsWith("--range="))?.slice(8);
+const usage = (message: string): never => {
+  console.error(message);
+  process.exit(1);
+};
+if (rangeIndex >= 0 && (!range || range.startsWith("-")))
+  usage("Usage: npm run privacy -- --range origin/main..HEAD");
+const git = (argv: string[]) =>
+  execFileSync("git", argv, { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+const decode = (bytes: Buffer) =>
+  bytes.subarray(0, 8192).includes(0) ? null : bytes.toString("utf8");
+const blob = (spec: string) => {
+  const size = Number(git(["cat-file", "-s", spec]).trim());
+  if (size > MAX_SCAN_BYTES) return { content: null, size };
+  return {
+    content: decode(
+      execFileSync("git", ["cat-file", "blob", spec], { maxBuffer: MAX_SCAN_BYTES + 1 }),
+    ),
+    size,
+  };
+};
+
+type Target = { label: string; file: string; load: () => { content: string | null; size: number } };
+const targets: Target[] = [];
+const list = (out: string) => out.split("\0").filter(Boolean);
+if (range) {
+  let commits: string[] = [];
+  try {
+    commits = list(
+      execFileSync("git", ["rev-list", "--no-merges", range], {
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }).replaceAll("\n", "\0"),
+    );
+  } catch {
+    usage(`Unknown revision range ${range}; fetch the base first (git fetch origin main)`);
   }
-  const content = staged
-    ? execFileSync("git", ["show", `:${file}`], { encoding: "utf8", maxBuffer: 5000000 })
-    : readFileSync(file, "utf8");
-  if (
-    publicTrustAnchor &&
-    createHash("sha256").update(content).digest("hex") !==
-      "6eb9688305e4bbca67f44b59c29a0661ae930f09b5945b5d1d9ae01125c8d6c0"
-  ) {
-    findings.push(`${file}: unexpected public trust anchor contents`);
-    continue;
-  }
-  // Never echo matching contents: a failed check must not become a second leak.
-  const rules: [string, RegExp][] = [
-    ["private key", /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/],
-    ["GitHub token", /\b(?:gh[pousr]_[a-zA-Z0-9]{30,}|github_pat_[a-zA-Z0-9_]{30,})\b/],
-    ["credential header", /"(?:cookie|authorization|x-csrf-protect|set-cookie)"\s*:\s*"[^"\n]+"/i],
-    ["JWT", /\beyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}/],
-  ];
-  for (const [name, rule] of rules)
-    if (rule.test(content)) findings.push(`${file}: possible ${name}`);
-  if (file.includes("/fixtures/") && file.endsWith(".json")) {
-    const d = JSON.parse(content);
-    if (!["synthetic", "sanitized"].includes(d.provenance))
-      findings.push(`${file}: missing fixture provenance`);
-    if (/https?:\/\/[^\s"]+[?&](?:token|key|session|code)=/i.test(content))
-      findings.push(`${file}: credential-bearing URL`);
-  }
+  for (const commit of commits)
+    for (const file of list(
+      git([
+        "diff-tree",
+        "--no-commit-id",
+        "-r",
+        "--root",
+        "--name-only",
+        "--diff-filter=ACMR",
+        "-z",
+        commit,
+      ]),
+    ))
+      targets.push({
+        label: `${commit.slice(0, 12)}:${file}`,
+        file,
+        load: () => blob(`${commit}:${file}`),
+      });
+} else if (args.includes("--staged")) {
+  for (const file of list(git(["diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z"])))
+    targets.push({ label: file, file, load: () => blob(`:${file}`) });
+} else {
+  for (const file of list(git(["ls-files", "--cached", "--others", "--exclude-standard", "-z"])))
+    if (existsSync(file))
+      targets.push({
+        label: file,
+        file,
+        load: () => {
+          const size = statSync(file).size;
+          return { content: size > MAX_SCAN_BYTES ? null : decode(readFileSync(file)), size };
+        },
+      });
 }
+
+const findings: string[] = [];
+const warnings: string[] = [];
+for (const target of targets) {
+  const { content, size } = target.load();
+  const result = scanFile(target.file, content, size);
+  const relabel = (line: string) => line.replace(target.file, target.label);
+  findings.push(...result.findings.map(relabel));
+  warnings.push(...result.warnings.map(relabel));
+}
+if (warnings.length)
+  console.warn(`Review before publishing:\n${warnings.map((w) => `- ${w}`).join("\n")}\n`);
 if (findings.length) {
-  console.error(findings.join("\n"));
+  console.error(`Privacy check failed (${findings.length}). Values are not printed:\n`);
+  console.error(findings.map((f) => `- ${f}`).join("\n"));
+  console.error(
+    "\nRemove the data from every commit (rewrite the branch before pushing), then rerun. See docs/privacy.md.",
+  );
   process.exitCode = 1;
 } else
   console.log(
-    `Privacy heuristics passed for ${files.length} files. Human pre-publication review is still required.`,
+    `Privacy heuristics passed for ${targets.length} file version(s). Human pre-publication review is still required.`,
   );
