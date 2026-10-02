@@ -49,8 +49,13 @@ state; the low-level `challenge` helper is for component tests only. Retrying ca
 renew grants, recreate consumed challenges or move a reservation to another enclave.
 Controller pause/revocation stops new authorization; already issued offline permits
 remain valid until expiry (at most two minutes). The runtime `challenge` operation returns a
-context and context-bound quote only under its measured operator key. The client
-requires the quote nonce to equal SHA-256 of the canonical context. The checked-in
+context and a quote whose nonce is SHA-256 of the canonical context. That quote
+proves the enclave key and measurements only: `attest` signs any caller nonce, so
+it does not prove the enclave issued the context. Decryption still needs the stored
+challenge, and receipt authenticity comes from the enclave's RSA signature. Time
+budget: everything from `authorize_challenge` to execute fits in 120 seconds;
+verifiers allow 5 seconds of controller clock lead, and the owner client re-attests
+immediately before encrypting. The checked-in
 operator policy disables this route; no deployed secret-sharing endpoint exists.
 
 Legacy provider diagnostics are retained for research only; they cannot enable model

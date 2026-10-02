@@ -1,5 +1,28 @@
 # Launch review — October 2, 2026
 
+## Status update — October 2, 2026 (evening)
+
+- Landing (`link.peer.xyz`) and docs (`docs.peer.xyz/developer/peer-link`) are in
+  production. The Merit project holds **$1,000** across 20 banks at $50 each; see
+  [incentives](incentives.md).
+- A review pass fixed one medium owner-client bug (stale attestation after slow
+  owner input) and several session-burning robustness bugs, made `enclave-compare`
+  fail when a build fails, hardened worker IAM, the ledger and expiry alarms, and
+  added a CSP. GitHub secret scanning, push protection and Dependabot alerts are on.
+  AWS now has a $50 tag-filtered budget, an active `Project` cost tag, a protected
+  ledger, an emptied default security group and a termination-protected network stack.
+- The compiled Mercury adapter and reference oracle agreed on every supported record
+  of a live company history page ([evidence](../verification/infra/evidence/2026-10-02-mercury-live-adapter-check.json)).
+  The enclave path has hardware evidence only with synthetic data. Replaying a web
+  session from AWS is not attempted: it needs the session cookie outside the
+  browser and may trip Mercury's device and IP controls. Prefer a read-only Mercury
+  API token with its own reviewed adapter surface for the first live enclave run.
+- Still open: a second human code owner and environment reviewer, merging #81 and
+  creating the OIDC invoke role at activation, a tested alarm subscription, and the
+  attest/challenge nonce domain separation noted in the verifier review.
+
+The sections below are the earlier launch review, kept for history.
+
 **Production is on hold.** The project is named **Peer Link**, as selected by the
 owner. No three-user testing gate applies.
 

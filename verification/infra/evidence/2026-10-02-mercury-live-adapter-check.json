@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1",
+  "kind": "owner-authorized-live-adapter-check",
+  "date": "2026-10-02",
+  "sourceCommit": "d1b7a3e55434a85969e2c16ef43caac17d12389e",
+  "adapterArtifactSha256": "1f60b6c92814ab31db16ea02482e23632f2272b27d56aa5bcf2e19bc08bfd56d",
+  "surface": "owner-authorized Mercury web transaction history (company account, owner's own browser session)",
+  "acquisition": "The owner's signed-in browser issued its own first-page transactions-lite request; the response was handed to the verifier code locally without exporting cookies or headers.",
+  "observedRequestShape": {
+    "limit": 100,
+    "cursorDirection": "startAfter",
+    "sort": "date desc",
+    "keys": ["cursorDirection", "limit", "sortSettings", "timezone"]
+  },
+  "response": {
+    "status": 200,
+    "contentType": "application/json",
+    "strictJson": "ok",
+    "envelopeKeys": ["data", "hasMore", "next"],
+    "records": 100
+  },
+  "oracle": { "supported": 3, "oracle_unsupported_payment": 97 },
+  "compiledAdapterVsOracle": { "consistent": 3, "mismatch": 0, "abstained": 0 },
+  "negativeControls": { "unknownTransactionId": "oracle_ambiguous_transaction" },
+  "rawBankingDataSaved": false,
+  "credentialsExported": false,
+  "credentialReplayTested": false,
+  "enclaveAcquisitionTested": false,
+  "privateDataSentToModel": false,
+  "limitations": [
+    "Runs the reviewed reference oracle, field minimization and the compiled Wasm adapter on live data; it does not test credential replay or the Nitro relay path.",
+    "The browser request used the owner's timezone; the enclave reader pins UTC and that variant is still untested against Mercury.",
+    "Replaying a company web session (cookies plus device-bound headers) from an AWS IP may be rejected or trip fraud controls; a read-only Mercury API token is the preferred enclave credential and needs its own reviewed adapter surface.",
+    "Bank-reported sent status does not establish recipient credit or irreversible settlement."
+  ]
+}
