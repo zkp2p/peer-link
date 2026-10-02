@@ -171,6 +171,14 @@ and allow only `lambda:InvokeFunction` on that version ARN. It must have no
 `PassRole`, deployment, SSM, secret or bank-data permissions. Record the live
 protection responses; merely adding CODEOWNERS or YAML is not enforcement.
 
+The workflow requests GitHub's OIDC token directly and exchanges it through the
+runner's AWS CLI for a 15-minute session. This keeps the organization rule that
+permits only GitHub/Peer-owned Actions intact. It verifies the account, role and
+numeric controller version before requesting a token, rejects redirects and
+unexpected assumed identities, and passes credentials only to the invocation
+subprocess. No token file, cross-step credential export or repository checkout is
+used. Failures are redacted and are never retried automatically.
+
 Cleanup: pause the budget and disable dispatch first; let the owning reaper
 terminate the exact test worker, verify its disk deletion and lease clearance,
 then remove the test stack. Export audit rows before disposing of an explicitly

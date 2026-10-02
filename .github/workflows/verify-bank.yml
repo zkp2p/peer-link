@@ -28,28 +28,69 @@ jobs:
           import os,re
           assert re.fullmatch(r'[a-f0-9]{32}', os.environ['APPROVAL_ID'])
           PY
-      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
-        with:
-          role-to-assume: ${{ vars.PEER_LINK_INVOKE_ROLE }}
-          aws-region: us-east-1
-          role-duration-seconds: 900
-          allowed-account-ids: ${{ vars.PEER_LINK_AWS_ACCOUNT }}
-          unset-current-credentials: true
       - name: Invoke pinned trusted controller
         env:
           APPROVAL_ID: ${{ inputs.approval_id }}
+          INVOKE_ROLE: ${{ vars.PEER_LINK_INVOKE_ROLE }}
+          AWS_ACCOUNT: ${{ vars.PEER_LINK_AWS_ACCOUNT }}
           CONTROLLER: ${{ vars.PEER_LINK_CONTROLLER_VERSION_ARN }}
         run: |
           python3 - <<'PY'
-          import json,os,re,subprocess,tempfile
-          arn=os.environ['CONTROLLER']
-          assert re.fullmatch(r'arn:aws:lambda:us-east-1:[0-9]{12}:function:peer-link-[a-z0-9-]+:[1-9][0-9]*',arn)
-          with tempfile.TemporaryDirectory() as path:
-              output=path+'/result.json'
-              subprocess.run(['aws','lambda','invoke','--function-name',arn,
-                  '--cli-binary-format','raw-in-base64-out','--payload',
-                  json.dumps({'approvalId':os.environ['APPROVAL_ID']}),output],check=True)
-              result=json.load(open(output))
-              assert 'error' not in result, 'Dispatch refused or uncertain; operator must reconcile before retrying'
-              print(json.dumps(result))
+          import json,os,re,subprocess,sys,tempfile,urllib.parse,urllib.request
+          # No third-party Actions, checkout, token file or cross-step credentials.
+          # The role trust and protected environment remain the authority boundary.
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self,*args,**kwargs):
+                  raise ValueError('oidc_redirect_refused')
+          try:
+              account=os.environ['AWS_ACCOUNT']
+              role=os.environ['INVOKE_ROLE']
+              arn=os.environ['CONTROLLER']
+              approval=os.environ['APPROVAL_ID']
+              run=os.environ['GITHUB_RUN_ID']
+              assert re.fullmatch(r'[0-9]{12}',account)
+              assert re.fullmatch(r'arn:aws:iam::'+account+r':role/peer-link-[a-z0-9-]+',role)
+              assert re.fullmatch(r'arn:aws:lambda:us-east-1:'+account+r':function:peer-link-[a-z0-9-]+:[1-9][0-9]*',arn)
+              assert re.fullmatch(r'[a-f0-9]{32}',approval) and re.fullmatch(r'[0-9]+',run)
+              endpoint=urllib.parse.urlsplit(os.environ['ACTIONS_ID_TOKEN_REQUEST_URL'])
+              assert endpoint.scheme=='https' and endpoint.hostname.endswith('.actions.githubusercontent.com')
+              assert endpoint.port in (None,443) and not endpoint.username and not endpoint.password
+              query=[(k,v) for k,v in urllib.parse.parse_qsl(endpoint.query) if k!='audience']
+              url=urllib.parse.urlunsplit(endpoint._replace(query=urllib.parse.urlencode(query+[('audience','sts.amazonaws.com')])))
+              opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),NoRedirect())
+              request=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']})
+              with opener.open(request,timeout=15) as response:
+                  token=json.loads(response.read(65536))['value']
+              assert isinstance(token,str) and 0<len(token)<32768
+              clean={k:v for k,v in os.environ.items() if not k.startswith(('AWS_','ACTIONS_'))}
+              clean.update(AWS_EC2_METADATA_DISABLED='true',AWS_CONFIG_FILE='/dev/null',
+                           AWS_SHARED_CREDENTIALS_FILE='/dev/null',AWS_DEFAULT_REGION='us-east-1')
+              session='peer-link-'+run
+              exchange={'RoleArn':role,'RoleSessionName':session,'WebIdentityToken':token,'DurationSeconds':900}
+              assumed=subprocess.run(['aws','sts','assume-role-with-web-identity','--no-sign-request',
+                  '--cli-input-json','file:///dev/stdin','--output','json'],input=json.dumps(exchange),
+                  env=clean,capture_output=True,text=True,timeout=30,check=True)
+              identity=json.loads(assumed.stdout)
+              assert identity['AssumedRoleUser']['Arn']=='arn:aws:sts::'+account+':assumed-role/'+role.rsplit('/',1)[1]+'/'+session
+              credentials=identity['Credentials']
+              for envkey,key in [('AWS_ACCESS_KEY_ID','AccessKeyId'),('AWS_SECRET_ACCESS_KEY','SecretAccessKey'),('AWS_SESSION_TOKEN','SessionToken')]:
+                  value=credentials[key]
+                  assert isinstance(value,str) and re.fullmatch(r'[A-Za-z0-9/+=]+',value)
+                  clean[envkey]=value
+              with tempfile.TemporaryDirectory() as path:
+                  output=path+'/result.json'
+                  subprocess.run(['aws','lambda','invoke','--function-name',arn,
+                      '--cli-binary-format','raw-in-base64-out','--payload',
+                      json.dumps({'approvalId':approval}),output],env=clean,
+                      capture_output=True,text=True,timeout=60,check=True)
+                  with open(output) as response:
+                      result=json.load(response)
+                  assert set(result)=={'approvalId','instanceId','artifactDigest','releaseDigest','reservedMicroUsd','expiresAt','bankSessionAccepted'}
+                  assert result['approvalId']==approval and result['bankSessionAccepted'] is False
+                  assert re.fullmatch(r'i-[a-f0-9]{8,17}',result['instanceId'])
+                  assert all(re.fullmatch(r'[a-f0-9]{64}',result[k]) for k in ('artifactDigest','releaseDigest'))
+                  assert result['reservedMicroUsd']==2000000 and type(result['expiresAt']) is int
+                  print(json.dumps(result))
+          except Exception:
+              sys.exit('Dispatch refused or uncertain; operator must reconcile before retrying')
           PY
