@@ -130,7 +130,8 @@ in a privileged job. The current synthetic pilot's image filename is
 
 The worker role can read only that S3 object version and open SSM transport. It
 cannot read Parameter Store or Secrets Manager, use KMS, assume roles or access
-other artifacts. User data verifies the bundle digest before extraction, starts
+other artifacts. Explicit denies cover every other action and S3 resource, so a
+resource policy elsewhere in the shared account cannot widen the role. User data verifies the bundle digest before extraction, starts
 one enclave without debug mode and binds its opaque gateway to localhost. There
 are no inbound security-group rules. Public IPv4 plus outbound TLS avoids a NAT
 gateway; the enclave's bank allowlist is narrower than the host's egress policy.
@@ -138,7 +139,10 @@ gateway; the enclave's bank allowlist is narrower than the host's egress policy.
 The operator seeds the single DynamoDB `budget` row with `committedMicroUsd`
 including **all earlier task reservations** and `paused: true`. Creation must use
 `attribute_not_exists(id)`. Never reset this row to recover from an error or stack
-redeploy. Ledger resources have retention policies. A separately reviewed
+redeploy. The ledger is retained on stack deletion and has deletion protection and
+point-in-time recovery; disabling protection is a separate, explicit cleanup step.
+A new stack creates a new table, so carry forward the retained ledger's committed
+total before unpausing. A separately reviewed
 approval row `approval/<32-hex-id>` contains `state: approved`, `releaseDigest`,
 `artifactDigest` and an unexpired integer `expiresAt`. No credentials go in rows.
 
@@ -153,8 +157,10 @@ no worker remains. Never retry an uncertain launch automatically.
 The expiry Lambda runs every five minutes, terminates only this stack's tagged
 workers older than 110 minutes or in stopping/stopped state, and clears a lease
 only after termination is observed. A host shutdown timer is an additional guard.
-CloudWatch tracks expiry errors; connect and test a notification route before
-unattended use. The current pilot has operator supervision, not unattended alerts.
+CloudWatch alarms on expiry errors and on a reaper that stops running. Pass
+`AlarmTopicArn` (an SNS topic with a confirmed, tested subscription) to route both;
+without it they notify no one. The current pilot has operator supervision, not
+unattended alerts.
 
 The checked-in manual GitHub workflow is disabled by default. Before activation,
 verify protected main and CODEOWNERS review, required CI, environment reviewers,
