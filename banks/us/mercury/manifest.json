@@ -7,6 +7,7 @@
   "version": "0.1.0",
   "surface": "web-transactions-lite",
   "capability": "Interpret outgoing domestic USD wires as sender-bank-reported sent payments",
+  "entrypoint": "interpretMercury",
   "maintainers": ["0xSachinK"],
   "currencies": ["USD"],
   "unsupported": [
@@ -17,5 +18,6 @@
     "recipient-credit confirmation",
     "cryptographic source authentication"
   ],
-  "fixtureProvenance": "synthetic"
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/mercury.svg"
 }
