@@ -84,5 +84,15 @@ class OwnerClientFreshnessTests(unittest.TestCase):
         self.assertNotIn('execute', self.operations)
 
 
+class ResponseDeadlineTests(unittest.TestCase):
+    def test_reply_waits_exceed_the_enclave_execute_deadlines(self):
+        # A reply dropped by a shorter wait loses the receipt after the session burned.
+        from verification import owner_client, parent_gateway, sandbox
+        from verification.acquisition_process import PROCESS_DEADLINE_SECONDS
+        worst_execute = PROCESS_DEADLINE_SECONDS + sandbox.TIMEOUT_SECONDS
+        self.assertGreater(parent_gateway.ENCLAVE_RESPONSE_SECONDS, worst_execute)
+        self.assertGreater(owner_client.RESPONSE_SECONDS, parent_gateway.ENCLAVE_RESPONSE_SECONDS)
+
+
 if __name__ == '__main__':
     unittest.main()

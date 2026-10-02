@@ -16,12 +16,17 @@ import struct
 import sys
 from pathlib import Path
 
+from .acquisition_process import PROCESS_DEADLINE_SECONDS
 from .attestation import policy_digest, verify_document
 from .client import verified_session
 from .common import b64, canonical, digest, fields, require, strict_json, unb64
 from .receipts import verify as verify_receipt
 from .runtime import receive
-from .sandbox import MAX_MODULE
+from .sandbox import MAX_MODULE, TIMEOUT_SECONDS as SANDBOX_SECONDS
+
+# An execute reply can take the bank-reader deadline plus the Wasm deadline, then
+# signing and a fresh quote. A reply lost to a short wait still burns the session.
+RESPONSE_SECONDS = PROCESS_DEADLINE_SECONDS + SANDBOX_SECONDS + 15
 
 
 def transport(port, request):
@@ -29,9 +34,8 @@ def transport(port, request):
     body = canonical(request)
     require(len(body) <= 3 * 1024 * 1024, 'frame_size')
     with socket.create_connection(('127.0.0.1', port), timeout=5) as stream:
-        stream.settimeout(30)
+        stream.settimeout(RESPONSE_SECONDS)
         stream.sendall(struct.pack('!I', len(body)) + body)
-        # Acquisition is bounded to 20 seconds plus a bounded guest execution.
         # First wait for completion; receive then bounds the remaining frame.
         prefix = stream.recv(1, socket.MSG_PEEK)
         require(bool(prefix), 'truncated_frame')
