@@ -7,9 +7,9 @@ the earlier repository URLs. The npm workspace name is `peer-link`.
 Public copy, contribution links, agent instructions, catalog generation,
 workflow variables, future infrastructure names and verifier identifiers use
 the new name. The discovery document is `/.well-known/peer-link.json`; Vercel
-redirects the two old discovery paths to it. The existing `openplaid.com` domain
-remains an operational compatibility address until a replacement domain is
-configured and verified. It is not the project name.
+redirects the two old discovery paths to it. The canonical public site is
+`https://link.peer.xyz`; the earlier `openplaid.com` domain is a legacy address
+only and is not the project name.
 
 ## Verification compatibility
 

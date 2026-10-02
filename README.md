@@ -4,7 +4,7 @@
 
 An MIT-licensed library of bank adapters, payment semantics, privacy-safe fixtures, and community test reports. Bring your bank account and your coding agent. Turn what works for you into knowledge anyone can inspect, reproduce, and maintain.
 
-[Website](https://openplaid.com) · [Contribute](CONTRIBUTING.md) · [Integrations](https://openplaid.com/#providers) · [Incentives](docs/incentives.md)
+[Website](https://link.peer.xyz) · [Contribute](CONTRIBUTING.md) · [Integrations](https://link.peer.xyz/#providers) · [Incentives](docs/incentives.md)
 
 **Targeted rewards: at most $50 per bank.** Priority goes to Monobank, Vietcombank and selected US banks. The new total authorization is $1,000 including funding fees. Check [current funding and assignment terms](docs/incentives.md) before starting paid work. Contributions from every geography are welcome.
 

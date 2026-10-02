@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://openplaid.com/sitemap.xml
+Sitemap: https://link.peer.xyz/sitemap.xml
