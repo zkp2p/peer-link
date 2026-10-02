@@ -257,8 +257,8 @@ const REPORT_FIELDS = [
 export type ReportContext = {
   manifestSurface?: string;
   fixtureExists: (ref: string) => boolean;
-  /** "ok" when the commit exists and contains the bank folder at that revision. */
-  revision: (sha: string) => "ok" | "missing-commit" | "missing-bank";
+  /** "ok" when the commit is an ancestor of HEAD and contains the bank's manifest. */
+  revision: (sha: string) => "ok" | "missing-commit" | "not-ancestor" | "missing-bank";
   now: number;
 };
 
@@ -313,6 +313,10 @@ export function validateReport(
     if (state === "missing-commit")
       err(
         `${key} is not in this repository's history. Reports must reference a commit that is already on main (see the two-PR flow in docs/evidence.md)`,
+      );
+    else if (state === "not-ancestor")
+      err(
+        `${key} is not in this branch's history. Do not rebase or squash after writing a report; merge main instead, or rerun the live check and cite the new commit`,
       );
     else if (state === "missing-bank" && key === "adapterRevision")
       err(`adapterRevision does not contain ${bank.bank}/ at that commit`);

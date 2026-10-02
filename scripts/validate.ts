@@ -12,6 +12,7 @@ import {
   checkTransformerSource,
   classifyBankPath,
   parseJson,
+  type ReportContext,
   validateFixture,
   validateManifest,
   validateReport,
@@ -21,7 +22,7 @@ export type Repository = {
   files: string[];
   read(file: string): string;
   exists(file: string): boolean;
-  revision(sha: string, bankFolder: string): "ok" | "missing-commit" | "missing-bank";
+  revision(sha: string, bankFolder: string): ReturnType<ReportContext["revision"]>;
   now: number;
 };
 
@@ -127,6 +128,11 @@ function gitRevision(sha: string, bankFolder: string) {
     execFileSync("git", ["cat-file", "-e", `${sha}^{commit}`], { stdio: "ignore" });
   } catch {
     return "missing-commit" as const;
+  }
+  try {
+    execFileSync("git", ["merge-base", "--is-ancestor", sha, "HEAD"], { stdio: "ignore" });
+  } catch {
+    return "not-ancestor" as const;
   }
   try {
     execFileSync("git", ["cat-file", "-e", `${sha}:${bankFolder}/manifest.json`], {

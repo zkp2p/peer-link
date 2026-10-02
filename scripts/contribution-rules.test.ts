@@ -135,7 +135,7 @@ describe("reports", () => {
   const ctx = {
     manifestSurface: "web-transactions-lite",
     fixtureExists: (ref: string) => ref === "fixtures/sent.synthetic.json",
-    revision: (): "ok" | "missing-commit" | "missing-bank" => "ok",
+    revision: (): "ok" | "missing-commit" | "not-ancestor" | "missing-bank" => "ok",
     now: Date.parse("2026-10-02T00:00:00Z"),
   };
   const check = (patch: Record<string, unknown>, context = ctx, name = file) =>
@@ -166,6 +166,7 @@ describe("reports", () => {
   it("requires revisions that exist and contain the bank folder", () => {
     expect(check({}, { ...ctx, revision: () => "missing-commit" })).toContain("two-PR flow");
     expect(check({}, { ...ctx, revision: () => "missing-bank" })).toContain("does not contain");
+    expect(check({}, { ...ctx, revision: () => "not-ancestor" })).toContain("Do not rebase");
   });
   it("accepts a suffixed file name", () =>
     expect(check({}, ctx, "banks/us/mercury/reports/2026-09-23-0xsachink-ach.json")).toBe(""));
