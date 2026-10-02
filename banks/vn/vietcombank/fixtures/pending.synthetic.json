@@ -1,0 +1,33 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic pending Vietcombank transfer fixture with invented account numbers; not a real transaction.",
+  "input": {
+    "account": {
+      "accountNo": "0071000000001",
+      "currency": "VND"
+    },
+    "transactions": [
+      {
+        "id": "VCB2026100200001",
+        "refNo": "VCB2026100200001",
+        "type": "transfer",
+        "direction": "debit",
+        "status": "pending",
+        "amount": -500000,
+        "currency": "VND",
+        "timeIso": "2026-10-02T15:00:00.000Z",
+        "counterparty": {
+          "accountNumber": "000000000002",
+          "name": "Synthetic Recipient",
+          "bankName": "Techcombank"
+        },
+        "description": "Chuyen tien nhanh 247 den 000000000002"
+      }
+    ]
+  },
+  "transactionId": "VCB2026100200001",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is not bank-reported completed"
+  }
+}
