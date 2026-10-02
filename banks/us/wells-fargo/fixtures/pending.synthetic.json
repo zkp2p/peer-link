@@ -1,0 +1,33 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented transaction in pending status representing a pending outgoing ACH debit. Must abstain with insufficient_evidence.",
+  "input": {
+    "account": {
+      "id": "wf-synthetic-acct-1001",
+      "name": "Synthetic Everyday Checking",
+      "currency": "USD"
+    },
+    "transactions": [
+      {
+        "id": "wf-synthetic-tx-8802",
+        "type": "outgoingDomesticTransfer",
+        "direction": "debit",
+        "amount": "250.75",
+        "currency": "USD",
+        "status": "pending",
+        "postedAt": "2026-02-20T16:45:00.000Z",
+        "counterparty": {
+          "routingNumber": "000000000",
+          "accountNumber": "000000000001",
+          "name": "Example Recipient Corp"
+        },
+        "memo": "Synthetic pending payment fixture"
+      }
+    ]
+  },
+  "transactionId": "wf-synthetic-tx-8802",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is not bank-reported completed"
+  }
+}

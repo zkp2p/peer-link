@@ -1,0 +1,38 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented account, routing, counterparty and transaction identifiers representing a completed outgoing domestic ACH transfer on Wells Fargo web activity. Not a real banking record.",
+  "input": {
+    "account": {
+      "id": "wf-synthetic-acct-1001",
+      "name": "Synthetic Everyday Checking",
+      "currency": "USD"
+    },
+    "transactions": [
+      {
+        "id": "wf-synthetic-tx-8801",
+        "type": "outgoingDomesticTransfer",
+        "direction": "debit",
+        "amount": "250.75",
+        "currency": "USD",
+        "status": "completed",
+        "postedAt": "2026-02-20T16:45:00.000Z",
+        "counterparty": {
+          "routingNumber": "000000000",
+          "accountNumber": "000000000001",
+          "name": "Example Recipient Corp"
+        },
+        "memo": "Synthetic payment fixture"
+      }
+    ]
+  },
+  "transactionId": "wf-synthetic-tx-8801",
+  "expected": {
+    "outcome": "supported",
+    "amountMinor": "25075",
+    "currency": "USD",
+    "status": "completed",
+    "payerId": "wf-synthetic-acct-1001",
+    "payeeId": "000000000:000000000001",
+    "timestamp": "2026-02-20T16:45:00.000Z"
+  }
+}

@@ -42,6 +42,35 @@
         }
       ],
       "source": "https://github.com/zkp2p/peer-link/tree/main/banks/us/mercury"
+    },
+    {
+      "schemaVersion": "1",
+      "id": "us/wells-fargo",
+      "name": "Wells Fargo",
+      "country": "US",
+      "status": "experimental",
+      "version": "0.1.0",
+      "surface": "web-account-activity",
+      "capability": "Interpret outgoing domestic USD ACH transfers from web account activity as sender-bank completed payments",
+      "maintainers": [
+        "Simultech369"
+      ],
+      "currencies": [
+        "USD"
+      ],
+      "unsupported": [
+        "wires",
+        "debit-cards",
+        "checks",
+        "incoming-transfers",
+        "international-wires",
+        "recipient-credit-confirmation",
+        "cryptographic-source-authentication"
+      ],
+      "fixtureProvenance": "synthetic",
+      "reportCount": 0,
+      "evidence": [],
+      "source": "https://github.com/zkp2p/peer-link/tree/main/banks/us/wells-fargo"
     }
   ]
 }
