@@ -28,6 +28,12 @@ def execute(module_bytes, input_bytes):
     config.wasm_threads = False
     config.wasm_memory64 = False
     config.wasm_multi_memory = False
+    # Javy output needs none of these. GC objects would also live outside the
+    # linear-memory limit below; keep newer proposal code paths unreachable.
+    config.wasm_gc = False
+    config.wasm_function_references = False
+    config.wasm_exceptions = False
+    config.wasm_stack_switching = False
     engine = w.Engine(config)
     module = w.Module(engine, module_bytes)  # Never deserialize untrusted native code.
     store = w.Store(engine)

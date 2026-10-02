@@ -65,6 +65,16 @@ class SandboxTests(unittest.TestCase):
             with self.subTest(size=len(body)):
                 self.assertEqual(self.run_wasm(emit_module(body)), expected)
 
+    def test_unneeded_wasm_proposals_are_disabled(self):
+        # GC objects live outside the 64 MiB linear-memory limit; Javy output needs
+        # neither GC nor exceptions, so such modules must not compile.
+        gc = emit_module(extra='(type $a (array (mut i64))) (global $k (mut (ref null $a)) (ref.null $a))',
+                         prefix='(global.set $k (array.new $a (i64.const 7) (i32.const 8000000)))')
+        exceptions = emit_module(extra='(tag $t)', prefix='(try_table (throw $t))')
+        for module in (gc, exceptions):
+            with self.assertRaisesRegex(Rejected, '^sandbox_failed$'):
+                self.run_wasm(module)
+
     def test_guest_errors_and_non_json_never_escape(self):
         for body in (b'private error text', b'{"a":1,"a":2}'):
             with self.assertRaisesRegex(Rejected, '^sandbox_failed$'): self.run_wasm(emit_module(body))
