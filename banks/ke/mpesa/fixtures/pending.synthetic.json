@@ -1,0 +1,31 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic Safaricom M-Pesa outgoing Send Money peer-to-person KES transfer in pending status; not a real payment.",
+  "input": {
+    "account": {
+      "phone": "0700000001"
+    },
+    "transactions": [
+      {
+        "id": "mpesa-tx-00001234",
+        "type": "sendMoney",
+        "direction": "debit",
+        "status": "pending",
+        "amount": "1250.00",
+        "currency": "KES",
+        "bookedAt": "2026-05-12T09:15:00Z",
+        "counterparty": {
+          "phone": "0700000002",
+          "name": "Synthetic Example Recipient"
+        },
+        "description": "Send Money to 0700000002",
+        "memo": "SYNTHETIC EXAMPLE ONLY"
+      }
+    ]
+  },
+  "transactionId": "mpesa-tx-00001234",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is not bank-reported completed"
+  }
+}
