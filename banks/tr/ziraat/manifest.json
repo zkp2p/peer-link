@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1",
+  "id": "tr/ziraat",
+  "name": "Ziraat Bank",
+  "country": "TR",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "mobile-app-receipt",
+  "capability": "Interpret outgoing domestic TRY transfers as sender-bank-reported debits",
+  "entrypoint": "interpretZiraat",
+  "maintainers": ["Simultech369"],
+  "currencies": ["TRY"],
+  "unsupported": [
+    "cards",
+    "utility-payments",
+    "tax-payments",
+    "fx-exchanges",
+    "international-swift",
+    "incoming-credits",
+    "recipient-credit confirmation",
+    "cryptographic source authentication"
+  ],
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/ziraat.png"
+}
