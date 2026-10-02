@@ -1,0 +1,37 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic pending outgoing IDR transfer record from myBCA/KlikBCA receipt",
+  "input": {
+    "account": {
+      "id": "0000000001",
+      "name": "Synthetic Payer"
+    },
+    "transactions": [
+      {
+        "id": "BCA2026100200002",
+        "type": "domesticTransfer",
+        "paymentType": "BI-FAST",
+        "direction": "debit",
+        "status": "DIPROSES",
+        "amount": "100000",
+        "currency": "IDR",
+        "bookedAt": "2026-10-02T17:15:00Z",
+        "payer": {
+          "accountNumber": "0000000001",
+          "name": "Synthetic Payer"
+        },
+        "payee": {
+          "accountNumber": "0000000002",
+          "name": "Synthetic Payee",
+          "bank": "Bank Central Asia"
+        },
+        "memo": "Synthetic pending transfer"
+      }
+    ]
+  },
+  "transactionId": "BCA2026100200002",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is still pending bank execution"
+  }
+}

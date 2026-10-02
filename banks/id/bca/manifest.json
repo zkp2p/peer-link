@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1",
+  "id": "id/bca",
+  "name": "BCA",
+  "country": "ID",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "mobile-app-receipt",
+  "capability": "Interpret outgoing domestic IDR transfers as sender-bank-reported debits",
+  "entrypoint": "interpretBca",
+  "maintainers": ["Simultech369"],
+  "currencies": ["IDR"],
+  "unsupported": [
+    "qris-merchant-payments",
+    "virtual-account-bill-payments",
+    "tax-payments",
+    "auto-debit",
+    "fx-exchanges",
+    "incoming-credits",
+    "recipient-credit confirmation",
+    "cryptographic source authentication"
+  ],
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/bca.png"
+}
