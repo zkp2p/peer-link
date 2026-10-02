@@ -1,0 +1,36 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic pending outgoing BDT Send Money transfer record from bKash app receipt",
+  "input": {
+    "account": {
+      "id": "01700000001",
+      "name": "Synthetic Payer"
+    },
+    "transactions": [
+      {
+        "id": "BK2026100200002",
+        "type": "domesticTransfer",
+        "paymentType": "SendMoney",
+        "direction": "debit",
+        "status": "PENDING",
+        "amount": "250.00",
+        "currency": "BDT",
+        "bookedAt": "2026-10-02T18:15:00Z",
+        "payer": {
+          "mobileNumber": "01700000001",
+          "name": "Synthetic Payer"
+        },
+        "payee": {
+          "mobileNumber": "01700000002",
+          "name": "Synthetic Payee"
+        },
+        "memo": "Synthetic pending transfer"
+      }
+    ]
+  },
+  "transactionId": "BK2026100200002",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is still pending bank execution"
+  }
+}
