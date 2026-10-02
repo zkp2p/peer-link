@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1",
+  "id": "ke/mpesa",
+  "name": "Safaricom M-Pesa",
+  "country": "KE",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "mobile-app-statement",
+  "capability": "Interpret outgoing domestic KES Send Money peer transfers as sender-wallet-reported sent payments",
+  "entrypoint": "interpretMpesa",
+  "maintainers": ["0xSachinK"],
+  "currencies": ["KES"],
+  "unsupported": [
+    "Lipa na M-Pesa (Buy Goods and Till numbers)",
+    "Paybill merchant numbers",
+    "Fuliza overdraft operations",
+    "agent cash-out and withdrawals",
+    "airtime and data bundle top-ups",
+    "bank transfers (Bank to M-Pesa / M-Pesa to Bank)",
+    "incoming credits and deposits",
+    "unauthenticated SMS parsing",
+    "recipient-credit confirmation",
+    "cryptographic source authentication"
+  ],
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/14.png"
+}

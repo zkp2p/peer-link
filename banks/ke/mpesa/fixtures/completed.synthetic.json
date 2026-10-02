@@ -1,0 +1,38 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic Safaricom M-Pesa outgoing Send Money peer-to-person KES transfer with invented phone numbers; not a real payment.",
+  "input": {
+    "account": {
+      "phone": "0700000001"
+    },
+    "transactions": [
+      {
+        "id": "mpesa-tx-00001234",
+        "type": "sendMoney",
+        "direction": "debit",
+        "status": "completed",
+        "amount": "1250.00",
+        "currency": "KES",
+        "bookedAt": "2026-05-12T09:15:00Z",
+        "counterparty": {
+          "phone": "0700000002",
+          "name": "Synthetic Example Recipient"
+        },
+        "description": "Send Money to 0700000002",
+        "memo": "SYNTHETIC EXAMPLE ONLY"
+      }
+    ]
+  },
+  "transactionId": "mpesa-tx-00001234",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "0700000001",
+    "payeeId": "0700000002",
+    "amountMinor": "125000",
+    "currency": "KES",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "status": "completed",
+    "timestamp": "2026-05-12T09:15:00Z"
+  }
+}
