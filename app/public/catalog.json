@@ -3,6 +3,37 @@
   "providers": [
     {
       "schemaVersion": "1",
+      "id": "co/bancolombia",
+      "name": "Bancolombia",
+      "country": "CO",
+      "status": "experimental",
+      "version": "0.1.0",
+      "surface": "web-movimientos",
+      "capability": "Interpret outgoing domestic COP transfers (Bancolombia-to-Bancolombia or Transfiya) as sender-bank-reported sent payments",
+      "maintainers": [
+        "0xSachinK"
+      ],
+      "currencies": [
+        "COP"
+      ],
+      "unsupported": [
+        "service and utility payments (Pago de Facturas y Servicios)",
+        "credit card payments and credit advances",
+        "merchant and QR code payments",
+        "cash withdrawals and ATM operations",
+        "foreign currency operations (USD)",
+        "incoming credits and deposits",
+        "recipient-credit confirmation",
+        "cryptographic source authentication"
+      ],
+      "fixtureProvenance": "synthetic",
+      "logo": "/logos/bancolombia.png",
+      "reportCount": 0,
+      "evidence": [],
+      "source": "https://github.com/zkp2p/peer-link/tree/main/banks/co/bancolombia"
+    },
+    {
+      "schemaVersion": "1",
       "id": "us/mercury",
       "name": "Mercury",
       "country": "US",

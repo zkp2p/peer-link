@@ -1,0 +1,31 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic Bancolombia outgoing domestic COP transfer in pending status; not a real payment.",
+  "input": {
+    "account": {
+      "accountNumber": "00001234567"
+    },
+    "transactions": [
+      {
+        "id": "bancolombia-mov-00001234",
+        "type": "domesticTransfer",
+        "direction": "debit",
+        "status": "pending",
+        "amount": "150000",
+        "currency": "COP",
+        "bookedAt": "2026-06-18T15:45:00Z",
+        "counterparty": {
+          "accountNumber": "00009876543",
+          "name": "Synthetic Example Payee"
+        },
+        "description": "Transferencia a terceros Bancolombia",
+        "memo": "SYNTHETIC EXAMPLE ONLY"
+      }
+    ]
+  },
+  "transactionId": "bancolombia-mov-00001234",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is not bank-reported completed"
+  }
+}
