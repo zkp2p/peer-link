@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1",
+  "id": "br/itau",
+  "name": "Itau Brazil",
+  "country": "BR",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "web-extrato-pix",
+  "capability": "Completed outgoing domestic BRL Pix transfer from Itau Brazil account statements",
+  "entrypoint": "interpretItauBrazil",
+  "maintainers": ["Simultech369"],
+  "currencies": ["BRL"],
+  "unsupported": [
+    "TED and DOC interbank transfers (ted, doc)",
+    "Boleto bancário and utility bill payments (boleto, convenio)",
+    "Debit and credit card purchases (compra com cartao)",
+    "ATM cash withdrawals (saque em caixa eletronico)",
+    "Incoming Pix transfers and third-party deposits",
+    "Pending, scheduled, in-analysis, or cancelled Pix transfers",
+    "Non-BRL international currency transfers"
+  ],
+  "fixtureProvenance": "synthetic"
+}
