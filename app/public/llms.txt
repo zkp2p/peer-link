@@ -8,8 +8,9 @@
 - Agent contribution skill: https://github.com/zkp2p/peer-link/blob/main/skills/contribute-bank/SKILL.md
 - Privacy rules: https://github.com/zkp2p/peer-link/blob/main/docs/privacy.md
 - Evidence model and limitations: https://github.com/zkp2p/peer-link/blob/main/docs/evidence.md
-- Bounty terms and current funding status: https://github.com/zkp2p/peer-link/blob/main/docs/incentives.md
-- Bank request index: https://github.com/zkp2p/peer-link/issues/64
+- Bounty terms: https://github.com/zkp2p/peer-link/blob/main/docs/incentives.md
+- Funded bounty index ($1,000 across 20 banks, $50 each, paid in USDC via Merit): https://github.com/zkp2p/peer-link/issues/64
+- Merit project: https://terminal.merit.systems/zkp2p/peer-link
 - Propose a bank: https://github.com/zkp2p/peer-link/issues/new?template=bank-request.md
 
 - Agent instructions: https://github.com/zkp2p/peer-link/blob/main/AGENTS.md
@@ -26,4 +27,4 @@ No scheduled agent tasks or automatic payouts are enabled. Published issue terms
 
 ## Boundaries
 
-Use only bank accounts you are authorized to inspect. Account owners handle authentication and MFA. Never initiate payments or change account settings. Keep credentials, cookies, raw records, and unredacted transcripts out of public contributions. Adapters interpret supplied observations; they do not establish bank-origin authenticity, final settlement, or a signed payment attestation. Bounty eligibility and payment depend on each issue's current funding and acceptance terms. Peer Link is independent and is not affiliated with Plaid Inc. or named banks.
+Use only bank accounts you are authorized to inspect. Account owners handle authentication and MFA. Never initiate payments or change account settings. Keep credentials, cookies, raw records, and unredacted transcripts out of public contributions. Adapters interpret supplied observations; they do not establish bank-origin authenticity, final settlement, or a signed payment attestation. Bounties: $1,000 is funded on Merit for 20 banks at $50 each. Comment on a funded bank issue to be assigned; payment follows the maintainer's written acceptance on that issue, never an automatic trigger. Peer Link is independent and is not affiliated with Plaid Inc. or named banks.
