@@ -1,4 +1,5 @@
 import hashlib
+import json
 import unittest
 
 import wasmtime
@@ -51,6 +52,18 @@ class SandboxTests(unittest.TestCase):
           (if (i32.ne (i32.load (i32.const 24)) (i32.const 0)) (then unreachable))
           (if (i32.ne (memory.grow (i32.const 1024)) (i32.const -1)) (then unreachable))'''
         self.assertEqual(self.run_wasm(emit_module(extra=extra, prefix=prefix)), {'outcome': 'supported'})
+
+    def test_in_limit_output_survives_canonical_reencoding(self):
+        # The worker re-encodes guest JSON with ASCII escapes and float repr. An output
+        # within MAX_OUTPUT must not turn into a different, guest-selected error code.
+        text = json.dumps({'outcome': 'unsupported', 'reason': '\u2014' * 2700}, ensure_ascii=False)
+        cases = [(text.encode(), {'outcome': 'unsupported', 'reason': '\u2014' * 2700}),
+                 (b'"' + b'\x7f' * 8190 + b'"', '\x7f' * 8190),  # 1 byte -> 6-byte escape
+                 (b'[' + b','.join([b'9e15'] * 1638) + b']', [9e15] * 1638)]
+        for body, expected in cases:
+            self.assertLessEqual(len(body), 8192)
+            with self.subTest(size=len(body)):
+                self.assertEqual(self.run_wasm(emit_module(body)), expected)
 
     def test_guest_errors_and_non_json_never_escape(self):
         for body in (b'private error text', b'{"a":1,"a":2}'):
