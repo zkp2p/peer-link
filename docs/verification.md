@@ -119,7 +119,7 @@ adversarial holdouts must be stored separately and never run on untrusted PR hos
 
 Passing tests is not proof of no vulnerabilities. This development verifier has not
 been independently audited. Mercury's current parser describes sender-bank-reported
-sent domestic USD wires, not recipient credit or irreversible settlement. An Peer Link
+sent domestic USD wires, not recipient credit or irreversible settlement. A Peer Link
 verification result is not a Peer settlement signature. Signing, merging and payout
 authority must remain separate from untrusted adapter code and model output.
 

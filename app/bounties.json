@@ -6,7 +6,8 @@
     "currency": "UAH",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/6",
-    "logo": "/logos/monobank.png"
+    "logo": "/logos/monobank.png",
+    "adapter": "ua/monobank"
   },
   {
     "issue": 8,
@@ -15,7 +16,8 @@
     "currency": "VND",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/8",
-    "logo": "/logos/vietcombank.png"
+    "logo": "/logos/vietcombank.png",
+    "adapter": "vn/vietcombank"
   },
   {
     "issue": 73,
@@ -24,7 +26,8 @@
     "currency": "USD",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/73",
-    "logo": "/logos/chase.jpg"
+    "logo": "/logos/chase.jpg",
+    "adapter": "us/chase"
   },
   {
     "issue": 74,
@@ -33,7 +36,8 @@
     "currency": "USD",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/74",
-    "logo": "/logos/bank-of-america.png"
+    "logo": "/logos/bank-of-america.png",
+    "adapter": "us/bank-of-america"
   },
   {
     "issue": 75,
@@ -42,7 +46,8 @@
     "currency": "USD",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/75",
-    "logo": "/logos/wells-fargo.png"
+    "logo": "/logos/wells-fargo.png",
+    "adapter": "us/wells-fargo"
   },
   {
     "issue": 4,
@@ -51,7 +56,8 @@
     "currency": "NGN",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/4",
-    "logo": "/logos/opay.png"
+    "logo": "/logos/opay.png",
+    "adapter": "ng/opay"
   },
   {
     "issue": 86,
@@ -60,7 +66,8 @@
     "currency": "PKR",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/86",
-    "logo": "/logos/easypaisa.png"
+    "logo": "/logos/easypaisa.png",
+    "adapter": "pk/easypaisa"
   },
   {
     "issue": 7,
@@ -69,7 +76,8 @@
     "currency": "IDR",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/7",
-    "logo": "/logos/bca.png"
+    "logo": "/logos/bca.png",
+    "adapter": "id/bca"
   },
   {
     "issue": 9,
@@ -78,7 +86,8 @@
     "currency": "COP",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/9",
-    "logo": "/logos/bancolombia.png"
+    "logo": "/logos/bancolombia.png",
+    "adapter": "co/bancolombia"
   },
   {
     "issue": 10,
@@ -87,7 +96,8 @@
     "currency": "PHP",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/10",
-    "logo": "/logos/gcash.png"
+    "logo": "/logos/gcash.png",
+    "adapter": "ph/gcash"
   },
   {
     "issue": 13,
@@ -96,7 +106,8 @@
     "currency": "BDT",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/13",
-    "logo": "/logos/bkash.png"
+    "logo": "/logos/bkash.png",
+    "adapter": "bd/bkash"
   },
   {
     "issue": 14,
@@ -105,7 +116,8 @@
     "currency": "KES",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/14",
-    "logo": "/logos/14.png"
+    "logo": "/logos/14.png",
+    "adapter": "ke/mpesa"
   },
   {
     "issue": 15,
@@ -114,7 +126,8 @@
     "currency": "KZT",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/15",
-    "logo": "/logos/kaspi.png"
+    "logo": "/logos/kaspi.png",
+    "adapter": "kz/kaspi"
   },
   {
     "issue": 16,
@@ -123,7 +136,8 @@
     "currency": "MXN",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/16",
-    "logo": "/logos/16.png"
+    "logo": "/logos/16.png",
+    "adapter": "mx/bbva-mexico"
   },
   {
     "issue": 17,
@@ -132,7 +146,8 @@
     "currency": "PEN",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/17",
-    "logo": "/logos/bcp.png"
+    "logo": "/logos/bcp.png",
+    "adapter": "pe/bcp"
   },
   {
     "issue": 18,
@@ -141,7 +156,8 @@
     "currency": "TRY",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/18",
-    "logo": "/logos/ziraat.png"
+    "logo": "/logos/ziraat.png",
+    "adapter": "tr/ziraat"
   },
   {
     "issue": 20,
@@ -150,7 +166,8 @@
     "currency": "ARS",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/20",
-    "logo": "/logos/uala.png"
+    "logo": "/logos/uala.png",
+    "adapter": "ar/uala"
   },
   {
     "issue": 21,
@@ -159,7 +176,8 @@
     "currency": "BRL",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/21",
-    "logo": "/logos/itau.png"
+    "logo": "/logos/itau.png",
+    "adapter": "br/itau"
   },
   {
     "issue": 32,
@@ -168,7 +186,8 @@
     "currency": "GHS",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/32",
-    "logo": "/logos/mtn-momo.png"
+    "logo": "/logos/mtn-momo.png",
+    "adapter": "gh/mtn-momo"
   },
   {
     "issue": 24,
@@ -177,6 +196,7 @@
     "currency": "EUR",
     "amount": 50,
     "url": "https://github.com/zkp2p/peer-link/issues/24",
-    "logo": "/logos/24.png"
+    "logo": "/logos/24.png",
+    "adapter": "es/bbva-spain"
   }
 ]

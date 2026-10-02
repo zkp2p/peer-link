@@ -18,7 +18,9 @@ type Provider = {
   country: string;
   currencies: string[];
   source: string;
+  logo?: string;
 };
+type Bank = (typeof banks)[number];
 type Integration = {
   name: string;
   country: string;
@@ -30,43 +32,71 @@ type Integration = {
   bounty: number | null;
 };
 
-const bountyByUrl = new Map(bounties.map((bounty) => [bounty.url, bounty.amount]));
+// Mercury stays first; banks.json keeps Chase, Bank of America and Wells Fargo next.
+const PINNED_ADAPTERS = ["us/mercury"];
+const PINNED_BANKS = 3;
+const bountyByUrl = new Map(bounties.map((bounty) => [bounty.url, bounty]));
+const normalize = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 const list = document.querySelector("#provider-list");
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
 const catalogStatus = document.querySelector<HTMLElement>("#catalog-status");
 
+function fromProvider(provider: Provider, bank?: Bank): Integration {
+  return {
+    name: bank?.name ?? provider.name,
+    country: provider.country,
+    currency: provider.currencies.join(", "),
+    href: provider.source,
+    logo: provider.logo ?? bank?.logo ?? null,
+    mark: provider.name.slice(0, 2).toUpperCase(),
+    hasAdapter: true,
+    bounty: null,
+  };
+}
+
+function fromBank(bank: Bank): Integration {
+  return {
+    name: bank.name,
+    country: bank.country,
+    currency: bank.currency,
+    href: bank.issue,
+    logo: bank.logo,
+    mark: bank.mark,
+    hasAdapter: false,
+    bounty: bountyByUrl.get(bank.issue)?.amount ?? null,
+  };
+}
+
 function render(providers: Provider[], catalogUnavailable = false) {
   if (!list) return;
   list.replaceChildren();
+  // A merged adapter replaces its bank card (matched by bounty folder or name + country)
+  // so it keeps its place and logo; adapters for unlisted banks follow the pinned cards.
+  const used = new Set<string>();
+  const pinned = providers.filter((provider) => PINNED_ADAPTERS.includes(provider.id));
+  for (const provider of pinned) used.add(provider.id);
+  const bankCards = banks.map((bank) => {
+    const folder = bountyByUrl.get(bank.issue)?.adapter;
+    const provider = providers.find(
+      (candidate) =>
+        !used.has(candidate.id) &&
+        (candidate.id === folder ||
+          (candidate.country === bank.country &&
+            normalize(candidate.name) === normalize(bank.name))),
+    );
+    if (!provider) return fromBank(bank);
+    used.add(provider.id);
+    return fromProvider(provider, bank);
+  });
+  const unlisted = providers
+    .filter((provider) => !used.has(provider.id))
+    .map((p) => fromProvider(p));
   const integrations: Integration[] = [
-    ...providers.map((provider) => ({
-      name: provider.name,
-      country: provider.country,
-      currency: provider.currencies.join(", "),
-      href: provider.source,
-      logo: provider.id === "us/mercury" ? "/logos/mercury.svg" : null,
-      mark: provider.name.slice(0, 2).toUpperCase(),
-      hasAdapter: true,
-      bounty: null,
-    })),
-    ...banks
-      .filter(
-        (bank) =>
-          !providers.some(
-            (provider) => provider.name === bank.name && provider.country === bank.country,
-          ),
-      )
-      .map((bank) => ({
-        name: bank.name,
-        country: bank.country,
-        currency: bank.currency,
-        href: bank.issue,
-        logo: bank.logo,
-        mark: bank.mark,
-        hasAdapter: false,
-        bounty: bountyByUrl.get(bank.issue) ?? null,
-      })),
+    ...pinned.map((provider) => fromProvider(provider)),
+    ...bankCards.slice(0, PINNED_BANKS),
+    ...unlisted,
+    ...bankCards.slice(PINNED_BANKS),
   ];
 
   if (catalogStatus) {

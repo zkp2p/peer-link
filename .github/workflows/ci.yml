@@ -29,6 +29,28 @@ jobs:
       - run: npm run verify:setup
       - run: npm run check
       - run: npm run verify:sandbox-smoke
+  trusted-contribution-checks:
+    # A fork PR can edit the scripts and config that define its own checks. Re-run the
+    # base branch's tooling against the PR's bank files. No secrets, read-only token.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Restore check tooling from the base branch
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git checkout "$BASE_SHA" -- package.json package-lock.json .npmrc vitest.config.ts \
+            biome.json tsconfig.json scripts lib banks/adapter-contract.test.ts
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts
+      - run: npm run check:bank
   enclave-build:
     runs-on: ubuntu-24.04
     timeout-minutes: 15

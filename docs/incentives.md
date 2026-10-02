@@ -62,6 +62,10 @@ feasibility scopes were upgraded the same day to full $50 adapter awards.
    Open a PR that says `Closes #<issue>`. Submissions are due
    **2026-11-15 23:59 UTC**.
 
+Maintainers track each bounty with the `bounty: assigned`, `bounty: in review` and
+`bounty: accepted` labels. Keep the `Merit` and `$50` labels only on funded bank
+issues; Merit lists every open issue that carries both.
+
 ## Acceptance
 
 - Original, MIT-compatible, pure and deterministic adapter with a manifest and
