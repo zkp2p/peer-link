@@ -1,4 +1,4 @@
-# Peer Link
+# 🔗 Peer Link
 
 **Banking integrations, built together.**
 
