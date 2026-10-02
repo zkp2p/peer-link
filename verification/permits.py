@@ -7,13 +7,14 @@ import time
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-from .common import Rejected, b64, canonical, fields, hex_digest, identifier, require, unb64
+from .common import (CLOCK_SKEW_SECONDS, Rejected, b64, canonical, fields, hex_digest,
+                     identifier, require, unb64)
 
 PERMIT_FIELDS = ("audience", "attempt", "ticket", "artifactDigest", "policyDigest",
                  "enclaveKeyDigest", "challenge", "expiresAt", "maximumMicroUsd")
 
 
-def validate(claims, *, now=None):
+def validate(claims, *, now=None, skew=0):
     now = time.time() if now is None else now
     fields(claims, PERMIT_FIELDS)
     require(claims["audience"] == "peer-link-verification-v1", "permit_audience")
@@ -21,7 +22,7 @@ def validate(claims, *, now=None):
         identifier(claims[name])
     for name in ("artifactDigest", "policyDigest", "enclaveKeyDigest", "challenge"):
         hex_digest(claims[name])
-    require(type(claims["expiresAt"]) is int and now < claims["expiresAt"] <= now + 120,
+    require(type(claims["expiresAt"]) is int and now < claims["expiresAt"] <= now + 120 + skew,
             "permit_expired")
     require(type(claims["maximumMicroUsd"]) is int and 0 < claims["maximumMicroUsd"] <= 50000,
             "permit_budget")
@@ -35,7 +36,7 @@ def issue(claims, private_key):
 def verify(permit, public_key, *, enclave_key_digest, policy_digest, artifact_digest, challenge):
     fields(permit, ("claims", "signature"))
     claims = permit["claims"]
-    validate(claims)
+    validate(claims, skew=CLOCK_SKEW_SECONDS)
     require(claims["enclaveKeyDigest"] == enclave_key_digest and
             claims["policyDigest"] == policy_digest and
             claims["artifactDigest"] == artifact_digest and

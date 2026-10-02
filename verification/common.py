@@ -6,6 +6,12 @@ import math
 import re
 
 
+# Verifiers of controller-signed grants/permits allow this much clock difference
+# on the two-minute lifetime cap only. Issuers never sign beyond two minutes, and
+# expiry itself is never extended. Matches the receipt/attestation tolerance.
+CLOCK_SKEW_SECONDS = 5
+
+
 class Rejected(ValueError):
     pass
 

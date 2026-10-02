@@ -3,19 +3,20 @@ import time
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-from .common import Rejected, b64, canonical, fields, hex_digest, identifier, require, unb64
+from .common import (CLOCK_SKEW_SECONDS, Rejected, b64, canonical, fields, hex_digest,
+                     identifier, require, unb64)
 
 CLAIMS = ("audience", "attempt", "bindingDigest", "policyDigest", "enclaveKeyDigest", "expiresAt")
 
 
-def validate(claims):
+def validate(claims, *, skew=0):
     fields(claims, CLAIMS)
     require(claims["audience"] == "peer-link-challenge-v1", "admission_audience")
     identifier(claims["attempt"])
     for name in ("bindingDigest", "policyDigest", "enclaveKeyDigest"):
         hex_digest(claims[name])
     now = time.time()
-    require(type(claims["expiresAt"]) is int and now < claims["expiresAt"] <= now + 120,
+    require(type(claims["expiresAt"]) is int and now < claims["expiresAt"] <= now + 120 + skew,
             "admission_expired")
 
 
@@ -27,7 +28,7 @@ def issue(claims, private_key):
 def verify(grant, public_key, *, enclave_key_digest, policy_digest):
     fields(grant, ("claims", "signature"))
     claims = grant["claims"]
-    validate(claims)
+    validate(claims, skew=CLOCK_SKEW_SECONDS)
     require(claims["enclaveKeyDigest"] == enclave_key_digest and
             claims["policyDigest"] == policy_digest, "admission_binding")
     try:
