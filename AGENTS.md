@@ -24,6 +24,14 @@ Vercel Git-triggered deployments are disabled in `vercel.json`. Deploy the landi
 
 `banks/<country>/<bank>/` for adapters; `lib/` for shared format/matching; `skills/` for contribute/test/review workflows; `app/` for the public landing page. Provider statuses remain experimental. Changes to the shared output contract need a version change and migration explanation.
 
+## Main-page bank logos and ordering
+
+- Every bank added to the main-page integration directory must include its actual logo in the same change. A missing/null logo or an initials-only placeholder is not a completed integration card.
+- Save the unchanged logo locally in `app/public/logos/`, preferably from the bank's official public website. Record the source URL in `app/public/logos/BANK-ASSETS.md`; do not hotlink the image or copy private assets.
+- Wire the local `/logos/...` path in `app/banks.json` and, when applicable, `app/bounties.json`. For an implemented adapter from `catalog.json`, ensure `app/main.ts` resolves the logo too. A runtime fallback is only for an unexpected image failure, not a substitute for supplying the logo.
+- Keep Mercury, Chase, Bank of America and Wells Fargo as the first four cards, in that order, unless the user requests otherwise. Preserve the remaining bank entries.
+- Verify that the logo loads and looks correct in the actual card on desktop and mobile before merging or deploying. Run the repository checks and staged privacy check.
+
 ## Verification service
 
 Read `verification/agent-contract.json` and `skills/operate-verifier/SKILL.md` for verifier work. The verification service is separate from pure bank adapters. No source policy or release is enabled until independently verified; never substitute example measurements or mock evidence for a live report. Explicit account-owner consent is required before the verified encrypted session flow. Model output cannot change trust rules, approve its own contribution or spend funds. No scheduled tasks or automatic payouts are enabled.

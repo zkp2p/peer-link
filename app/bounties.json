@@ -28,7 +28,7 @@
     "currency": "USD",
     "amount": 25,
     "issue": "https://github.com/zkp2p/peer-link/issues/73",
-    "logo": null,
+    "logo": "/logos/chase.jpg",
     "mark": "C",
     "scope": "Feasibility proposal"
   },
@@ -39,7 +39,7 @@
     "currency": "USD",
     "amount": 25,
     "issue": "https://github.com/zkp2p/peer-link/issues/74",
-    "logo": null,
+    "logo": "/logos/bank-of-america.png",
     "mark": "B",
     "scope": "Feasibility proposal"
   },
@@ -50,7 +50,7 @@
     "currency": "USD",
     "amount": 25,
     "issue": "https://github.com/zkp2p/peer-link/issues/75",
-    "logo": null,
+    "logo": "/logos/wells-fargo.png",
     "mark": "W",
     "scope": "Feasibility proposal"
   }

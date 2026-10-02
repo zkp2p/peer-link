@@ -1,5 +1,29 @@
 [
   {
+    "name": "Chase",
+    "country": "US",
+    "currency": "USD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/73",
+    "logo": "/logos/chase.jpg",
+    "mark": "C"
+  },
+  {
+    "name": "Bank of America",
+    "country": "US",
+    "currency": "USD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/74",
+    "logo": "/logos/bank-of-america.png",
+    "mark": "B"
+  },
+  {
+    "name": "Wells Fargo",
+    "country": "US",
+    "currency": "USD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/75",
+    "logo": "/logos/wells-fargo.png",
+    "mark": "W"
+  },
+  {
     "name": "OPay",
     "country": "NG",
     "currency": "NGN",
@@ -478,29 +502,5 @@
     "issue": "https://github.com/zkp2p/peer-link/issues/63",
     "logo": "/logos/acleda.png",
     "mark": "AB"
-  },
-  {
-    "name": "Chase",
-    "country": "US",
-    "currency": "USD",
-    "issue": "https://github.com/zkp2p/peer-link/issues/73",
-    "logo": null,
-    "mark": "C"
-  },
-  {
-    "name": "Bank of America",
-    "country": "US",
-    "currency": "USD",
-    "issue": "https://github.com/zkp2p/peer-link/issues/74",
-    "logo": null,
-    "mark": "B"
-  },
-  {
-    "name": "Wells Fargo",
-    "country": "US",
-    "currency": "USD",
-    "issue": "https://github.com/zkp2p/peer-link/issues/75",
-    "logo": null,
-    "mark": "W"
   }
 ]
