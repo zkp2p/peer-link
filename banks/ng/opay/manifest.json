@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1",
+  "id": "ng/opay",
+  "name": "OPay",
+  "country": "NG",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "app-transaction-detail",
+  "capability": "Completed outgoing domestic NGN transfer from OPay transaction detail",
+  "entrypoint": "interpretOpay",
+  "maintainers": ["Simultech369"],
+  "currencies": ["NGN"],
+  "unsupported": [
+    "Incoming payments and wallet top-ups (credit)",
+    "Airtime and mobile data recharges",
+    "Utility bills, TV subscriptions, and government levies",
+    "Betting, gaming, and lottery wallet fundings",
+    "POS card debit purchases and ATM cash-out",
+    "Pending authorizations and unconfirmed movements",
+    "Non-NGN foreign currency operations"
+  ],
+  "fixtureProvenance": "synthetic"
+}

@@ -1,0 +1,40 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic OPay outgoing domestic NGN transfer fixture with invented account numbers and timestamps; not a real transaction.",
+  "input": {
+    "account": {
+      "accountNo": "8000000001",
+      "currency": "NGN"
+    },
+    "transactions": [
+      {
+        "id": "OPAY2026100200001",
+        "orderNo": "OPAY2026100200001",
+        "type": "transfer",
+        "direction": "debit",
+        "status": "completed",
+        "amount": -500000,
+        "currency": "NGN",
+        "timeIso": "2026-10-02T15:00:00.000Z",
+        "counterparty": {
+          "accountNumber": "0000000002",
+          "name": "Synthetic Recipient",
+          "bankName": "Access Bank"
+        },
+        "description": "Transfer to 0000000002 Access Bank"
+      }
+    ]
+  },
+  "transactionId": "OPAY2026100200001",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "8000000001",
+    "payeeId": "0000000002",
+    "amountMinor": "500000",
+    "currency": "NGN",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "status": "completed",
+    "timestamp": "2026-10-02T15:00:00.000Z"
+  }
+}
