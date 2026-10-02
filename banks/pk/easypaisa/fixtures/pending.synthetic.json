@@ -1,0 +1,29 @@
+{
+  "provenance": "synthetic",
+  "description": "Pending money transfer from Easypaisa mobile receipt",
+  "input": {
+    "receipt": {
+      "transactionId": "EP-20261002-00002",
+      "transactionType": "EASYPAISA_TRANSFER",
+      "transferMode": "WALLET_TO_WALLET",
+      "direction": "DEBIT",
+      "status": "PENDING",
+      "amount": "800.00",
+      "currency": "PKR",
+      "executionTimestamp": "2026-10-02T13:00:00Z",
+      "sender": {
+        "mobileNumber": "03000000001",
+        "accountTitle": "Synthetic Sender"
+      },
+      "receiver": {
+        "mobileNumber": "03000000002",
+        "accountTitle": "Synthetic Recipient"
+      }
+    }
+  },
+  "transactionId": "EP-20261002-00002",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction status is not bank-reported COMPLETED or SUCCESS"
+  }
+}

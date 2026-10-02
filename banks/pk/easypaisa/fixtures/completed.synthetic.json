@@ -1,0 +1,39 @@
+{
+  "provenance": "synthetic",
+  "description": "Completed outgoing money transfer from Easypaisa mobile receipt",
+  "input": {
+    "receipt": {
+      "transactionId": "EP-20261002-00001",
+      "transactionType": "EASYPAISA_TRANSFER",
+      "transferMode": "WALLET_TO_WALLET",
+      "direction": "DEBIT",
+      "status": "COMPLETED",
+      "amount": "1500.00",
+      "currency": "PKR",
+      "executionTimestamp": "2026-10-02T12:00:00Z",
+      "sender": {
+        "mobileNumber": "03000000001",
+        "accountTitle": "Synthetic Sender"
+      },
+      "receiver": {
+        "mobileNumber": "03000000002",
+        "accountTitle": "Synthetic Recipient"
+      },
+      "fee": "0.00",
+      "memo": "Synthetic payment for peer-link test invoice"
+    }
+  },
+  "transactionId": "EP-20261002-00001",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "03000000001",
+    "payeeId": "03000000002",
+    "amountMinor": "150000",
+    "currency": "PKR",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "status": "COMPLETED",
+    "timestamp": "2026-10-02T12:00:00Z",
+    "timestampMeaning": "executionTimestamp"
+  }
+}

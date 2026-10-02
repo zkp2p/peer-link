@@ -3,6 +3,36 @@
   "providers": [
     {
       "schemaVersion": "1",
+      "id": "pk/easypaisa",
+      "name": "Easypaisa",
+      "country": "PK",
+      "status": "experimental",
+      "version": "0.1.0",
+      "surface": "mobile-app-receipt",
+      "capability": "Interpret outgoing completed PKR Easypaisa money transfers as sender-bank-reported debits",
+      "maintainers": [
+        "Simultech369"
+      ],
+      "currencies": [
+        "PKR"
+      ],
+      "unsupported": [
+        "mobile-load",
+        "bill-payment",
+        "cash-withdrawal",
+        "incoming-credits",
+        "merchant-payments",
+        "recipient-credit confirmation",
+        "cryptographic source authentication"
+      ],
+      "fixtureProvenance": "synthetic",
+      "logo": "/logos/easypaisa.png",
+      "reportCount": 0,
+      "evidence": [],
+      "source": "https://github.com/zkp2p/peer-link/tree/main/banks/pk/easypaisa"
+    },
+    {
+      "schemaVersion": "1",
       "id": "us/mercury",
       "name": "Mercury",
       "country": "US",
