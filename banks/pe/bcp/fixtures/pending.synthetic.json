@@ -1,0 +1,31 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic BCP outgoing domestic PEN transfer in pending status; not a real payment.",
+  "input": {
+    "account": {
+      "accountNumber": "19100001234567"
+    },
+    "transactions": [
+      {
+        "id": "bcp-mov-00001234",
+        "type": "domesticTransfer",
+        "direction": "debit",
+        "status": "pending",
+        "amount": "250.75",
+        "currency": "PEN",
+        "bookedAt": "2026-03-15T14:30:00Z",
+        "counterparty": {
+          "accountNumber": "19300009876543",
+          "name": "Synthetic Example Payee"
+        },
+        "description": "Transferencia a terceros BCP",
+        "memo": "SYNTHETIC EXAMPLE ONLY"
+      }
+    ]
+  },
+  "transactionId": "bcp-mov-00001234",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is not bank-reported completed"
+  }
+}
