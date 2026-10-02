@@ -1,0 +1,36 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic pending outgoing PHP Send Money transfer record from GCash mobile app receipt",
+  "input": {
+    "account": {
+      "id": "09000000001",
+      "name": "Synthetic Payer"
+    },
+    "transactions": [
+      {
+        "id": "9026100200002",
+        "type": "domesticTransfer",
+        "paymentType": "SendMoney",
+        "direction": "debit",
+        "status": "PENDING",
+        "amount": "250.00",
+        "currency": "PHP",
+        "bookedAt": "2026-10-02T16:15:00Z",
+        "payer": {
+          "mobileNumber": "09000000001",
+          "name": "Synthetic Payer"
+        },
+        "payee": {
+          "mobileNumber": "09000000002",
+          "name": "Synthetic Payee"
+        },
+        "memo": "Synthetic pending payment"
+      }
+    ]
+  },
+  "transactionId": "9026100200002",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is still pending bank execution"
+  }
+}

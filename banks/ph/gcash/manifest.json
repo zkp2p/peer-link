@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1",
+  "id": "ph/gcash",
+  "name": "GCash",
+  "country": "PH",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "mobile-app-receipt",
+  "capability": "Interpret outgoing domestic PHP transfers as sender-bank-reported debits",
+  "entrypoint": "interpretGcash",
+  "maintainers": ["Simultech369"],
+  "currencies": ["PHP"],
+  "unsupported": [
+    "cash-in",
+    "cash-out",
+    "pay-bills",
+    "buy-load",
+    "merchant-qr-payments",
+    "credit-lines",
+    "investments",
+    "incoming-credits",
+    "recipient-credit confirmation",
+    "cryptographic source authentication"
+  ],
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/gcash.png"
+}
