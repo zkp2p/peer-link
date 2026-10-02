@@ -1,0 +1,29 @@
+{
+  "provenance": "synthetic",
+  "description": "Pending outgoing domestic transfer from Uala Argentina mobile receipt",
+  "input": {
+    "receipt": {
+      "transactionId": "UALA-20261002-00002",
+      "transactionType": "TRANSFER_OUTGOING",
+      "transferType": "CVU",
+      "direction": "DEBIT",
+      "status": "PENDING",
+      "amount": "1200.00",
+      "currency": "ARS",
+      "settlementTimestamp": "2026-10-02T16:30:00Z",
+      "sender": {
+        "cvu": "0000000000000000000001",
+        "name": "Synthetic Payer"
+      },
+      "receiver": {
+        "cvu": "0000000000000000000002",
+        "name": "Synthetic Payee"
+      }
+    }
+  },
+  "transactionId": "UALA-20261002-00002",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction status is not bank-reported COMPLETED, APROBADA, or EXITOSA"
+  }
+}

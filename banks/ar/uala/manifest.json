@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1",
+  "id": "ar/uala",
+  "name": "Ualá",
+  "country": "AR",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "mobile-app-receipt",
+  "capability": "Interpret outgoing completed ARS CVU/alias transfers as sender-bank-reported debits",
+  "entrypoint": "interpretUala",
+  "maintainers": ["Simultech369"],
+  "currencies": ["ARS"],
+  "unsupported": [
+    "card-purchases",
+    "credit-line-draws",
+    "investments",
+    "incoming-credits",
+    "cash-deposits",
+    "recipient-credit confirmation",
+    "cryptographic source authentication"
+  ],
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/uala.png"
+}

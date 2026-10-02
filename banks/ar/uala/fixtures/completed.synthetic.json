@@ -1,0 +1,40 @@
+{
+  "provenance": "synthetic",
+  "description": "Completed outgoing domestic transfer from Uala Argentina mobile receipt",
+  "input": {
+    "receipt": {
+      "transactionId": "UALA-20261002-00001",
+      "transactionType": "TRANSFER_OUTGOING",
+      "transferType": "CVU",
+      "direction": "DEBIT",
+      "status": "COMPLETED",
+      "amount": "2500.00",
+      "currency": "ARS",
+      "settlementTimestamp": "2026-10-02T16:00:00Z",
+      "sender": {
+        "cvu": "0000000000000000000001",
+        "name": "Synthetic Payer"
+      },
+      "receiver": {
+        "cvu": "0000000000000000000002",
+        "alias": "synthetic.payee.uala",
+        "name": "Synthetic Payee"
+      },
+      "coelsaId": "COELSA-0000-1111-2222",
+      "memo": "Synthetic payment for peer-link test invoice"
+    }
+  },
+  "transactionId": "UALA-20261002-00001",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "0000000000000000000001",
+    "payeeId": "0000000000000000000002",
+    "amountMinor": "250000",
+    "currency": "ARS",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "status": "COMPLETED",
+    "timestamp": "2026-10-02T16:00:00Z",
+    "timestampMeaning": "settlementTimestamp"
+  }
+}
