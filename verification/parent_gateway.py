@@ -8,6 +8,10 @@ import socket
 import struct
 import time
 
+# Longer than the enclave's worst execute (20 s bank reader + 10 s Wasm worker +
+# signing/attestation) and shorter than owner_client.RESPONSE_SECONDS.
+ENCLAVE_RESPONSE_SECONDS = 40
+
 
 def frame(stream, maximum, timeout=5):
     end = time.monotonic() + timeout
@@ -43,10 +47,10 @@ def serve(cid, port):
                     client.settimeout(5)
                     request = frame(client, 3 * 1024 * 1024)
                     with socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM) as enclave:
-                        enclave.settimeout(30)
+                        enclave.settimeout(ENCLAVE_RESPONSE_SECONDS)
                         enclave.connect((cid, 5000))
                         enclave.sendall(request)
-                        client.sendall(frame(enclave, 65536, 30))
+                        client.sendall(frame(enclave, 65536, ENCLAVE_RESPONSE_SECONDS))
                 except Exception:
                     pass
 

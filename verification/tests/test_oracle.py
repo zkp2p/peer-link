@@ -33,7 +33,10 @@ class MercuryOracleTests(unittest.TestCase):
         cases = {"amount": [True, "-1", 0, 1, -1.001, float("inf"), -90071992547410],
                  "currency": [None, "EUR"], "status": ["pending", "failed", "reversed", None],
                  "activeHolds": [None, ["hold"]], "disputed": [None, "disputed"],
-                 "postedAt": ["2026-02-30T12:00:00Z", "2026-01-01", "2026-01-01T00:00:00+01:00"]}
+                 "postedAt": ["2026-02-30T12:00:00Z", "2026-01-01", "2026-01-01T00:00:00+01:00",
+                              # Python 3.14 reads 24:00 as next-day midnight; the adapter rejects it.
+                              "2026-01-15T24:00:00Z", "2026-01-15T24:00:00.000Z",
+                              "2026-01-15T23:60:00Z", "2026-01-15T23:59:60Z"]}
         for key, values in cases.items():
             for value in values:
                 document = copy.deepcopy(self.document)

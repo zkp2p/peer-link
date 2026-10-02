@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from .acquisition import MAX_WORKER_FRAME
 from .common import Rejected, canonical, require, strict_json
 
 PROCESS_DEADLINE_SECONDS = 20
@@ -30,7 +31,7 @@ def fetch_source_isolated(policy, credentials, *, source_context=None, transport
             input=request, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
             env={}, close_fds=True, timeout=PROCESS_DEADLINE_SECONDS, check=False)
         require(result.returncode == 0, 'bank_read_failed')
-        response = strict_json(result.stdout, 1048576)
+        response = strict_json(result.stdout, MAX_WORKER_FRAME)
         require(isinstance(response, dict) and set(response) == {'ok', 'value'} and
                 response['ok'] is True, 'bank_read_failed')
         return response['value']

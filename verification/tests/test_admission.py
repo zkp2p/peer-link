@@ -49,6 +49,21 @@ class AdmissionTests(unittest.TestCase):
         self.assertFalse(self.channel.challenges)
         self.assertFalse(self.channel.admissions)
 
+    def test_enclave_clock_slightly_behind_controller_still_admits(self):
+        # The controller signs int(now) + 120; an enclave clock one second behind
+        # must not read that fresh grant as longer than two minutes.
+        issued = time.time()
+        grant = issue({**self.claims, 'expiresAt': int(issued) + 120}, self.signer)
+        with patch('verification.admission.time.time', return_value=issued - 1):
+            self.assertEqual(self.challenge(grant)['expiresAt'], int(issued) + 120)
+        late = issue({**self.claims, 'attempt': 'synthetic-late', 'expiresAt': int(issued) + 120},
+                     self.signer)
+        with patch('verification.admission.time.time', return_value=issued - 10):
+            with self.assertRaisesRegex(Rejected, 'admission_expired'):
+                self.challenge(late)
+        with self.assertRaisesRegex(Rejected, 'admission_expired'):
+            issue({**self.claims, 'expiresAt': int(time.time()) + 122}, self.signer)
+
     def test_consumption_and_bad_ciphertext_cannot_remint(self):
         context = self.challenge()
         envelope = encrypt_session(self.channel.public_key_der, context, {'synthetic': True}, consent=True)

@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from verification.acquisition import fetch_source
+from verification.acquisition import MAX_WORKER_FRAME, fetch_source
 from verification.relay import tunnel_socket
 from verification.common import canonical, fields, require, strict_json
 
@@ -24,7 +24,7 @@ def main():
             options['source_context'] = request['sourceContext']
         value = fetch_source(request['policy'], request['credentials'], **options)
         body = canonical({'ok': True, 'value': value})
-        require(len(body) <= 1048576, 'bank_response_size')
+        require(len(body) <= MAX_WORKER_FRAME, 'bank_response_size')
         sys.stdout.buffer.write(body)
     except BaseException:
         # Neither response data nor credential-bearing exception text may escape.

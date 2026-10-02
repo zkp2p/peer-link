@@ -9,6 +9,11 @@ from .common import Rejected, b64, canonical, hex_digest, require, strict_json
 MAX_MODULE = 2 * 1024 * 1024
 MAX_INPUT = 1024 * 1024
 MAX_OUTPUT = 8192
+# The worker re-encodes validated guest JSON canonically. ASCII escaping turns one
+# byte into at most six (DEL -> \u007f) and float repr expands at most 4.5x, so an
+# in-limit guest result needs this much room; otherwise the guest picks the error.
+MAX_RESULT = 6 * MAX_OUTPUT + 1024
+TIMEOUT_SECONDS = 10
 
 
 def run_adapter(module, input_value, *, artifact_digest):
@@ -27,9 +32,9 @@ def run_adapter(module, input_value, *, artifact_digest):
     try:
         result = subprocess.run([sys.executable, '-I', str(Path(__file__).with_name('sandbox_worker.py'))],
                                 input=request, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-                                env={}, close_fds=True, timeout=10, check=False)
+                                env={}, close_fds=True, timeout=TIMEOUT_SECONDS, check=False)
         require(result.returncode == 0, 'sandbox_failed')
-        response = strict_json(result.stdout, MAX_OUTPUT + 1024)
+        response = strict_json(result.stdout, MAX_RESULT)
         require(isinstance(response, dict) and response.get('ok') is True and
                 set(response) == {'ok', 'value'}, 'sandbox_failed')
         return response['value']
