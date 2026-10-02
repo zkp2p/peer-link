@@ -3,6 +3,38 @@
   "providers": [
     {
       "schemaVersion": "1",
+      "id": "gh/mtn-momo",
+      "name": "MTN MoMo Ghana",
+      "country": "GH",
+      "status": "experimental",
+      "version": "0.1.0",
+      "surface": "mobile-app-statement",
+      "capability": "Interpret outgoing domestic GHS MoMo-to-MoMo peer transfers as sender-wallet-reported sent payments",
+      "maintainers": [
+        "0xSachinK"
+      ],
+      "currencies": [
+        "GHS"
+      ],
+      "unsupported": [
+        "merchant payments and Buy Goods",
+        "cash-out and agent withdrawals",
+        "airtime and data bundle top-ups",
+        "utility and bill payments",
+        "bank transfers (Bank to Wallet / Wallet to Bank)",
+        "incoming credits and deposits",
+        "unauthenticated SMS parsing",
+        "recipient-credit confirmation",
+        "cryptographic source authentication"
+      ],
+      "fixtureProvenance": "synthetic",
+      "logo": "/logos/mtn-momo.png",
+      "reportCount": 0,
+      "evidence": [],
+      "source": "https://github.com/zkp2p/peer-link/tree/main/banks/gh/mtn-momo"
+    },
+    {
+      "schemaVersion": "1",
       "id": "us/mercury",
       "name": "Mercury",
       "country": "US",

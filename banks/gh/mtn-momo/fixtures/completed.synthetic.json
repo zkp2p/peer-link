@@ -1,0 +1,38 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic MTN MoMo outgoing peer-to-peer GHS transfer with invented phone numbers; not a real payment.",
+  "input": {
+    "account": {
+      "phone": "0240000001"
+    },
+    "transactions": [
+      {
+        "id": "momo-tx-00009876",
+        "type": "momoTransfer",
+        "direction": "debit",
+        "status": "completed",
+        "amount": "150.50",
+        "currency": "GHS",
+        "bookedAt": "2026-04-10T11:20:00Z",
+        "counterparty": {
+          "phone": "0540000002",
+          "name": "Synthetic Example Recipient"
+        },
+        "description": "Transfer to 0540000002",
+        "memo": "SYNTHETIC EXAMPLE ONLY"
+      }
+    ]
+  },
+  "transactionId": "momo-tx-00009876",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "0240000001",
+    "payeeId": "0540000002",
+    "amountMinor": "15050",
+    "currency": "GHS",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "status": "completed",
+    "timestamp": "2026-04-10T11:20:00Z"
+  }
+}
