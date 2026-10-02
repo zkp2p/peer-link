@@ -75,6 +75,17 @@ describe("new-bank scaffold", () => {
       else expect(result.reason).toBe(fixture.expected.reason);
     }
   });
+  it("derives the entrypoint from the display name", () => {
+    expect(files["banks/nz/example-bank/manifest.json"]).toContain(
+      '"entrypoint": "interpretExampleBank"',
+    );
+    expect(
+      scaffold("pe/bcp", { name: "Banco de Crédito del Perú" })["banks/pe/bcp/manifest.json"],
+    ).toContain('"entrypoint": "interpretBancoDeCreditoDelPeru"');
+    expect(scaffold("us/x", { name: "123" })["banks/us/x/manifest.json"]).toContain(
+      '"entrypoint": "interpretX"',
+    );
+  });
   it("derives names and rejects invalid IDs", () => {
     expect(scaffold("us/bank-of-america")["banks/us/bank-of-america/manifest.json"]).toContain(
       '"name": "Bank Of America"',

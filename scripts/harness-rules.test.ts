@@ -118,6 +118,11 @@ it("describes a response shape without values", () => {
     },
   });
   expect(JSON.stringify(shape)).not.toMatch(/Jane|123\.45|000123456789|someone/);
+  expect(shapeOf({ ccy: "NZD", account: "02-1234-0567890-00", iban: "GB82 WEST 1234" })).toEqual({
+    ccy: "NZD",
+    account: "<string length 18, digits 15 with separators>",
+    iban: "<string length 14>",
+  });
   expect(shapeOf({ status: "Jane Doe the third with a long name!" })).toEqual({
     status: "<string length 36>",
   });

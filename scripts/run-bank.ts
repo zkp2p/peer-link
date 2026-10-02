@@ -5,7 +5,8 @@
  *       synthetic fixtures without reading banking data
  *   npm run try:bank -- <country>/<bank> .local/<file>.json <transactionId>
  *       runs the adapter and prints a redacted summary plus the revision to cite in a report
- * Inputs must stay under the Git-ignored .local/ directory. Delete them when you are done.
+ * Inputs must stay under the Git-ignored .local/ directory: .json is parsed, .txt/.html is
+ * passed to the adapter as a string. Delete them when you are done.
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
@@ -25,10 +26,13 @@ const load = (input: string): unknown => {
     !realpathSync(input).startsWith(`${realpathSync(local)}${sep}`)
   )
     die("Keep captured responses inside .local/ (Git-ignored); refusing other paths");
+  const text = readFileSync(input, "utf8");
+  // Text evidence (an SMS confirmation, an HTML page) is passed through as a string.
+  if (/\.(txt|html?)$/i.test(input)) return text;
   try {
-    return JSON.parse(readFileSync(input, "utf8"));
+    return JSON.parse(text);
   } catch {
-    return die("The saved response is not JSON (contents not shown)");
+    return die("The saved response is not JSON (contents not shown); use .txt for text evidence");
   }
 };
 

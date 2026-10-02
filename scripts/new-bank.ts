@@ -20,7 +20,15 @@ export function scaffold(id: string, options: { name?: string } = {}) {
   if (!BANK_ID.test(id)) throw new Error("Bank ID must look like ua/monobank");
   const [country, slug] = id.split("/");
   const name = options.name?.trim() || title(slug);
-  const entry = `interpret${title(slug).replaceAll(" ", "")}`;
+  const pascal = name
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9 ]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join("");
+  const entry = `interpret${/^[A-Za-z]/.test(pascal) ? pascal : title(slug).replaceAll(" ", "")}`;
   const folder = `banks/${id}`;
   const files: Record<string, string> = {};
   const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;

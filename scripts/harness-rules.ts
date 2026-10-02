@@ -39,7 +39,7 @@ export function summarize(result: Interpretation) {
 }
 
 const ENUM_KEY =
-  /(^|[_-])?(status|state|type|kind|direction|currency|category|method|channel|side)$/i;
+  /(status|state|type|kind|direction|currency|ccy|category|method|channel|side|sign)$/i;
 
 function describeString(value: string) {
   const hints = [`length ${value.length}`];
@@ -48,6 +48,8 @@ function describeString(value: string) {
   else if (/^\d{4}-\d{2}-\d{2}$/.test(value)) hints.push("date");
   else if (/^-?\d+$/.test(value)) hints.push(`digits ${value.replace("-", "").length}`);
   else if (/^-?\d+\.\d+$/.test(value)) hints.push(`decimal ${value.split(".")[1].length} places`);
+  else if (/^\d[\d -]*\d$/.test(value))
+    hints.push(`digits ${value.replace(/\D/g, "").length} with separators`);
   if (/[*•x]{3,}/i.test(value)) hints.push("masked");
   if (/@/.test(value)) hints.push("contains @");
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(value)) hints.push("uuid");
