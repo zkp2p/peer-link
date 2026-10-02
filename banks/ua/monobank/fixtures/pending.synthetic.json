@@ -1,0 +1,38 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic pending Monobank domestic UAH transfer fixture with active authorization hold.",
+  "transactionId": "tx-mono-0002",
+  "input": {
+    "account": {
+      "id": "acc-synthetic-0001",
+      "iban": "UA213223130000026007233566001",
+      "holderName": "Synthetic Payer Account"
+    },
+    "transactions": [
+      {
+        "id": "tx-mono-0002",
+        "type": "transfer",
+        "time": 1790953200,
+        "timeIso": "2026-10-02T15:00:00.000Z",
+        "description": "Переказ на картку іншого банку",
+        "mcc": 4829,
+        "amount": -15000,
+        "operationAmount": -15000,
+        "currencyCode": 980,
+        "commissionRate": 0,
+        "cashbackAmount": 0,
+        "balance": 500000,
+        "hold": true,
+        "direction": "debit",
+        "counterparty": {
+          "iban": "UA003223130000026007233566002",
+          "name": "Example Beneficiary Entity"
+        }
+      }
+    ]
+  },
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction has an active hold and is not settled"
+  }
+}
