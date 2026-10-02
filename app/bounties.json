@@ -54,12 +54,12 @@
     "logo": "/logos/opay.png"
   },
   {
-    "issue": 5,
+    "issue": 86,
     "name": "Easypaisa",
     "country": "PK",
     "currency": "PKR",
     "amount": 50,
-    "url": "https://github.com/zkp2p/peer-link/issues/5",
+    "url": "https://github.com/zkp2p/peer-link/issues/86",
     "logo": "/logos/easypaisa.png"
   },
   {

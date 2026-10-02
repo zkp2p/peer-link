@@ -26,7 +26,7 @@ issue. The infrastructure budget for the verifier is separate.
 | Bank of America | [#74](https://github.com/zkp2p/peer-link/issues/74) | USD | $50 |
 | Wells Fargo | [#75](https://github.com/zkp2p/peer-link/issues/75) | USD | $50 |
 | OPay | [#4](https://github.com/zkp2p/peer-link/issues/4) | NGN | $50 |
-| Easypaisa | [#5](https://github.com/zkp2p/peer-link/issues/5) | PKR | $50 |
+| Easypaisa | [#86](https://github.com/zkp2p/peer-link/issues/86) | PKR | $50 |
 | BCA | [#7](https://github.com/zkp2p/peer-link/issues/7) | IDR | $50 |
 | Bancolombia | [#9](https://github.com/zkp2p/peer-link/issues/9) | COP | $50 |
 | GCash | [#10](https://github.com/zkp2p/peer-link/issues/10) | PHP | $50 |
