@@ -3,6 +3,39 @@
   "providers": [
     {
       "schemaVersion": "1",
+      "id": "bd/bkash",
+      "name": "bKash",
+      "country": "BD",
+      "status": "experimental",
+      "version": "0.1.0",
+      "surface": "mobile-app-receipt",
+      "capability": "Interpret outgoing domestic BDT transfers as sender-bank-reported debits",
+      "maintainers": [
+        "Simultech369"
+      ],
+      "currencies": [
+        "BDT"
+      ],
+      "unsupported": [
+        "cash-out",
+        "merchant-payments",
+        "mobile-recharge",
+        "pay-bill",
+        "add-money",
+        "remittance",
+        "savings-and-loans",
+        "incoming-credits",
+        "recipient-credit confirmation",
+        "cryptographic source authentication"
+      ],
+      "fixtureProvenance": "synthetic",
+      "logo": "/logos/bkash.png",
+      "reportCount": 0,
+      "evidence": [],
+      "source": "https://github.com/zkp2p/peer-link/tree/main/banks/bd/bkash"
+    },
+    {
+      "schemaVersion": "1",
       "id": "us/mercury",
       "name": "Mercury",
       "country": "US",
