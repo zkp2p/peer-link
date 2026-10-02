@@ -3,6 +3,38 @@
   "providers": [
     {
       "schemaVersion": "1",
+      "id": "pe/bcp",
+      "name": "Banco de Crédito del Perú",
+      "country": "PE",
+      "status": "experimental",
+      "version": "0.1.0",
+      "surface": "web-movimientos",
+      "capability": "Interpret outgoing domestic PEN transfers (BCP-to-BCP or interbank CCI) as sender-bank-reported sent payments",
+      "maintainers": [
+        "0xSachinK"
+      ],
+      "currencies": [
+        "PEN"
+      ],
+      "unsupported": [
+        "Yape transfers",
+        "service and utility payments (Pago de Servicios)",
+        "credit card payments",
+        "merchant payments and POS transactions",
+        "cash withdrawals and ATM operations",
+        "foreign currency exchanges (USD)",
+        "incoming credits and transfers",
+        "recipient-credit confirmation",
+        "cryptographic source authentication"
+      ],
+      "fixtureProvenance": "synthetic",
+      "logo": "/logos/bcp.png",
+      "reportCount": 0,
+      "evidence": [],
+      "source": "https://github.com/zkp2p/peer-link/tree/main/banks/pe/bcp"
+    },
+    {
+      "schemaVersion": "1",
       "id": "us/mercury",
       "name": "Mercury",
       "country": "US",

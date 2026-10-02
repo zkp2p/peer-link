@@ -1,0 +1,38 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic BCP outgoing domestic PEN transfer between BCP accounts with invented identifiers; not a real payment.",
+  "input": {
+    "account": {
+      "accountNumber": "19100001234567"
+    },
+    "transactions": [
+      {
+        "id": "bcp-mov-00001234",
+        "type": "domesticTransfer",
+        "direction": "debit",
+        "status": "completed",
+        "amount": "250.75",
+        "currency": "PEN",
+        "bookedAt": "2026-03-15T14:30:00Z",
+        "counterparty": {
+          "accountNumber": "19300009876543",
+          "name": "Synthetic Example Payee"
+        },
+        "description": "Transferencia a terceros BCP",
+        "memo": "SYNTHETIC EXAMPLE ONLY"
+      }
+    ]
+  },
+  "transactionId": "bcp-mov-00001234",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "19100001234567",
+    "payeeId": "19300009876543",
+    "amountMinor": "25075",
+    "currency": "PEN",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "status": "completed",
+    "timestamp": "2026-03-15T14:30:00Z"
+  }
+}
