@@ -62,7 +62,12 @@ def complete(bundle, *, release, expected_adapter, call, collect_session):
     # The caller displays the independently pinned scope and asks for explicit
     # consent only AFTER attestation succeeds, before collecting bank input.
     session = collect_session()
-    envelope = verified_session(quote, nonce=nonce, release=release, context=context,
+    # Reading the scope and typing hidden input can outlast the 60-second quote
+    # window. Re-attest immediately before encryption, to the same verified key.
+    fresh = call({'operation': 'attest', 'nonce': b64(nonce)})
+    fields(fresh, ('attestation', 'publicKey', 'policyDigest'))
+    require(unb64(fresh['publicKey'], 4096) == public_key, 'session_key_changed')
+    envelope = verified_session(fresh, nonce=nonce, release=release, context=context,
         attempt=context['attempt'], binding_digest=digest(bundle['binding']),
         session=session, consent=True)
     session = None
