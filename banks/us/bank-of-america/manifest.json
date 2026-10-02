@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1",
+  "id": "us/bank-of-america",
+  "name": "Bank of America",
+  "country": "US",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "web-activity-detail",
+  "capability": "Completed outgoing domestic USD ACH transfer from Bank of America activity detail",
+  "entrypoint": "interpretBankOfAmerica",
+  "maintainers": ["Simultech369"],
+  "currencies": ["USD"],
+  "unsupported": [
+    "Incoming deposits and credits",
+    "Wire transfers and international remittances",
+    "Check deposits, check payments, and draft checks",
+    "Debit card purchases, POS transactions, and ATM cash withdrawals",
+    "Credit card payments and account adjustments",
+    "Pending, scheduled, or processing transactions",
+    "Non-USD foreign currency transactions"
+  ],
+  "fixtureProvenance": "synthetic"
+}
