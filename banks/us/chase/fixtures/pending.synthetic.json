@@ -1,0 +1,33 @@
+{
+  "provenance": "synthetic",
+  "description": "Pending outgoing domestic ACH transfer from Chase web activity",
+  "input": {
+    "account": {
+      "accountId": "chase-synthetic-acct-1001",
+      "accountType": "TOTAL_CHECKING",
+      "mask": "1001"
+    },
+    "transactions": [
+      {
+        "transactionId": "chase-tx-20261002-002",
+        "transactionType": "ACH_OUTGOING",
+        "paymentMethod": "ACH",
+        "direction": "DEBIT",
+        "status": "PENDING",
+        "amount": "75.00",
+        "currency": "USD",
+        "postedTimestamp": "2026-10-02T16:00:00Z",
+        "counterparty": {
+          "routingNumber": "021000021",
+          "accountNumber": "000000000001",
+          "name": "Synthetic Recipient LLC"
+        }
+      }
+    ]
+  },
+  "transactionId": "chase-tx-20261002-002",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction status is not bank-reported POSTED or COMPLETED"
+  }
+}
