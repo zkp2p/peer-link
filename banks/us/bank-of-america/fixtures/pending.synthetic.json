@@ -1,0 +1,33 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic pending Bank of America transfer fixture with invented account numbers; not a real transaction.",
+  "input": {
+    "account": {
+      "accountNumber": "000000000001",
+      "currency": "USD"
+    },
+    "transactions": [
+      {
+        "id": "BOA2026100200001",
+        "confirmationNumber": "BOA2026100200001",
+        "type": "ach_transfer",
+        "direction": "debit",
+        "status": "pending",
+        "amount": -15000,
+        "currency": "USD",
+        "timeIso": "2026-10-02T15:00:00.000Z",
+        "counterparty": {
+          "routingNumber": "000000000",
+          "accountNumber": "000000000002",
+          "name": "Synthetic Recipient"
+        },
+        "description": "ACH Transfer to Recipient 000000000002"
+      }
+    ]
+  },
+  "transactionId": "BOA2026100200001",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is not bank-reported completed"
+  }
+}

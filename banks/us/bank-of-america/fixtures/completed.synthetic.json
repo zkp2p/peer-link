@@ -1,0 +1,40 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic Bank of America outgoing domestic USD ACH transfer fixture with invented account numbers and timestamps; not a real transaction.",
+  "input": {
+    "account": {
+      "accountNumber": "000000000001",
+      "currency": "USD"
+    },
+    "transactions": [
+      {
+        "id": "BOA2026100200001",
+        "confirmationNumber": "BOA2026100200001",
+        "type": "ach_transfer",
+        "direction": "debit",
+        "status": "completed",
+        "amount": -15000,
+        "currency": "USD",
+        "timeIso": "2026-10-02T15:00:00.000Z",
+        "counterparty": {
+          "routingNumber": "000000000",
+          "accountNumber": "000000000002",
+          "name": "Synthetic Recipient"
+        },
+        "description": "ACH Transfer to Recipient 000000000002"
+      }
+    ]
+  },
+  "transactionId": "BOA2026100200001",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "000000000001",
+    "payeeId": "000000000:000000000002",
+    "amountMinor": "15000",
+    "currency": "USD",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "status": "completed",
+    "timestamp": "2026-10-02T15:00:00.000Z"
+  }
+}
