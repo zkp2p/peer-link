@@ -20,9 +20,17 @@ def template():
  for name in ['ArtifactSha256','ReleaseDigest']:params[name]['AllowedPattern']='[a-f0-9]{64}'
  params['DispatchEnabled']={'Type':'String','Default':'false','AllowedValues':['false','true']}
  params['ImageId']={'Type':'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>','Default':'/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64'}
- r['Ledger']={'Type':'AWS::DynamoDB::Table','DeletionPolicy':'Retain','UpdateReplacePolicy':'Retain','Properties':{'BillingMode':'PAY_PER_REQUEST','AttributeDefinitions':[{'AttributeName':'id','AttributeType':'S'}],'KeySchema':[{'AttributeName':'id','KeyType':'HASH'}],'SSESpecification':{'SSEEnabled':True}}}
+ # Optional existing SNS topic with a tested, confirmed subscription. Empty means no route.
+ params['AlarmTopicArn']={'Type':'String','Default':'','AllowedPattern':'(arn:aws:sns:[a-z0-9-]+:[0-9]{12}:[A-Za-z0-9_-]{1,256})?'}
+ conditions={'HasAlarmTopic':{'Fn::Not':[{'Fn::Equals':[ref('AlarmTopicArn'),'']}]}}
+ alarm_actions={'Fn::If':['HasAlarmTopic',[ref('AlarmTopicArn')],ref('AWS::NoValue')]}
+ # The ledger is the durable $50/concurrency authority: guard against deletion and overwrite.
+ r['Ledger']={'Type':'AWS::DynamoDB::Table','DeletionPolicy':'Retain','UpdateReplacePolicy':'Retain','Properties':{'BillingMode':'PAY_PER_REQUEST','AttributeDefinitions':[{'AttributeName':'id','AttributeType':'S'}],'KeySchema':[{'AttributeName':'id','KeyType':'HASH'}],'SSESpecification':{'SSEEnabled':True},'DeletionProtectionEnabled':True,'PointInTimeRecoverySpecification':{'PointInTimeRecoveryEnabled':True}}}
  ssm=['ssm:UpdateInstanceInformation','ssmmessages:CreateControlChannel','ssmmessages:CreateDataChannel','ssmmessages:OpenControlChannel','ssmmessages:OpenDataChannel','ec2messages:AcknowledgeMessage','ec2messages:DeleteMessage','ec2messages:FailMessage','ec2messages:GetEndpoint','ec2messages:GetMessages','ec2messages:SendReply']
- host_policy=[allow(ssm,'*'),allow('s3:GetObjectVersion',sub('arn:${AWS::Partition}:s3:::${ArtifactBucket}/${ArtifactKey}'),Condition={'StringEquals':{'s3:VersionId':ref('ArtifactVersion')}}),{'Effect':'Deny','Action':['ssm:GetParameter*','secretsmanager:*','kms:*','sts:AssumeRole','iam:*'],'Resource':'*'}]
+ bundle=sub('arn:${AWS::Partition}:s3:::${ArtifactBucket}/${ArtifactKey}')
+ # The account is shared with Peer production. Explicit denies stop any resource policy
+ # (S3, SQS, SNS, Lambda, ECR, ...) that names this role or "*" from widening it.
+ host_policy=[allow(ssm,'*'),allow('s3:GetObjectVersion',bundle,Condition={'StringEquals':{'s3:VersionId':ref('ArtifactVersion')}}),{'Effect':'Deny','Action':['ssm:GetParameter*','secretsmanager:*','kms:*','sts:AssumeRole','iam:*'],'Resource':'*'},{'Effect':'Deny','NotAction':ssm+['s3:GetObjectVersion'],'Resource':'*'},{'Effect':'Deny','Action':'s3:*','NotResource':bundle}]
  r['HostRole']={'Type':'AWS::IAM::Role','Properties':{'AssumeRolePolicyDocument':trust('ec2.amazonaws.com'),'Policies':[{'PolicyName':'OnlyApprovedWorkerAndSessionTransport','PolicyDocument':policy(host_policy)}]}}
  r['HostProfile']={'Type':'AWS::IAM::InstanceProfile','Properties':{'Roles':[ref('HostRole')]}}
  r['WorkerGroup']={'Type':'AWS::EC2::SecurityGroup','Properties':{'VpcId':ref('VpcId'),'GroupDescription':'Peer Link manual worker: no ingress, outbound TLS only','SecurityGroupEgress':[{'IpProtocol':'tcp','FromPort':443,'ToPort':443,'CidrIp':'0.0.0.0/0'}]}}
@@ -67,8 +75,13 @@ def handler(event,context):
  if lease and not active:
   done=int(lease['expiresAt']['N'])<time.time()
   if 'instanceId' in lease:
-   status=ec2.describe_instances(InstanceIds=[lease['instanceId']['S']])['Reservations'][0]['Instances'][0]
-   done=status['State']['Name']=='terminated'
+   try:
+    status=ec2.describe_instances(InstanceIds=[lease['instanceId']['S']])['Reservations'][0]['Instances'][0]
+    done=status['State']['Name']=='terminated'
+   except ec2.exceptions.ClientError as error:
+    # Terminated records age out of EC2 (~1h); a new ID can also be briefly unknown.
+    # Treat unknown as gone only after the lease lifetime, never earlier.
+    if error.response['Error']['Code']!='InvalidInstanceID.NotFound':raise
   if done:ddb.delete_item(TableName=table,Key={'id':{'S':'active'}},ConditionExpression='approvalId = :approval',ExpressionAttributeValues={':approval':lease['approvalId']})
  return {'terminated':len(expired),'active':len(active)}
 '''
@@ -76,7 +89,9 @@ def handler(event,context):
  r['Expiry']={'Type':'AWS::Lambda::Function','Properties':{'Runtime':'python3.12','Handler':'index.handler','Role':arn('ExpiryRole'),'Timeout':30,'MemorySize':128,'Environment':{'Variables':{'TABLE':ref('Ledger'),'STACK_ID':ref('AWS::StackId')}},'Code':{'ZipFile':expiry}}}
  r['Schedule']={'Type':'AWS::Events::Rule','Properties':{'ScheduleExpression':'rate(5 minutes)','State':'ENABLED','Targets':[{'Arn':arn('Expiry'),'Id':'ExpireWorkers','RetryPolicy':{'MaximumRetryAttempts':2,'MaximumEventAgeInSeconds':300}}]}}
  r['ExpiryPermission']={'Type':'AWS::Lambda::Permission','Properties':{'FunctionName':ref('Expiry'),'Action':'lambda:InvokeFunction','Principal':'events.amazonaws.com','SourceArn':arn('Schedule'),'SourceAccount':ref('AWS::AccountId')}}
- r['ExpiryErrors']={'Type':'AWS::CloudWatch::Alarm','Properties':{'Namespace':'AWS/Lambda','MetricName':'Errors','Dimensions':[{'Name':'FunctionName','Value':ref('Expiry')}],'Statistic':'Sum','Period':300,'EvaluationPeriods':1,'Threshold':1,'ComparisonOperator':'GreaterThanOrEqualToThreshold','TreatMissingData':'notBreaching'}}
- return {'AWSTemplateFormatVersion':'2010-09-09','Description':'Peer Link isolated manual controller; disabled by default. No bank credentials.','Parameters':params,'Resources':r,'Outputs':{'Table':{'Value':ref('Ledger')},'Controller':{'Value':ref('Controller')},'Expiry':{'Value':ref('Expiry')},'Template':{'Value':ref('WorkerTemplate')}}}
+ r['ExpiryErrors']={'Type':'AWS::CloudWatch::Alarm','Properties':{'Namespace':'AWS/Lambda','MetricName':'Errors','Dimensions':[{'Name':'FunctionName','Value':ref('Expiry')}],'Statistic':'Sum','Period':300,'EvaluationPeriods':1,'Threshold':1,'ComparisonOperator':'GreaterThanOrEqualToThreshold','TreatMissingData':'notBreaching','AlarmActions':alarm_actions}}
+ # A disabled/deleted schedule or throttled reaper emits no Errors; alarm on silence too.
+ r['ExpiryNotRunning']={'Type':'AWS::CloudWatch::Alarm','Properties':{'Namespace':'AWS/Lambda','MetricName':'Invocations','Dimensions':[{'Name':'FunctionName','Value':ref('Expiry')}],'Statistic':'Sum','Period':300,'EvaluationPeriods':3,'Threshold':1,'ComparisonOperator':'LessThanThreshold','TreatMissingData':'breaching','AlarmActions':alarm_actions}}
+ return {'AWSTemplateFormatVersion':'2010-09-09','Description':'Peer Link isolated manual controller; disabled by default. No bank credentials.','Parameters':params,'Conditions':conditions,'Resources':r,'Outputs':{'Table':{'Value':ref('Ledger')},'Controller':{'Value':ref('Controller')},'Expiry':{'Value':ref('Expiry')},'Template':{'Value':ref('WorkerTemplate')}}}
 
 if __name__=='__main__':print(json.dumps(template(),indent=2))

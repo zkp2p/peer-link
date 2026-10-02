@@ -1,6 +1,25 @@
+# CLI deployments upload the local directory, not Git. Allowlist only what the
+# static landing build needs so untracked local work (.worktrees/, lab assets,
+# operator keys or ledgers) is never uploaded.
+/*
+!app
+!banks
+!lib
+!scripts
+!package.json
+!package-lock.json
+!.npmrc
+!tsconfig.json
+!vercel.json
+# Never upload local or sensitive artifacts, even inside allowed directories.
 .local
 .env*
 coverage
+node_modules
+app/dist
 *.har
 *.log
+*.pem
+*.key
+*.sqlite3
 .DS_Store
