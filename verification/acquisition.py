@@ -134,15 +134,8 @@ def request_plan(host, operation, source_context=None):
     return "GET", path, None
 
 
-def fetch_source(policy, credentials, *, source_context=None, socket_factory=public_socket):
-    require(policy.get("enabled") is True and policy.get("status") == "approved",
-            "source_policy_not_approved")
-    require(len(policy.get("origins", [])) == 1 and len(policy.get("operations", [])) == 1,
-            "unsupported_policy")
-    host = checked_origin(policy["origins"][0])
-    operation = policy["operations"][0]
-    method, path, request_body = request_plan(host, operation, source_context)
-    names = operation["credentialHeaders"]
+def checked_credentials(names, credentials):
+    """Policy-named header values only; shared with the owner client's local pre-check."""
     require(isinstance(names, list) and 1 <= len(names) <= 4 and len(names) == len(set(names)) and
             all(isinstance(n, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,63}", n) and
                 n not in {"host", "connection", "content-length", "transfer-encoding", "accept-encoding",
@@ -151,6 +144,18 @@ def fetch_source(policy, credentials, *, source_context=None, socket_factory=pub
     fields(credentials, names)
     require(all(isinstance(v, str) and 0 < len(v) <= 8192 and
                 all(32 <= ord(c) <= 126 for c in v) for v in credentials.values()), "invalid_session")
+    return credentials
+
+
+def fetch_source(policy, credentials, *, source_context=None, socket_factory=public_socket):
+    require(policy.get("enabled") is True and policy.get("status") == "approved",
+            "source_policy_not_approved")
+    require(len(policy.get("origins", [])) == 1 and len(policy.get("operations", [])) == 1,
+            "unsupported_policy")
+    host = checked_origin(policy["origins"][0])
+    operation = policy["operations"][0]
+    method, path, request_body = request_plan(host, operation, source_context)
+    checked_credentials(operation["credentialHeaders"], credentials)
     headers = {**credentials, "Accept": "application/json", "Accept-Encoding": "identity",
                "Connection": "close"}
     if request_body is not None:

@@ -16,10 +16,11 @@ import struct
 import sys
 from pathlib import Path
 
+from .acquisition import checked_credentials, checked_origin, request_plan
 from .acquisition_process import PROCESS_DEADLINE_SECONDS
 from .attestation import policy_digest, verify_document
 from .client import verified_session
-from .common import b64, canonical, digest, fields, require, strict_json, unb64
+from .common import b64, canonical, digest, fields, identifier, require, strict_json, unb64
 from .receipts import verify as verify_receipt
 from .runtime import receive
 from .sandbox import MAX_MODULE, TIMEOUT_SECONDS as SANDBOX_SECONDS
@@ -42,6 +43,21 @@ def transport(port, request):
         response = receive(stream, 65536)
     require(isinstance(response, dict) and 'error' not in response, 'worker_refused')
     return response
+
+
+def check_session(source, session):
+    """Run the enclave's input checks locally, before encryption.
+
+    The enclave burns the one-use challenge before validating owner input, so a
+    typo (an uppercase organization ID, a pasted non-ASCII byte) would otherwise
+    consume the attempt and surface only as bank_read_failed.
+    """
+    fields(session, ('credentials', 'sourceContext', 'transactionId'))
+    identifier(session['transactionId'])
+    operation = source['operations'][0]
+    request_plan(checked_origin(source['origins'][0]), operation, session['sourceContext'])
+    checked_credentials(operation['credentialHeaders'], session['credentials'])
+    return session
 
 
 def complete(bundle, *, release, expected_adapter, call, collect_session):
@@ -134,8 +150,8 @@ def main():
         context = None
         if operation['id'] == 'mercury-history-v1':
             context = {'organizationId': getpass.getpass('Organization ID (hidden): ')}
-        return {'credentials': credentials, 'sourceContext': context,
-                'transactionId': getpass.getpass('Selected transaction ID (hidden): ')}
+        return check_session(source, {'credentials': credentials, 'sourceContext': context,
+            'transactionId': getpass.getpass('Selected transaction ID (hidden): ')})
 
     report = complete(bundle, release=release, expected_adapter=args.expected_adapter_sha256,
         call=lambda request: transport(args.port, request), collect_session=collect)

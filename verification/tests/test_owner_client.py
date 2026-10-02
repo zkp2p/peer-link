@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from verification.channel import SessionChannel
 from verification.common import Rejected, b64, digest, unb64
-from verification.owner_client import complete
+from verification.owner_client import check_session, complete
 from verification.receipts import sign as sign_receipt
 from verification.tests import test_crypto
 
@@ -82,6 +82,32 @@ class OwnerClientFreshnessTests(unittest.TestCase):
         with self.assertRaisesRegex(Rejected, 'expired_challenge'):
             self.run_owner(121)
         self.assertNotIn('execute', self.operations)
+
+
+class OwnerInputTests(unittest.TestCase):
+    SOURCE = {'origins': ['https://backend.mercury.com'], 'operations': [{
+        'id': 'mercury-history-v1', 'method': 'POST',
+        'path': '/organizations/{organizationId}/transactions-lite',
+        'credentialHeaders': ['cookie', 'x-csrf-protect']}]}
+
+    def session(self, **changes):
+        return {'credentials': {'cookie': 'synthetic=1', 'x-csrf-protect': 'synthetic'},
+                'sourceContext': {'organizationId': '00000000-0000-4000-8000-000000000001'},
+                'transactionId': '00000000-0000-4000-8000-000000000002', **changes}
+
+    def test_enclave_input_rules_run_before_encryption(self):
+        self.assertEqual(check_session(self.SOURCE, self.session()), self.session())
+        for changes, code in (
+            ({'sourceContext': {'organizationId': '00000000-0000-4000-8000-00000000000A'}},
+             'invalid_source_context'),
+            ({'sourceContext': None}, 'invalid_fields'),
+            ({'credentials': {'cookie': 'synthetic=\u00e9', 'x-csrf-protect': 'synthetic'}},
+             'invalid_session'),
+            ({'credentials': {'cookie': 'synthetic=1'}}, 'invalid_fields'),
+            ({'transactionId': ' synthetic'}, 'invalid_identifier'),
+        ):
+            with self.subTest(code=code), self.assertRaisesRegex(Rejected, code):
+                check_session(self.SOURCE, self.session(**changes))
 
 
 class ResponseDeadlineTests(unittest.TestCase):
