@@ -1,0 +1,38 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic Spanish SEPA transfer fixture with invented IBANs, amounts and timestamps.",
+  "transactionId": "tx-es-bbva-0001",
+  "input": {
+    "account": {
+      "id": "acc-synthetic-0001",
+      "iban": "ES9121000418450200051332",
+      "accountNumber": "00000000000000000001",
+      "holderName": "Synthetic Payer Account"
+    },
+    "transactions": [
+      {
+        "id": "tx-es-bbva-0001",
+        "type": "sepaTransfer",
+        "direction": "debit",
+        "status": "completed",
+        "amount": "145.50",
+        "currency": "EUR",
+        "bookedAt": "2026-10-02T15:00:00Z",
+        "counterparty": {
+          "iban": "ES0000000000000000000000",
+          "name": "Example Beneficiary Entity"
+        },
+        "description": "Invoice 2026-001 settlement"
+      }
+    ]
+  },
+  "expected": {
+    "outcome": "supported",
+    "amountMinor": "14550",
+    "currency": "EUR",
+    "status": "completed",
+    "payerId": "ES9121000418450200051332",
+    "payeeId": "ES0000000000000000000000",
+    "timestamp": "2026-10-02T15:00:00Z"
+  }
+}
