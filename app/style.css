@@ -109,46 +109,16 @@ footer a:hover {
   max-width: 1060px;
   padding-block: 93px 100px;
 }
-.eyebrow {
-  display: block;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  margin-bottom: 25px;
-}
-.hero .eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.eyebrow > span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #ff3a33;
-}
 h1 {
   font-size: clamp(48px, 6.9vw, 86px);
   line-height: 1.05;
   letter-spacing: -5px;
   font-weight: 550;
-  margin-bottom: 31px;
+  margin-bottom: 40px;
 }
 em {
   color: #757575;
   font-style: normal;
-}
-.hero p {
-  max-width: 580px;
-  color: #555;
-  font-size: 19px;
-  line-height: 1.65;
-  margin-bottom: 29px;
-}
-.hero-actions {
-  display: flex;
-  align-items: center;
-  gap: 28px;
 }
 .button {
   display: inline-flex;
@@ -171,26 +141,7 @@ em {
   background: #333;
   transform: translateY(-2px);
 }
-.button span {
-  font-size: 20px;
-  line-height: 1;
-}
-.text-link {
-  font-size: 13px;
-  font-weight: 500;
-}
-.text-link span {
-  margin-left: 10px;
-}
-.text-link:hover {
-  text-decoration: underline;
-  text-underline-offset: 5px;
-}
-.hero .hero-note {
-  font-size: 11px;
-  color: #727272;
-  margin: 24px 0 0;
-}
+
 .section {
   padding-block: 80px;
 }
@@ -201,23 +152,10 @@ h2 {
   font-weight: 500;
   margin-bottom: 0;
 }
-.section-heading {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 50px;
-  margin-bottom: 39px;
-}
-.section-heading .eyebrow {
-  color: #666;
-  margin-bottom: 17px;
-}
-.section-heading > p {
-  max-width: 300px;
-  color: var(--muted);
-  line-height: 1.65;
-  font-size: 13px;
-  margin-bottom: 3px;
+
+.how-section h2,
+.integrations-section h2 {
+  margin-bottom: 32px;
 }
 .collaboration-map {
   position: relative;
@@ -240,7 +178,7 @@ h2 {
   left: 12%;
   right: 12%;
   top: 50%;
-  border-top: 1px dashed #aaa;
+  border-top: 1px solid #aaa;
 }
 .map-stage {
   position: relative;
@@ -250,14 +188,6 @@ h2 {
   align-items: center;
   justify-content: center;
   min-width: 0;
-}
-.map-kicker {
-  color: #666;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 1.4px;
-  margin-bottom: 15px;
-  white-space: nowrap;
 }
 .bank-stack,
 .maker-cluster {
@@ -368,13 +298,6 @@ h2 {
   font-weight: 500;
   letter-spacing: -0.5px;
 }
-.public-label {
-  margin-top: 14px;
-  color: #aaa;
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 2px;
-}
 .reward-card {
   display: flex;
   flex-direction: column;
@@ -404,31 +327,6 @@ h2 {
 .integrations-section {
   border-top: 1px solid var(--line);
 }
-.integration-filters {
-  border: 0;
-  padding: 0;
-  margin-inline: 0;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 18px;
-}
-.integration-filters button {
-  padding: 11px 17px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #fff;
-  color: #555;
-  font-size: 12px;
-}
-.integration-filters button[aria-pressed="true"] {
-  background: #000;
-  color: #fff;
-  border-color: #000;
-}
-.integration-filters button:hover:not([aria-pressed="true"]) {
-  background: #eee;
-}
 .catalog-status {
   color: var(--muted);
   font-size: 12px;
@@ -437,7 +335,7 @@ h2 {
 }
 .integration-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 14px;
 }
 .integration-tile {
@@ -445,8 +343,8 @@ h2 {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  min-height: 224px;
-  padding: 23px;
+  min-height: 156px;
+  padding: 16px 14px;
   border: 1px solid var(--line);
   background: #fff;
   border-radius: 15px;
@@ -472,7 +370,7 @@ h2 {
   color: #333;
   font-size: 14px;
   font-weight: 600;
-  margin-bottom: 25px;
+  margin-bottom: 13px;
 }
 .integration-logo img {
   width: 36px;
@@ -480,7 +378,7 @@ h2 {
   object-fit: contain;
 }
 .integration-name {
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1.3;
   font-weight: 600;
 }
@@ -490,66 +388,7 @@ h2 {
   line-height: 1.5;
   margin-top: 7px;
 }
-.integration-status {
-  color: #333;
-  font-size: 10px;
-  font-weight: 500;
-  margin-top: auto;
-  padding-top: 18px;
-}
-.integration-status::before {
-  content: "";
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  background: #999;
-  border-radius: 50%;
-  margin: 0 6px 1px 0;
-}
-.is-available {
-  background: #f5f5f5;
-  border-color: #d4d4d4;
-}
-.is-available .integration-status::before {
-  background: #000;
-}
-.integration-tooltip {
-  display: none;
-}
-.integration-disclaimer {
-  max-width: 800px;
-  color: #666;
-  font-size: 12px;
-  line-height: 1.7;
-  margin: 23px 0 0;
-}
-.add-integration {
-  justify-content: center;
-  gap: 12px;
-  border-style: dashed;
-  background: #fafafa;
-}
-.add-integration:hover {
-  background: #eee;
-}
-.add-icon {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid #ccc;
-  border-radius: 50%;
-  font-size: 26px;
-  font-weight: 400;
-  line-height: 1;
-}
-.add-integration strong {
-  font-size: 14px;
-}
-.add-integration span:last-child {
-  color: #666;
-  font-size: 11px;
-}
+
 .contribute-section {
   background: #000;
   color: #fff;
@@ -564,18 +403,8 @@ h2 {
   align-items: center;
   gap: 80px;
 }
-.contribute-section .eyebrow {
-  color: #aaa;
-}
 .contribute-section h2 {
   font-size: clamp(34px, 4vw, 46px);
-  margin-bottom: 23px;
-}
-.contribute-section p:not(#agent-prompt) {
-  max-width: 350px;
-  color: #aaa;
-  font-size: 14px;
-  line-height: 1.7;
 }
 .prompt-card {
   border: 1px solid #393939;
@@ -586,16 +415,10 @@ h2 {
 .prompt-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 10px;
   padding: 17px 20px;
   border-bottom: 1px solid #393939;
-}
-.prompt-top > span {
-  color: #aaa;
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 1.3px;
 }
 .prompt-top button {
   border: 0;
@@ -621,6 +444,9 @@ h2 {
   margin: 0 24px 22px;
   color: #aaa;
   font-size: 10px;
+}
+.copy-status:empty {
+  display: none;
 }
 .faq-section {
   display: grid;
@@ -711,6 +537,9 @@ footer > div {
   padding: 15px;
 }
 @media (max-width: 1050px) {
+  .integration-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
   .wrap {
     padding-inline: 28px;
   }
@@ -769,28 +598,11 @@ footer > div {
     font-size: clamp(40px, 9.9vw, 64px);
     letter-spacing: -2.5px;
   }
-  .hero p {
-    font-size: 16px;
-  }
-  .hero-actions {
-    gap: 20px;
-    flex-wrap: wrap;
-  }
-  .eyebrow {
-    font-size: 9px;
-    letter-spacing: 1.2px;
-  }
+
   .section {
     padding-block: 60px;
   }
-  .section-heading {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-  }
-  .section-heading > p {
-    max-width: 400px;
-  }
+
   .collaboration-map {
     grid-template-columns: 1fr 1fr;
     gap: 32px 16px;
@@ -817,8 +629,8 @@ footer > div {
     gap: 12px;
   }
   .integration-tile {
-    min-height: 220px;
-    padding: 19px 16px;
+    min-height: 156px;
+    padding: 16px 14px;
   }
   .contribute-section {
     padding-block: 65px;
@@ -853,13 +665,6 @@ footer > div {
   .bank-stack,
   .maker-cluster {
     width: 132px;
-  }
-  .integration-filters {
-    gap: 5px;
-  }
-  .integration-filters button {
-    padding: 10px 12px;
-    font-size: 11px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -1,4 +1,4 @@
-import bounties from "./bounties.json";
+import banks from "./banks.json";
 
 const prompt = document.querySelector<HTMLElement>("#agent-prompt");
 const copyStatus = document.querySelector<HTMLElement>("#copy-status");
@@ -25,72 +25,60 @@ type Integration = {
   href: string;
   logo: string | null;
   mark: string;
-  amount?: number;
-  scope: string;
+  hasAdapter: boolean;
 };
 
 const list = document.querySelector("#provider-list");
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
-
-let catalog: Provider[] = [];
-let catalogUnavailable = false;
-let filter = "all";
-const filters = document.querySelectorAll<HTMLButtonElement>("[data-filter]");
 const catalogStatus = document.querySelector<HTMLElement>("#catalog-status");
-for (const button of filters) {
-  button.addEventListener("click", () => {
-    filter = button.dataset.filter ?? "all";
-    for (const item of filters) item.setAttribute("aria-pressed", String(item === button));
-    render();
-  });
-}
 
-function render() {
+function render(providers: Provider[], catalogUnavailable = false) {
   if (!list) return;
   list.replaceChildren();
   const integrations: Integration[] = [
-    ...catalog.map((provider) => ({
+    ...providers.map((provider) => ({
       name: provider.name,
-      scope: "Experimental adapter",
       country: provider.country,
       currency: provider.currencies.join(", "),
       href: provider.source,
       logo: provider.id === "us/mercury" ? "/logos/mercury.svg" : null,
       mark: provider.name.slice(0, 2).toUpperCase(),
+      hasAdapter: true,
     })),
-    ...bounties.map((bounty) => ({
-      name: bounty.name,
-      scope: bounty.scope,
-      country: bounty.country,
-      currency: bounty.currency,
-      href: bounty.issue,
-      logo: bounty.logo,
-      mark: bounty.mark,
-      amount: bounty.amount,
-    })),
+    ...banks
+      .filter(
+        (bank) =>
+          !providers.some(
+            (provider) => provider.name === bank.name && provider.country === bank.country,
+          ),
+      )
+      .map((bank) => ({
+        name: bank.name,
+        country: bank.country,
+        currency: bank.currency,
+        href: bank.issue,
+        logo: bank.logo,
+        mark: bank.mark,
+        hasAdapter: false,
+      })),
   ];
 
-  const visible = integrations.filter(
-    (item) =>
-      filter === "all" ||
-      (filter === "adapter" ? item.amount === undefined : item.amount !== undefined),
-  );
   if (catalogStatus) {
+    catalogStatus.classList.toggle("sr-only", !catalogUnavailable);
     catalogStatus.textContent = catalogUnavailable
-      ? "The adapter catalog could not load. Proposed rewards are shown; reload to see adapters."
-      : `${catalog.length} experimental adapter · ${bounties.length} proposed rewards · ${visible.length} shown`;
+      ? "The adapter catalog could not load. Reload to see all integrations."
+      : `${integrations.length} banks`;
   }
-  for (const integration of visible) {
-    const available = integration.amount === undefined;
+  for (const integration of integrations) {
     const card = document.createElement("a");
-    card.className = `integration-tile ${available ? "is-available" : "is-bounty"}`;
+    card.className = "integration-tile";
     card.href = integration.href;
     const place = countryNames.of(integration.country) ?? integration.country;
     card.setAttribute(
       "aria-label",
-      available
-        ? `${integration.name}, ${place}, experimental integration in the repository. View scope and limitations.`
-        : `${integration.name}, ${place}, proposed $${integration.amount} reward. Confirm funding and assignment in the issue.`,
+      integration.hasAdapter
+        ? `${integration.name}, ${place}. View experimental adapter.`
+        : `${integration.name}, ${place}. View bank integration discussion.`,
     );
     const logo = document.createElement("span");
     logo.className = "integration-logo";
@@ -112,34 +100,10 @@ function render() {
     name.textContent = integration.name;
     const meta = document.createElement("span");
     meta.className = "integration-meta";
-    meta.textContent = `${place} / ${integration.currency} · ${integration.scope}`;
-    const status = document.createElement("span");
-    status.className = "integration-status";
-    status.textContent = available ? "In the library" : `Proposed $${integration.amount}`;
-    const tooltip = document.createElement("span");
-    tooltip.className = "integration-tooltip";
-    tooltip.setAttribute("aria-hidden", "true");
-    tooltip.textContent = available
-      ? "View experimental scope"
-      : `Proposed $${integration.amount}; check funding and scope`;
-    card.append(logo, name, meta, status, tooltip);
+    meta.textContent = `${place} / ${integration.currency}`;
+    card.append(logo, name, meta);
     list.append(card);
   }
-
-  const add = document.createElement("a");
-  add.className = "integration-tile add-integration";
-  add.href = "https://github.com/zkp2p/peer-link/issues/new?template=bank-request.md";
-  add.setAttribute("aria-label", "Propose an integration for your bank on GitHub");
-  const icon = document.createElement("span");
-  icon.className = "add-icon";
-  icon.setAttribute("aria-hidden", "true");
-  icon.textContent = "+";
-  const title = document.createElement("strong");
-  title.textContent = "Add your bank";
-  const caption = document.createElement("span");
-  caption.textContent = "Propose an integration";
-  add.append(icon, title, caption);
-  list.insertBefore(add, list.querySelector(".is-bounty"));
 }
 
 fetch("/catalog.json")
@@ -149,10 +113,6 @@ fetch("/catalog.json")
   })
   .then((data: { providers: Provider[] }) => {
     if (!Array.isArray(data.providers)) throw new Error("Invalid catalog");
-    catalog = data.providers;
-    render();
+    render(data.providers);
   })
-  .catch(() => {
-    catalogUnavailable = true;
-    render();
-  });
+  .catch(() => render([], true));
