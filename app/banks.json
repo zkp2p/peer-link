@@ -24,6 +24,22 @@
     "mark": "W"
   },
   {
+    "name": "Monobank",
+    "country": "UA",
+    "currency": "UAH",
+    "issue": "https://github.com/zkp2p/peer-link/issues/6",
+    "logo": "/logos/monobank.png",
+    "mark": "M"
+  },
+  {
+    "name": "Vietcombank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/8",
+    "logo": "/logos/vietcombank.png",
+    "mark": "V"
+  },
+  {
     "name": "OPay",
     "country": "NG",
     "currency": "NGN",
@@ -40,28 +56,12 @@
     "mark": "E"
   },
   {
-    "name": "Monobank",
-    "country": "UA",
-    "currency": "UAH",
-    "issue": "https://github.com/zkp2p/peer-link/issues/6",
-    "logo": "/logos/monobank.png",
-    "mark": "M"
-  },
-  {
     "name": "BCA",
     "country": "ID",
     "currency": "IDR",
     "issue": "https://github.com/zkp2p/peer-link/issues/7",
     "logo": "/logos/bca.png",
     "mark": "B"
-  },
-  {
-    "name": "Vietcombank",
-    "country": "VN",
-    "currency": "VND",
-    "issue": "https://github.com/zkp2p/peer-link/issues/8",
-    "logo": "/logos/vietcombank.png",
-    "mark": "V"
   },
   {
     "name": "Bancolombia",
@@ -78,22 +78,6 @@
     "issue": "https://github.com/zkp2p/peer-link/issues/10",
     "logo": "/logos/gcash.png",
     "mark": "G"
-  },
-  {
-    "name": "ICICI Bank",
-    "country": "IN",
-    "currency": "INR",
-    "issue": "https://github.com/zkp2p/peer-link/issues/11",
-    "logo": "/logos/icici.png",
-    "mark": "IB"
-  },
-  {
-    "name": "ABA Bank",
-    "country": "KH",
-    "currency": "USD",
-    "issue": "https://github.com/zkp2p/peer-link/issues/12",
-    "logo": "/logos/aba.png",
-    "mark": "AB"
   },
   {
     "name": "bKash",
@@ -144,14 +128,6 @@
     "mark": "ZB"
   },
   {
-    "name": "Abu Dhabi Commercial Bank",
-    "country": "AE",
-    "currency": "AED",
-    "issue": "https://github.com/zkp2p/peer-link/issues/19",
-    "logo": "/logos/adcb.png",
-    "mark": "AD"
-  },
-  {
     "name": "Uala Argentina",
     "country": "AR",
     "currency": "ARS",
@@ -168,6 +144,46 @@
     "mark": "IB"
   },
   {
+    "name": "MTN MoMo Ghana",
+    "country": "GH",
+    "currency": "GHS",
+    "issue": "https://github.com/zkp2p/peer-link/issues/32",
+    "logo": "/logos/mtn-momo.png",
+    "mark": "MM"
+  },
+  {
+    "name": "BBVA Spain",
+    "country": "ES",
+    "currency": "EUR",
+    "issue": "https://github.com/zkp2p/peer-link/issues/24",
+    "logo": "/logos/24.png",
+    "mark": "BS"
+  },
+  {
+    "name": "ICICI Bank",
+    "country": "IN",
+    "currency": "INR",
+    "issue": "https://github.com/zkp2p/peer-link/issues/11",
+    "logo": "/logos/icici.png",
+    "mark": "IB"
+  },
+  {
+    "name": "ABA Bank",
+    "country": "KH",
+    "currency": "USD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/12",
+    "logo": "/logos/aba.png",
+    "mark": "AB"
+  },
+  {
+    "name": "Abu Dhabi Commercial Bank",
+    "country": "AE",
+    "currency": "AED",
+    "issue": "https://github.com/zkp2p/peer-link/issues/19",
+    "logo": "/logos/adcb.png",
+    "mark": "AD"
+  },
+  {
     "name": "Wave Senegal",
     "country": "SN",
     "currency": "XOF",
@@ -182,14 +198,6 @@
     "issue": "https://github.com/zkp2p/peer-link/issues/23",
     "logo": "/logos/bog.png",
     "mark": "BO"
-  },
-  {
-    "name": "BBVA Spain",
-    "country": "ES",
-    "currency": "EUR",
-    "issue": "https://github.com/zkp2p/peer-link/issues/24",
-    "logo": "/logos/24.png",
-    "mark": "BS"
   },
   {
     "name": "Paysera Lithuania",
@@ -246,14 +254,6 @@
     "issue": "https://github.com/zkp2p/peer-link/issues/31",
     "logo": "/logos/fnb.png",
     "mark": "FS"
-  },
-  {
-    "name": "MTN MoMo Ghana",
-    "country": "GH",
-    "currency": "GHS",
-    "issue": "https://github.com/zkp2p/peer-link/issues/32",
-    "logo": "/logos/mtn-momo.png",
-    "mark": "MM"
   },
   {
     "name": "Vodacom M-Pesa Tanzania",

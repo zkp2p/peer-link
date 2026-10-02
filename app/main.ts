@@ -1,4 +1,5 @@
 import banks from "./banks.json";
+import bounties from "./bounties.json";
 
 const prompt = document.querySelector<HTMLElement>("#agent-prompt");
 const copyStatus = document.querySelector<HTMLElement>("#copy-status");
@@ -26,7 +27,10 @@ type Integration = {
   logo: string | null;
   mark: string;
   hasAdapter: boolean;
+  bounty: number | null;
 };
+
+const bountyByUrl = new Map(bounties.map((bounty) => [bounty.url, bounty.amount]));
 
 const list = document.querySelector("#provider-list");
 const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
@@ -44,6 +48,7 @@ function render(providers: Provider[], catalogUnavailable = false) {
       logo: provider.id === "us/mercury" ? "/logos/mercury.svg" : null,
       mark: provider.name.slice(0, 2).toUpperCase(),
       hasAdapter: true,
+      bounty: null,
     })),
     ...banks
       .filter(
@@ -60,6 +65,7 @@ function render(providers: Provider[], catalogUnavailable = false) {
         logo: bank.logo,
         mark: bank.mark,
         hasAdapter: false,
+        bounty: bountyByUrl.get(bank.issue) ?? null,
       })),
   ];
 
@@ -78,7 +84,9 @@ function render(providers: Provider[], catalogUnavailable = false) {
       "aria-label",
       integration.hasAdapter
         ? `${integration.name}, ${place}. View experimental adapter.`
-        : `${integration.name}, ${place}. View bank integration discussion.`,
+        : integration.bounty
+          ? `${integration.name}, ${place}. $${integration.bounty} bounty. View the bounty issue.`
+          : `${integration.name}, ${place}. View bank integration discussion.`,
     );
     const logo = document.createElement("span");
     logo.className = "integration-logo";
@@ -102,6 +110,14 @@ function render(providers: Provider[], catalogUnavailable = false) {
     meta.className = "integration-meta";
     meta.textContent = `${place} / ${integration.currency}`;
     card.append(logo, name, meta);
+    if (integration.bounty) {
+      card.classList.add("has-bounty");
+      const tag = document.createElement("span");
+      tag.className = "bounty-tag";
+      tag.setAttribute("aria-hidden", "true");
+      tag.textContent = `$${integration.bounty}`;
+      card.append(tag);
+    }
     list.append(card);
   }
 }

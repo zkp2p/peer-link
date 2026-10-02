@@ -1,12 +1,12 @@
 # 🔗 Peer Link
 
-**Banking integrations, built together.**
+**Link your bank, get rewarded for building.**
 
 An MIT-licensed library of bank adapters, payment semantics, privacy-safe fixtures, and community test reports. Bring your bank account and your coding agent. Turn what works for you into knowledge anyone can inspect, reproduce, and maintain.
 
 [Website](https://link.peer.xyz) · [Contribute](CONTRIBUTING.md) · [Integrations](https://link.peer.xyz/#providers) · [Incentives](docs/incentives.md)
 
-**Targeted rewards: at most $50 per bank.** Priority goes to Monobank, Vietcombank and selected US banks. The new total authorization is $1,000 including funding fees. Check [current funding and assignment terms](docs/incentives.md) before starting paid work. Contributions from every geography are welcome.
+**$1,000 in bounties** is funded on [Merit](https://terminal.merit.systems/zkp2p/peer-link) for 20 banks, $50 each, paid in USDC. Pick a bank from the [bounty index](https://github.com/zkp2p/peer-link/issues/64), get assigned on its issue, and follow the [terms](docs/incentives.md). Contributions for any other bank are welcome too.
 
 ## Start with your agent
 
@@ -41,7 +41,7 @@ Community reports are revision-specific claims, not certified unique people or b
 
 Peer Link is designed for agent-assisted maintenance. Public prompts, explicit policies and machine-readable decisions make reviews inspectable. A private verifier is being built to authenticate bank evidence inside an AWS enclave, with deterministic reference checks and explicit account-owner consent.
 
-**Current status: development, not a live verification service.** No scheduled agent tasks or automatic payouts are enabled. The old unfunded round is being replaced; see the current incentive terms.
+**Current status: development, not a live verification service.** No scheduled agent tasks or automatic payouts are enabled.
 
 **Venice remains disabled:** Peer Link has not independently verified its TEE execution and end-to-end response authenticity. Bank data is not forwarded to Venice or OpenAI. The [synthetic agent evaluation](docs/verification.md#synthetic-agent-evaluation) tests the advisory review task only; success does not establish Venice model accuracy or TEE security.
 
@@ -63,7 +63,7 @@ CI publishes each builder's experimental unsigned `normalized.eif` with its meas
 - Add a bank adapter with meaningful negative tests.
 - Reproduce a provider against your own account and submit a privacy-safe report.
 - Add an edge case, fix a broken integration or improve acquisition instructions.
-- Sponsor a reviewed issue. No reward is promised until a sponsor explicitly funds an issue.
+- Sponsor a reviewed issue. Only issues labelled `Merit` with a funded amount carry a reward.
 
 [Contribution guide](CONTRIBUTING.md) · [Privacy rules](docs/privacy.md) · [Security](SECURITY.md)
 
