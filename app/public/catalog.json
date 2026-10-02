@@ -3,6 +3,38 @@
   "providers": [
     {
       "schemaVersion": "1",
+      "id": "mx/bbva-mexico",
+      "name": "BBVA Mexico",
+      "country": "MX",
+      "status": "experimental",
+      "version": "0.1.0",
+      "surface": "web-movimientos",
+      "capability": "Interpret outgoing domestic MXN SPEI transfers as sender-bank-reported sent payments",
+      "maintainers": [
+        "0xSachinK"
+      ],
+      "currencies": [
+        "MXN"
+      ],
+      "unsupported": [
+        "Banxico CEP lookup (separate surface)",
+        "service and utility payments (Pago de Servicios)",
+        "credit card payments and credit advances",
+        "merchant and QR code payments",
+        "cash withdrawals and ATM operations",
+        "foreign currency operations (USD)",
+        "incoming credits and deposits",
+        "recipient-credit confirmation",
+        "cryptographic source authentication"
+      ],
+      "fixtureProvenance": "synthetic",
+      "logo": "/logos/16.png",
+      "reportCount": 0,
+      "evidence": [],
+      "source": "https://github.com/zkp2p/peer-link/tree/main/banks/mx/bbva-mexico"
+    },
+    {
+      "schemaVersion": "1",
       "id": "us/mercury",
       "name": "Mercury",
       "country": "US",

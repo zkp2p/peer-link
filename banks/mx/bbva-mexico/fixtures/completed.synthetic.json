@@ -1,0 +1,38 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic BBVA Mexico outgoing domestic MXN SPEI transfer with invented CLABE numbers; not a real payment.",
+  "input": {
+    "account": {
+      "clabe": "012180000012345678"
+    },
+    "transactions": [
+      {
+        "id": "bbva-spei-00001234",
+        "type": "speiTransfer",
+        "direction": "debit",
+        "status": "completed",
+        "amount": "850.50",
+        "currency": "MXN",
+        "bookedAt": "2026-07-22T17:30:00Z",
+        "counterparty": {
+          "clabe": "012180000087654321",
+          "name": "Synthetic Example Payee"
+        },
+        "description": "Transferencia SPEI a terceros",
+        "memo": "SYNTHETIC EXAMPLE ONLY"
+      }
+    ]
+  },
+  "transactionId": "bbva-spei-00001234",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "012180000012345678",
+    "payeeId": "012180000087654321",
+    "amountMinor": "85050",
+    "currency": "MXN",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "status": "completed",
+    "timestamp": "2026-07-22T17:30:00Z"
+  }
+}
