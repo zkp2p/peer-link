@@ -1,8 +1,14 @@
 # Evidence and community reports
 
-Fixture tests establish behavior on known inputs. Live reports are contributor claims. Neither authenticates a bank response, proves a unique human, or certifies settlement. Signed model inference would not prove the truth of its browser inputs.
+Fixture tests establish behavior on known inputs. Live reports are contributor claims.
+Neither authenticates a bank response, proves a unique human, or certifies settlement.
+Signed model inference would not prove the truth of its browser inputs.
 
-A report records exactly what was tested. Create it after the tested implementation commit exists (avoids self-referential commit hashes):
+## Report format
+
+A report records exactly what was tested. Save it as
+`banks/<country>/<bank>/reports/YYYY-MM-DD-<reporter-handle-lowercase>.json` (add a
+`-<suffix>` before `.json` for a second report the same day):
 
 ```json
 {
@@ -22,8 +28,47 @@ A report records exactly what was tested. Create it after the tested implementat
 }
 ```
 
-Allowed outcomes: pass, fail, partial, blocked, not-tested. Evidence classes: fixture-only, contributor-live, reviewer-live. Fixture-only reports never count as live reproductions. A maintainer checks that the PR author is the reporting handle or explains attribution; JSON alone cannot prove authorship.
+| Field | Rule |
+| --- | --- |
+| `provider` | The bank folder ID, equal to the manifest `id`. |
+| `adapterRevision` | Full SHA of the commit whose adapter you ran. It must be in the branch's history and contain the bank's `manifest.json`. |
+| `harnessRevision` | Full SHA of the repository tooling you ran it with (`npm run try:bank` or `npm run bundle:bank`). When you run from a clean checkout, both revisions are the same commit; `try:bank` prints it with `revisionClean`. |
+| `testedAt` | UTC time of the live run, not in the future. |
+| `reporter` | Your public GitHub handle; the file name ends with it in lowercase. |
+| `surface` | Exactly the manifest `surface`. |
+| `capability` | Kebab-case payment type you tested, e.g. `outgoing-domestic-usd-wire`. |
+| `outcome` | `pass`, `fail`, `partial`, `blocked` or `not-tested`. |
+| `evidenceClass` | `contributor-live`, `reviewer-live` or `fixture-only`. Fixture-only reports never count as live reproductions. |
+| `fixtureRefs` | Existing `fixtures/<case>.<provenance>.json` files that cover the tested case. |
+| `limitations` | At least one honest limitation. |
+| `summary` | At most 2,000 characters, no banking data or transcripts. |
 
-`npm run catalog` groups reports by adapter revision, harness revision, surface and capability. Within each scope it shows each public handle's latest outcome, preserving all original reports. No automatic carry-forward between versions. A ten-handle milestone is not ten independent people and does not trigger rewards. Read dates, failures and limitations, not just counts. Counts are submitted reports, not measured population success rates.
+`npm run validate` enforces these rules and rejects unknown fields.
 
-Payer and payee identifiers need explicit schemes/provenance. A display name or memo is not a verified identity. A sender's `sent` status is not recipient credit. Cross-bank duplicate prevention and irreversible settlement require separate evidence and policy.
+## Revisions and merging
+
+Create the report after the tested commit exists; a commit cannot contain its own SHA.
+Commit the adapter, run the live check on that clean commit, then commit the report citing
+it. After that, update the branch with a merge from `main`, not a rebase. Maintainers merge
+a PR that adds such a report with **Create a merge commit**: squash and rebase merges rewrite
+the cited SHA, and `npm run validate` on `main` would then fail. A report may also cite an
+adapter commit already on `main` in a separate PR.
+
+A maintainer checks that the PR author is the reporting handle or explains attribution;
+JSON alone cannot prove authorship.
+
+## How reports are aggregated
+
+`npm run catalog` groups reports by adapter revision, harness revision, surface and
+capability. Within each scope it shows each public handle's latest outcome, preserving all
+original reports. No automatic carry-forward between versions. A ten-handle milestone is not
+ten independent people and does not trigger rewards. Read dates, failures and limitations,
+not just counts. Counts are submitted reports, not measured population success rates.
+
+## Identity and status semantics
+
+Payer and payee identifiers need explicit schemes and provenance. A display name or memo is
+not a verified identity. A sender's `sent` status is not recipient credit. Cross-bank
+duplicate prevention and irreversible settlement require separate evidence and policy;
+`matchPayment` can compare identifier schemes and a UTC time window, but replay protection
+remains the adopting service's job.

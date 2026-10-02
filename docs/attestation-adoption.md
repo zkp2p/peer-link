@@ -1,8 +1,12 @@
 # Promoting an adapter into Peer
 
 The public contract is version 2 (`peer-link` 0.2.0). It consists of an original
-pure `BankAdapter.interpret(evidence, transactionId)` and a `PaymentObservation`.
-It contains no private Peer implementation or fixtures.
+pure interpretation function `(evidence, transactionId) => Interpretation`, exported
+from each adapter's `transformer.js` under the name in its manifest `entrypoint` (the
+`BankAdapter` type in `lib/types.ts` describes the same shape), and a
+`PaymentObservation`. It contains no private Peer implementation or fixtures.
+`banks/adapter-contract.test.ts` checks every adapter's supported fixtures against this
+contract and requires them to convert with `toAttestationCandidate`.
 
 `schemaVersion: "2"` adds an explicit `currencyExponent` and allows documented
 bank-specific identity schemes, directions and statuses. Version 1 consumers
