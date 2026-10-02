@@ -3,6 +3,37 @@
   "providers": [
     {
       "schemaVersion": "1",
+      "id": "tr/ziraat",
+      "name": "Ziraat Bank",
+      "country": "TR",
+      "status": "experimental",
+      "version": "0.1.0",
+      "surface": "mobile-app-receipt",
+      "capability": "Interpret outgoing domestic TRY transfers as sender-bank-reported debits",
+      "maintainers": [
+        "Simultech369"
+      ],
+      "currencies": [
+        "TRY"
+      ],
+      "unsupported": [
+        "cards",
+        "utility-payments",
+        "tax-payments",
+        "fx-exchanges",
+        "international-swift",
+        "incoming-credits",
+        "recipient-credit confirmation",
+        "cryptographic source authentication"
+      ],
+      "fixtureProvenance": "synthetic",
+      "logo": "/logos/ziraat.png",
+      "reportCount": 0,
+      "evidence": [],
+      "source": "https://github.com/zkp2p/peer-link/tree/main/banks/tr/ziraat"
+    },
+    {
+      "schemaVersion": "1",
       "id": "us/mercury",
       "name": "Mercury",
       "country": "US",

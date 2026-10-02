@@ -1,0 +1,37 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic pending outgoing TRY transfer record from Ziraat Mobil/Internet Banking",
+  "input": {
+    "account": {
+      "id": "TR000000000000000000000001",
+      "name": "Synthetic Payer"
+    },
+    "transactions": [
+      {
+        "id": "ZR2026100200002",
+        "type": "domesticTransfer",
+        "paymentType": "EFT",
+        "direction": "debit",
+        "status": "BEKLEMEDE",
+        "amount": "500.00",
+        "currency": "TRY",
+        "bookedAt": "2026-10-02T15:00:00Z",
+        "payer": {
+          "iban": "TR000000000000000000000001",
+          "name": "Synthetic Payer"
+        },
+        "payee": {
+          "iban": "TR000000000000000000000002",
+          "name": "Synthetic Payee",
+          "bank": "Ziraat Bankasi"
+        },
+        "memo": "Synthetic pending payment reference"
+      }
+    ]
+  },
+  "transactionId": "ZR2026100200002",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is still pending bank execution"
+  }
+}
