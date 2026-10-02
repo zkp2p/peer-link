@@ -1,0 +1,42 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic completed outgoing IDR transfer record from myBCA/KlikBCA receipt",
+  "input": {
+    "account": {
+      "id": "0000000001",
+      "name": "Synthetic Payer"
+    },
+    "transactions": [
+      {
+        "id": "BCA2026100200001",
+        "type": "domesticTransfer",
+        "paymentType": "BI-FAST",
+        "direction": "debit",
+        "status": "BERHASIL",
+        "amount": "500000",
+        "currency": "IDR",
+        "bookedAt": "2026-10-02T17:00:00Z",
+        "payer": {
+          "accountNumber": "0000000001",
+          "name": "Synthetic Payer"
+        },
+        "payee": {
+          "accountNumber": "0000000002",
+          "name": "Synthetic Payee",
+          "bank": "Bank Central Asia"
+        },
+        "memo": "Synthetic transfer test"
+      }
+    ]
+  },
+  "transactionId": "BCA2026100200001",
+  "expected": {
+    "outcome": "supported",
+    "amountMinor": "500000",
+    "currency": "IDR",
+    "status": "completed",
+    "payerId": "0000000001",
+    "payeeId": "0000000002",
+    "timestamp": "2026-10-02T17:00:00Z"
+  }
+}
