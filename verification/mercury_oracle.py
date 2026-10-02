@@ -56,8 +56,10 @@ def reference_facts(document, selected_transaction):
     require(0 < minor <= 9007199254740991 and minor == minor.to_integral_value(),
             "oracle_invalid_amount")
     timestamp = text(row.get("postedAt"))
-    require(re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?Z", timestamp),
-            "oracle_invalid_time")
+    # Explicit clock ranges: Python 3.14 fromisoformat accepts 24:00 as next-day
+    # midnight, which the adapter and older Pythons reject. Keep one meaning.
+    require(re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T(?:[01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]"
+                         r"(?:\.[0-9]{1,6})?Z", timestamp), "oracle_invalid_time")
     try:
         datetime.datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
     except ValueError:
