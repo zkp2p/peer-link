@@ -19,9 +19,18 @@ class InvokeAuthorityTests(unittest.TestCase):
         self.assertEqual(trust[0]['Action'], 'sts:AssumeRoleWithWebIdentity')
         self.assertEqual(trust[0]['Condition'], {'StringEquals': {
             'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
-            'token.actions.githubusercontent.com:sub':
-                'repo:zkp2p/peer-link:environment:peer-link-verification',
+            'token.actions.githubusercontent.com:sub': {'Ref': 'OidcSubject'},
         }})
+
+    def test_subject_accepts_verified_immutable_ids_without_wildcards(self):
+        pattern = template()['Parameters']['OidcSubject']['AllowedPattern']
+        for repo in ('repo:zkp2p/peer-link', 'repo:zkp2p@123456/peer-link@456789'):
+            self.assertTrue(re.fullmatch(pattern, repo + ':environment:peer-link-verification'))
+        for subject in ('repo:zkp2p/*:environment:peer-link-verification',
+                        'repo:zkp2p/peer-link:ref:refs/heads/main',
+                        'repo:zkp2p@123456/other@456789:environment:peer-link-verification',
+                        'repo:zkp2p/peer-link:environment:production'):
+            self.assertFalse(re.fullmatch(pattern, subject))
 
     def test_resource_policy_cannot_widen_invocation_or_other_actions(self):
         role = template()['Resources']['Role']['Properties']

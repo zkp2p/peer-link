@@ -218,7 +218,16 @@ coordinate, but ledger pause is the immediate stop for every published version.
 Create or reuse the account's GitHub OIDC provider only after checking its URL and
 `sts.amazonaws.com` audience. Generate `verification.infra.invoke_template` with
 that numeric controller version. Its role permits only that invocation, with explicit
-denies preventing another resource policy from widening it. Apply these variables:
+denies preventing another resource policy from widening it.
+
+Set the required `OidcSubject` from the repository's verified OIDC configuration
+(`gh api repos/zkp2p/peer-link/actions/oidc/customization/sub`) and the exact
+`peer-link-verification` environment. Immutable subjects include `@owner-id` and
+`@repository-id`; preserve those IDs instead of disabling immutable subjects or
+adding a wildcard. Recheck the GitHub repository and owner IDs before deployment.
+See [GitHub's AWS OIDC guidance](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws).
+
+Apply these variables:
 
 - Repository `PEER_LINK_DISPATCH_ENABLED`: `false` until the activation gates pass.
 - Protected environment `PEER_LINK_AWS_ACCOUNT`: the verified account ID.

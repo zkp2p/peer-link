@@ -16,6 +16,10 @@ def template():
         'Parameters': {
             'ControllerVersionArn': {'Type': 'String', 'AllowedPattern':
                 r'arn:aws:lambda:us-east-1:[0-9]{12}:function:peer-link-[a-z0-9-]+:[1-9][0-9]*'},
+            # Read the repository's OIDC customization before deployment. Newer
+            # repositories include immutable owner/repository IDs in this claim.
+            'OidcSubject': {'Type': 'String', 'AllowedPattern':
+                r'(repo:zkp2p/peer-link|repo:zkp2p@[1-9][0-9]*/peer-link@[1-9][0-9]*):environment:peer-link-verification'},
         },
         'Resources': {
             'Role': {'Type': 'AWS::IAM::Role', 'Properties': {
@@ -26,8 +30,7 @@ def template():
                     'Principal': {'Federated': sub('arn:${AWS::Partition}:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com')},
                     'Condition': {'StringEquals': {
                         'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
-                        'token.actions.githubusercontent.com:sub':
-                            'repo:zkp2p/peer-link:environment:peer-link-verification',
+                        'token.actions.githubusercontent.com:sub': ref('OidcSubject'),
                     }},
                 }]),
                 'Policies': [{'PolicyName': 'InvokeReviewedVersionOnly', 'PolicyDocument': policy([
