@@ -1,0 +1,42 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic completed outgoing TRY transfer record from Ziraat Mobil/Internet Banking",
+  "input": {
+    "account": {
+      "id": "TR000000000000000000000001",
+      "name": "Synthetic Payer"
+    },
+    "transactions": [
+      {
+        "id": "ZR2026100200001",
+        "type": "domesticTransfer",
+        "paymentType": "FAST",
+        "direction": "debit",
+        "status": "COMPLETED",
+        "amount": "1250.75",
+        "currency": "TRY",
+        "bookedAt": "2026-10-02T14:30:00Z",
+        "payer": {
+          "iban": "TR000000000000000000000001",
+          "name": "Synthetic Payer"
+        },
+        "payee": {
+          "iban": "TR000000000000000000000002",
+          "name": "Synthetic Payee",
+          "bank": "Ziraat Bankasi"
+        },
+        "memo": "Synthetic transfer reference test"
+      }
+    ]
+  },
+  "transactionId": "ZR2026100200001",
+  "expected": {
+    "outcome": "supported",
+    "amountMinor": "125075",
+    "currency": "TRY",
+    "status": "COMPLETED",
+    "payerId": "TR000000000000000000000001",
+    "payeeId": "TR000000000000000000000002",
+    "timestamp": "2026-10-02T14:30:00Z"
+  }
+}

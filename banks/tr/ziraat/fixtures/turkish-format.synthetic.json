@@ -1,0 +1,42 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic Turkish-formatted completed transfer record from Ziraat Mobil receipt",
+  "input": {
+    "account": {
+      "id": "TR123456789012345678901234",
+      "name": "Synthetic Payer"
+    },
+    "transactions": [
+      {
+        "id": "ZR2026100200003",
+        "type": "domesticTransfer",
+        "paymentType": "FAST",
+        "direction": "debit",
+        "status": "BAŞARILI",
+        "amount": "1.250,75 TL",
+        "currency": "TRY",
+        "bookedAt": "2026-10-02T15:00:00Z",
+        "payer": {
+          "iban": "TR12 3456 7890 1234 5678 9012 34",
+          "name": "Synthetic Payer"
+        },
+        "payee": {
+          "iban": "TR98 7654 3210 9876 5432 1098 76",
+          "name": "Synthetic Payee",
+          "bank": "Ziraat Bankasi"
+        },
+        "memo": "Kira odemesi"
+      }
+    ]
+  },
+  "transactionId": "ZR2026100200003",
+  "expected": {
+    "outcome": "supported",
+    "amountMinor": "125075",
+    "currency": "TRY",
+    "status": "BAŞARILI",
+    "payerId": "TR123456789012345678901234",
+    "payeeId": "TR987654321098765432109876",
+    "timestamp": "2026-10-02T15:00:00Z"
+  }
+}

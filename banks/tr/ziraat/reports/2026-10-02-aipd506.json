@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1",
+  "provider": "tr/ziraat",
+  "adapterRevision": "557be7655e0584931e7dc38fc2de0fe21e0b06be",
+  "harnessRevision": "557be7655e0584931e7dc38fc2de0fe21e0b06be",
+  "testedAt": "2026-10-02T20:25:00Z",
+  "reporter": "aipd506",
+  "surface": "mobile-app-receipt",
+  "capability": "outgoing-domestic-try-transfer",
+  "outcome": "pass",
+  "evidenceClass": "contributor-live",
+  "fixtureRefs": [
+    "fixtures/completed.synthetic.json",
+    "fixtures/failed.synthetic.json",
+    "fixtures/pending.synthetic.json",
+    "fixtures/turkish-format.synthetic.json"
+  ],
+  "limitations": [
+    "One contributor account; no independent multi-party reproduction.",
+    "Only completed outgoing domestic TRY transfers validated; cards, utility payments, and incoming transfers stay unsupported.",
+    "Source authenticity, legal person identity, recipient credit and irreversible settlement are not proven.",
+    "Raw receipt payload remained in local browser agent evaluation memory and is not published."
+  ],
+  "summary": "Account-owner-authorized session inspected Ziraat Mobil / Internet Banking transaction records and executed the repository transformer in memory against synthetic and live-shape transfer records. Completed status, TRY amount in kuruş, payer Turkish IBAN, counterparty Turkish IBAN, and UTC timestamps matched the official receipt exactly. Pending transfers and unsupported types abstain cleanly without throwing."
+}
