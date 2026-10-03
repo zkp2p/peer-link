@@ -200,7 +200,7 @@ class AttestationTests(unittest.TestCase):
                         session={"synthetic": "example"}, consent=True)
                 encrypt.assert_not_called()
 
-    def receipt_fixture(self):
+    def receipt_fixture(self, challenge_delay=0):
         channel = SessionChannel()
         release = {**self.release, "liveVerification": True}
         document = self.encode({**self.doc, "public_key": channel.public_key_der})
@@ -217,9 +217,15 @@ class AttestationTests(unittest.TestCase):
         operator = Ed25519PrivateKey.generate()
         initial_quote = self.encode({**self.doc, 'public_key': channel.public_key_der,
                                      'nonce': freshness_nonce(args['nonce'])})
-        ledger.authorize_challenge(attempt['id'], binding=binding, private_key=operator,
-                                   **{**args, 'attestation': initial_quote})
-        context = channel.challenge(attempt['id'], digest(binding))
+        grant = ledger.authorize_challenge(attempt['id'], binding=binding, private_key=operator,
+                                          **{**args, 'attestation': initial_quote})
+        # The live route carries the grant's expiry into the enclave. The low-level
+        # helper minted a later expiry when setup crossed a wall-clock second.
+        with patch('time.time', return_value=time.time() + challenge_delay):
+            context = channel.challenge_authorized(grant,
+                operator_public_key=operator.public_key().public_bytes(
+                    serialization.Encoding.Raw, serialization.PublicFormat.Raw),
+                policy_digest=release['policyDigest'])
         context_quote = self.encode({**self.doc, 'public_key': channel.public_key_der,
                                      'nonce': bytes.fromhex(digest(context))})
         ledger.authorize_execution(attempt['id'], context=context, attestation=context_quote,
@@ -229,6 +235,13 @@ class AttestationTests(unittest.TestCase):
                   "ticket": ticket["id"], "bindingDigest": digest(binding), "capability": "synthetic-sent",
                   "result": "verified", "issuedAt": int(time.time()), "expiresAt": int(time.time())+120}
         return channel, ledger, claims, binding, args
+
+    def test_receipt_challenge_delayed_across_seconds_preserves_admission_expiry(self):
+        channel, ledger, claims, binding, args = self.receipt_fixture(challenge_delay=2)
+        grant = json.loads(ledger.db.execute('SELECT grant_json FROM challenge_grants').fetchone()[0])
+        self.assertEqual(next(iter(channel.challenges.values()))['expiresAt'], grant['claims']['expiresAt'])
+        ledger.finish_receipt(sign_receipt(claims, channel.key), binding=binding, **args)
+        self.assertEqual(ledger.ticket(claims['ticket'])['state'], 'verified')
 
     def test_receipt_requires_execution_authorization(self):
         channel, ledger, claims, binding, args = self.receipt_fixture()
