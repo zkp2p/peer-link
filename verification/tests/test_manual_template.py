@@ -61,7 +61,15 @@ class ManualTemplateTests(unittest.TestCase):
         self.assertTrue(re.fullmatch(pattern, 'arn:aws:sns:us-east-1:123456789012:peer-link-alerts'))
         self.assertFalse(re.fullmatch(pattern, 'arn:aws:lambda:us-east-1:123456789012:function:x'))
         silent = self.resources['ExpiryNotRunning']['Properties']
-        self.assertEqual((silent['MetricName'], silent['TreatMissingData']), ('Invocations', 'breaching'))
+        self.assertEqual(silent['TreatMissingData'], 'breaching')
+        metric, expression = silent['Metrics']
+        self.assertEqual(metric['MetricStat']['Metric'], {
+            'Namespace': 'AWS/Lambda', 'MetricName': 'Invocations',
+            'Dimensions': [{'Name': 'FunctionName', 'Value': {'Ref': 'Expiry'}}]})
+        self.assertEqual((metric['MetricStat']['Period'], metric['MetricStat']['Stat']), (300, 'Sum'))
+        self.assertFalse(metric['ReturnData'])
+        self.assertEqual(expression, {'Id': 'heartbeat', 'Expression': 'FILL(invocations, 0)', 'ReturnData': True})
+        self.assertEqual((silent['EvaluationPeriods'], silent['DatapointsToAlarm']), (3, 3))
         for name in ('ExpiryErrors', 'ExpiryNotRunning'):
             self.assertEqual(self.resources[name]['Properties']['AlarmActions']['Fn::If'][0], 'HasAlarmTopic')
 

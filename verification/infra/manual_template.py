@@ -98,7 +98,10 @@ def handler(event,context):
  r['ExpiryPermission']={'Type':'AWS::Lambda::Permission','Properties':{'FunctionName':ref('Expiry'),'Action':'lambda:InvokeFunction','Principal':'events.amazonaws.com','SourceArn':arn('Schedule'),'SourceAccount':ref('AWS::AccountId')}}
  r['ExpiryErrors']={'Type':'AWS::CloudWatch::Alarm','Properties':{'Namespace':'AWS/Lambda','MetricName':'Errors','Dimensions':[{'Name':'FunctionName','Value':ref('Expiry')}],'Statistic':'Sum','Period':300,'EvaluationPeriods':1,'Threshold':1,'ComparisonOperator':'GreaterThanOrEqualToThreshold','TreatMissingData':'notBreaching','AlarmActions':alarm_actions}}
  # A disabled/deleted schedule or throttled reaper emits no Errors; alarm on silence too.
- r['ExpiryNotRunning']={'Type':'AWS::CloudWatch::Alarm','Properties':{'Namespace':'AWS/Lambda','MetricName':'Invocations','Dimensions':[{'Name':'FunctionName','Value':ref('Expiry')}],'Statistic':'Sum','Period':300,'EvaluationPeriods':3,'Threshold':1,'ComparisonOperator':'LessThanThreshold','TreatMissingData':'breaching','AlarmActions':alarm_actions}}
+ # Sparse metrics can retain old healthy datapoints beyond the evaluation window.
+ # Fill each missing interval with zero so a stopped reaper cannot appear healthy.
+ heartbeat=[{'Id':'invocations','MetricStat':{'Metric':{'Namespace':'AWS/Lambda','MetricName':'Invocations','Dimensions':[{'Name':'FunctionName','Value':ref('Expiry')}]},'Period':300,'Stat':'Sum'},'ReturnData':False},{'Id':'heartbeat','Expression':'FILL(invocations, 0)','ReturnData':True}]
+ r['ExpiryNotRunning']={'Type':'AWS::CloudWatch::Alarm','Properties':{'Metrics':heartbeat,'EvaluationPeriods':3,'DatapointsToAlarm':3,'Threshold':1,'ComparisonOperator':'LessThanThreshold','TreatMissingData':'breaching','AlarmActions':alarm_actions}}
  return {'AWSTemplateFormatVersion':'2010-09-09','Description':'Peer Link isolated manual controller; disabled by default. No bank credentials.','Parameters':params,'Conditions':conditions,'Resources':r,'Outputs':{'Table':{'Value':table},'Controller':{'Value':ref('Controller')},'Expiry':{'Value':ref('Expiry')},'Template':{'Value':ref('WorkerTemplate')}}}
 
 if __name__=='__main__':print(json.dumps(template(),indent=2))

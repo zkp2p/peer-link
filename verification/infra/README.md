@@ -164,6 +164,14 @@ CloudWatch alarms on expiry errors and on a reaper that stops running. Pass
 without it they notify no one. The current pilot has operator supervision, not
 unattended alerts.
 
+The heartbeat alarm uses `FILL(invocations, 0)` over three five-minute intervals.
+Without explicit zero filling, CloudWatch can keep using older healthy samples
+after a sparse metric stops, delaying notification. See
+[AWS's missing-data guidance](https://aws.amazon.com/blogs/mt/elevating-your-aws-observability-unlocking-the-power-of-amazon-cloudwatch-alarms/).
+Test a real failed invocation and a disabled schedule while no worker is running;
+an accelerated test interval must be restored before dispatch. Setting an alarm's
+state manually tests delivery only, not failure detection.
+
 The checked-in manual GitHub workflow is disabled by default. Before activation,
 verify protected main and CODEOWNERS review, required CI, environment reviewers,
 prevent-self-review, main-only environment deployment rules and restricted
