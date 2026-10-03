@@ -1,0 +1,45 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented receipt data representing a completed outgoing BRL Pix payment to an email key. Not a real banking record.",
+  "input": {
+    "receipts": [
+      {
+        "id": "itau-synthetic-rcpt-002",
+        "endToEndId": "E0000000020260221100000000000002",
+        "type": "PIX",
+        "direction": "SAIDA",
+        "amount": "R$ 82,50",
+        "currency": "BRL",
+        "status": "CONCLUIDA",
+        "completedAt": "2026-02-21T10:00:00-03:00",
+        "payer": {
+          "accountId": "000000000002",
+          "name": "Synthetic Payer Two"
+        },
+        "recipient": {
+          "name": "Synthetic Email Beneficiary",
+          "pixKey": {
+            "type": "EMAIL",
+            "value": "synthetic.payee@example.com"
+          }
+        },
+        "description": "Settlement service payment"
+      }
+    ]
+  },
+  "transactionId": "E0000000020260221100000000000002",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "000000000002",
+    "payerScheme": "itau-account-id",
+    "payeeId": "synthetic.payee@example.com",
+    "payeeScheme": "pix-email",
+    "amountMinor": "8250",
+    "currency": "BRL",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "status": "CONCLUIDA",
+    "timestamp": "2026-02-21T13:00:00.000Z",
+    "timestampMeaning": "completedAt"
+  }
+}

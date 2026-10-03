@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1",
+  "provider": "br/itau",
+  "adapterRevision": "8aa78368c9ef84919b5d77ccdf19613f3121d716",
+  "harnessRevision": "8aa78368c9ef84919b5d77ccdf19613f3121d716",
+  "testedAt": "2026-10-02T19:30:00Z",
+  "reporter": "aipd506",
+  "surface": "mobile-app-pix-receipt",
+  "capability": "outgoing-completed-brl-pix",
+  "outcome": "pass",
+  "evidenceClass": "contributor-live",
+  "fixtureRefs": [
+    "fixtures/receipt-phone.synthetic.json",
+    "fixtures/receipt-email.synthetic.json",
+    "fixtures/pending.synthetic.json"
+  ],
+  "limitations": [
+    "One contributor account; no independent multi-party reproduction.",
+    "Only completed outgoing BRL Pix payments validated; cards, boleto, and incoming Pix stay unsupported.",
+    "Source authenticity, legal person identity, recipient credit and irreversible settlement are not proven.",
+    "Raw receipt payload remained in local browser agent evaluation memory and is not published."
+  ],
+  "summary": "Account-owner-authorized session inspected Itaú mobile receipt records and executed the repository transformer in memory against synthetic and live-shape Pix comprovantes. Status CONCLUIDA, BRL amount in centavos, payer account ID, typed recipient Pix key, and UTC normalized timestamps matched the official comprovante exactly. Pending transfers and unsupported types abstain cleanly without throwing."
+}

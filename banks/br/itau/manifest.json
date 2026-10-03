@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1",
+  "id": "br/itau",
+  "name": "Itau Brazil",
+  "country": "BR",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "mobile-app-pix-receipt",
+  "capability": "Interpret completed outgoing BRL Pix transfers from Itau receipt data",
+  "entrypoint": "interpretItauBrazil",
+  "maintainers": ["aipd506"],
+  "currencies": ["BRL"],
+  "unsupported": [
+    "incoming-pix",
+    "scheduled-or-pending-pix",
+    "cards-boleto-ted-and-other-transfers",
+    "recipient-credit-confirmation",
+    "cryptographic-source-authentication"
+  ],
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/itau.png"
+}

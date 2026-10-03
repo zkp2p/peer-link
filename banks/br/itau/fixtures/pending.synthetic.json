@@ -1,0 +1,35 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented receipt data representing a pending Pix transfer still in processing. Must abstain with insufficient_evidence.",
+  "input": {
+    "receipts": [
+      {
+        "id": "itau-synthetic-rcpt-003",
+        "endToEndId": "E0000000020260220164500000000003",
+        "type": "PIX",
+        "direction": "SAIDA",
+        "amount": "R$ 150,00",
+        "currency": "BRL",
+        "status": "EM_PROCESSAMENTO",
+        "completedAt": "2026-02-20T16:45:00-03:00",
+        "payer": {
+          "accountId": "000000000001",
+          "name": "Synthetic Payer"
+        },
+        "recipient": {
+          "name": "Synthetic Beneficiary",
+          "pixKey": {
+            "type": "PHONE",
+            "value": "+5511900000001"
+          }
+        },
+        "description": "Pix transfer"
+      }
+    ]
+  },
+  "transactionId": "E0000000020260220164500000000003",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is not bank-reported CONCLUIDA"
+  }
+}
