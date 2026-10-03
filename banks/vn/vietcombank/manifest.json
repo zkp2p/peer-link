@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1",
+  "id": "vn/vietcombank",
+  "name": "Vietcombank",
+  "country": "VN",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "web-statement",
+  "capability": "Completed outgoing domestic VND transfer from Vietcombank Digibank statement movements",
+  "entrypoint": "interpretVietcombank",
+  "maintainers": ["Simultech369"],
+  "currencies": ["VND"],
+  "unsupported": [
+    "Incoming payments and deposits (tiền vào / credit)",
+    "Merchant QR code purchases and VNPAY-QR payments",
+    "Utility bills, telecommunications, and public service payments",
+    "Cash withdrawals and ATM operations",
+    "Credit card purchases and POS debits",
+    "Pending authorizations and unsettled movements",
+    "Non-VND foreign exchange transfers"
+  ],
+  "fixtureProvenance": "synthetic"
+}
