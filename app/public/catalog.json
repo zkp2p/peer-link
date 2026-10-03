@@ -3,6 +3,35 @@
   "providers": [
     {
       "schemaVersion": "1",
+      "id": "es/bbva-spain",
+      "name": "BBVA Spain",
+      "country": "ES",
+      "status": "experimental",
+      "version": "0.1.0",
+      "surface": "web-movimientos",
+      "capability": "Completed outgoing domestic and SEPA EUR credit transfer from BBVA Spain online movements",
+      "maintainers": [
+        "Simultech369"
+      ],
+      "currencies": [
+        "EUR"
+      ],
+      "unsupported": [
+        "Bizum peer-to-peer and merchant payments (bizum)",
+        "Incoming credits and third-party deposits",
+        "Debit and credit card purchases (POS / compras con tarjeta)",
+        "ATM cash withdrawals (cajeros automáticos)",
+        "Direct debits, utility bills and tax payments (recibos e impuestos)",
+        "Pending, scheduled, rejected, or cancelled transfers",
+        "Non-EUR international or cross-currency wire transfers"
+      ],
+      "fixtureProvenance": "synthetic",
+      "reportCount": 0,
+      "evidence": [],
+      "source": "https://github.com/zkp2p/peer-link/tree/main/banks/es/bbva-spain"
+    },
+    {
+      "schemaVersion": "1",
       "id": "us/mercury",
       "name": "Mercury",
       "country": "US",
