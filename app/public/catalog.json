@@ -3,6 +3,39 @@
   "providers": [
     {
       "schemaVersion": "1",
+      "id": "kz/kaspi",
+      "name": "Kaspi Bank",
+      "country": "KZ",
+      "status": "experimental",
+      "version": "0.1.0",
+      "surface": "mobile-app-receipt",
+      "capability": "Interpret outgoing domestic KZT transfers as sender-bank-reported debits",
+      "maintainers": [
+        "Simultech369"
+      ],
+      "currencies": [
+        "KZT"
+      ],
+      "unsupported": [
+        "kaspi-red-installments",
+        "kaspi-kredit",
+        "kaspi-pay-merchant-qr",
+        "utility-payments",
+        "mobile-topup",
+        "government-tax-payments",
+        "fx-exchanges",
+        "incoming-credits",
+        "recipient-credit confirmation",
+        "cryptographic source authentication"
+      ],
+      "fixtureProvenance": "synthetic",
+      "logo": "/logos/kaspi.png",
+      "reportCount": 0,
+      "evidence": [],
+      "source": "https://github.com/zkp2p/peer-link/tree/main/banks/kz/kaspi"
+    },
+    {
+      "schemaVersion": "1",
       "id": "us/mercury",
       "name": "Mercury",
       "country": "US",

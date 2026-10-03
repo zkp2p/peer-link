@@ -1,0 +1,36 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic pending outgoing KZT Kaspi-to-Kaspi transfer record from Kaspi.kz receipt",
+  "input": {
+    "account": {
+      "id": "+77000000001",
+      "name": "Synthetic Payer"
+    },
+    "transactions": [
+      {
+        "id": "KZ2026100200002",
+        "type": "domesticTransfer",
+        "paymentType": "KaspiTransfer",
+        "direction": "debit",
+        "status": "PENDING",
+        "amount": "5000.00",
+        "currency": "KZT",
+        "bookedAt": "2026-10-02T19:15:00Z",
+        "payer": {
+          "phone": "+77000000001",
+          "name": "Synthetic Payer"
+        },
+        "payee": {
+          "phone": "+77000000002",
+          "name": "Synthetic Payee"
+        },
+        "memo": "Synthetic pending transfer"
+      }
+    ]
+  },
+  "transactionId": "KZ2026100200002",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is still pending bank execution"
+  }
+}

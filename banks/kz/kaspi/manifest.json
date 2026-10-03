@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1",
+  "id": "kz/kaspi",
+  "name": "Kaspi Bank",
+  "country": "KZ",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "mobile-app-receipt",
+  "capability": "Interpret outgoing domestic KZT transfers as sender-bank-reported debits",
+  "entrypoint": "interpretKaspi",
+  "maintainers": ["Simultech369"],
+  "currencies": ["KZT"],
+  "unsupported": [
+    "kaspi-red-installments",
+    "kaspi-kredit",
+    "kaspi-pay-merchant-qr",
+    "utility-payments",
+    "mobile-topup",
+    "government-tax-payments",
+    "fx-exchanges",
+    "incoming-credits",
+    "recipient-credit confirmation",
+    "cryptographic source authentication"
+  ],
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/kaspi.png"
+}
