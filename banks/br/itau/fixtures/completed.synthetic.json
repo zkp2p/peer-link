@@ -1,0 +1,39 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic Itau Brazil Pix transfer fixture with invented account numbers, Pix keys, and amounts.",
+  "transactionId": "tx-itau-0001",
+  "input": {
+    "account": {
+      "id": "acc-synthetic-0001",
+      "agency": "0001",
+      "accountNumber": "00001-0",
+      "holderName": "Synthetic Payer Account"
+    },
+    "transactions": [
+      {
+        "id": "tx-itau-0001",
+        "endToEndId": "E0000000020261002150000000000001",
+        "type": "pixTransfer",
+        "direction": "debit",
+        "status": "completed",
+        "amount": "250.75",
+        "currency": "BRL",
+        "bookedAt": "2026-10-02T15:00:00Z",
+        "counterparty": {
+          "pixKey": "beneficiary@example.com",
+          "name": "Example Beneficiary Entity"
+        },
+        "description": "Pix transfer settlement"
+      }
+    ]
+  },
+  "expected": {
+    "outcome": "supported",
+    "amountMinor": "25075",
+    "currency": "BRL",
+    "status": "completed",
+    "payerId": "0001:000010",
+    "payeeId": "beneficiary@example.com",
+    "timestamp": "2026-10-02T15:00:00Z"
+  }
+}
