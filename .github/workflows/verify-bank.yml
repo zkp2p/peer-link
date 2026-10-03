@@ -36,7 +36,7 @@ jobs:
           CONTROLLER: ${{ vars.PEER_LINK_CONTROLLER_VERSION_ARN }}
         run: |
           python3 - <<'PY'
-          import json,os,re,subprocess,sys,tempfile,urllib.parse,urllib.request
+          import json,os,re,subprocess,sys,tempfile,urllib.parse,urllib.request,xml.etree.ElementTree as ET
           # No third-party Actions, checkout, token file or cross-step credentials.
           # The role trust and protected environment remain the authority boundary.
           class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -64,13 +64,27 @@ jobs:
               assert isinstance(token,str) and 0<len(token)<32768
               clean={k:v for k,v in os.environ.items() if not k.startswith(('AWS_','ACTIONS_'))}
               clean.update(AWS_EC2_METADATA_DISABLED='true',AWS_CONFIG_FILE='/dev/null',
-                           AWS_SHARED_CREDENTIALS_FILE='/dev/null',AWS_DEFAULT_REGION='us-east-1')
+                           AWS_SHARED_CREDENTIALS_FILE='/dev/null',AWS_DEFAULT_REGION='us-east-1',AWS_MAX_ATTEMPTS='1')
               session='peer-link-'+run
               exchange={'RoleArn':role,'RoleSessionName':session,'WebIdentityToken':token,'DurationSeconds':900}
-              assumed=subprocess.run(['aws','sts','assume-role-with-web-identity','--no-sign-request',
-                  '--cli-input-json','file:///dev/stdin','--output','json'],input=json.dumps(exchange),
-                  env=clean,capture_output=True,text=True,timeout=30,check=True)
-              identity=json.loads(assumed.stdout)
+              # AWS CLI can read /dev/stdin twice while resolving cli-input-json.
+              # Exchange directly with the fixed HTTPS STS endpoint instead; the
+              # token stays in memory and never enters argv, files or logs.
+              exchange.update(Action='AssumeRoleWithWebIdentity',Version='2011-06-15')
+              request=urllib.request.Request('https://sts.us-east-1.amazonaws.com/',
+                  data=urllib.parse.urlencode(exchange).encode(),
+                  headers={'Content-Type':'application/x-www-form-urlencoded'})
+              with opener.open(request,timeout=30) as response:
+                  raw=response.read(65537)
+              assert len(raw)<=65536
+              root=ET.fromstring(raw)
+              ns='{https://sts.amazonaws.com/doc/2011-06-15/}'
+              assert root.tag==ns+'AssumeRoleWithWebIdentityResponse'
+              result=root.find(ns+'AssumeRoleWithWebIdentityResult')
+              assert result is not None
+              identity={'AssumedRoleUser':{'Arn':result.findtext(ns+'AssumedRoleUser/'+ns+'Arn')},
+                        'Credentials':{k:result.findtext(ns+'Credentials/'+ns+k)
+                            for k in ('AccessKeyId','SecretAccessKey','SessionToken')}}
               assert identity['AssumedRoleUser']['Arn']=='arn:aws:sts::'+account+':assumed-role/'+role.rsplit('/',1)[1]+'/'+session
               credentials=identity['Credentials']
               for envkey,key in [('AWS_ACCESS_KEY_ID','AccessKeyId'),('AWS_SECRET_ACCESS_KEY','SecretAccessKey'),('AWS_SESSION_TOKEN','SessionToken')]:

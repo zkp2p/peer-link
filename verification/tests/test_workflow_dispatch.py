@@ -7,6 +7,8 @@ from pathlib import Path
 import subprocess
 import textwrap
 import unittest
+import urllib.parse
+import urllib.error
 from unittest.mock import Mock, patch
 
 
@@ -41,19 +43,37 @@ class WorkflowDispatchTests(unittest.TestCase):
         self.response.__exit__ = Mock(return_value=False)
         self.response.read.return_value = json.dumps({'value': 'synthetic.oidc.token'}).encode()
         self.opener = Mock()
-        self.opener.open.return_value = self.response
+        self.opener.open.side_effect = self.http
+        self.sts_error = None
+
+    def http(self, request, **kwargs):
+        if request.full_url.startswith('https://pipelines.actions.githubusercontent.com/'):
+            self.assertIn('audience=sts.amazonaws.com', request.full_url)
+            return self.response
+        self.assertEqual(request.full_url, 'https://sts.us-east-1.amazonaws.com/')
+        payload = urllib.parse.parse_qs(request.data.decode())
+        self.assertEqual(payload['RoleArn'], [self.role])
+        self.assertEqual(payload['DurationSeconds'], ['900'])
+        self.assertEqual(payload['WebIdentityToken'], ['synthetic.oidc.token'])
+        self.assertEqual(payload['Action'], ['AssumeRoleWithWebIdentity'])
+        if self.sts_error:
+            raise self.sts_error
+        credentials = ''.join('<'+k+'>'+v+'</'+k+'>' for k, v in self.identity['Credentials'].items())
+        raw = ('<AssumeRoleWithWebIdentityResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/">'
+               '<AssumeRoleWithWebIdentityResult><AssumedRoleUser><Arn>'
+               + self.identity['AssumedRoleUser']['Arn'] + '</Arn></AssumedRoleUser><Credentials>'
+               + credentials + '</Credentials></AssumeRoleWithWebIdentityResult></AssumeRoleWithWebIdentityResponse>')
+        response = Mock()
+        response.__enter__ = Mock(return_value=response)
+        response.__exit__ = Mock(return_value=False)
+        response.read.return_value = raw.encode()
+        return response
 
     def aws(self, args, **kwargs):
-        if args[1] == 'sts':
-            payload = json.loads(kwargs['input'])
-            self.assertEqual(payload['RoleArn'], self.role)
-            self.assertEqual(payload['DurationSeconds'], 900)
-            self.assertEqual(payload['WebIdentityToken'], 'synthetic.oidc.token')
-            self.assertNotIn('synthetic.oidc.token', str(args))
-            self.assertNotIn('AWS_ACCESS_KEY_ID', kwargs['env'])
-            self.assertNotIn('AWS_ENDPOINT_URL', kwargs['env'])
-            self.assertNotIn('ACTIONS_ID_TOKEN_REQUEST_TOKEN', kwargs['env'])
-            return subprocess.CompletedProcess(args, 0, json.dumps(self.identity), '')
+        self.assertNotIn('synthetic.oidc.token', str(args))
+        self.assertNotIn('AWS_ENDPOINT_URL', kwargs['env'])
+        self.assertNotIn('ACTIONS_ID_TOKEN_REQUEST_TOKEN', kwargs['env'])
+        self.assertEqual(kwargs['env']['AWS_MAX_ATTEMPTS'], '1')
         self.assertEqual(args[1:3], ['lambda', 'invoke'])
         self.assertEqual(args[args.index('--function-name') + 1], self.arn)
         self.assertEqual(json.loads(args[args.index('--payload') + 1]), {'approvalId': 'a' * 32})
@@ -70,9 +90,8 @@ class WorkflowDispatchTests(unittest.TestCase):
 
     def test_approval_only_invocation_and_credentials_stay_in_process(self):
         process = self.execute()
-        self.assertEqual(process.call_count, 2)
-        request = self.opener.open.call_args.args[0]
-        self.assertIn('audience=sts.amazonaws.com', request.full_url)
+        self.assertEqual(process.call_count, 1)
+        self.assertEqual(self.opener.open.call_count, 2)
         self.assertEqual(json.loads(self.stdout.getvalue()), self.result)
         for secret in ('synthetic.oidc.token', 'syntheticSecret', 'syntheticSession', 'synthetic-request-token'):
             self.assertNotIn(secret, self.stdout.getvalue())
@@ -94,7 +113,7 @@ class WorkflowDispatchTests(unittest.TestCase):
                 patch('urllib.request.build_opener', return_value=self.opener), \
                 patch('subprocess.run', side_effect=self.aws) as process, self.assertRaises(SystemExit):
             exec(compile(self.code, str(WORKFLOW), 'exec'), {})
-        self.assertEqual(process.call_count, 1)
+        process.assert_not_called()
 
     def test_controller_error_or_extra_data_is_not_logged(self):
         for result in ({'error': 'secret-diagnostic'}, {**self.result, 'session': 'secret-diagnostic'}):
@@ -105,10 +124,11 @@ class WorkflowDispatchTests(unittest.TestCase):
         self.assertEqual(self.stdout.getvalue(), '')
 
     def test_sts_failure_is_redacted_and_never_retried(self):
-        error = subprocess.CalledProcessError(1, ['aws'], output='sensitive-token', stderr='sensitive-token')
+        self.sts_error = urllib.error.URLError('sensitive-token')
         with patch.dict(os.environ, self.env, clear=True), \
                 patch('urllib.request.build_opener', return_value=self.opener), \
-                patch('subprocess.run', side_effect=error) as process, self.assertRaises(SystemExit) as caught:
+                patch('subprocess.run') as process, self.assertRaises(SystemExit) as caught:
             exec(compile(self.code, str(WORKFLOW), 'exec'), {})
         self.assertNotIn('sensitive-token', str(caught.exception))
-        self.assertEqual(process.call_count, 1)
+        process.assert_not_called()
+        self.assertEqual(self.opener.open.call_count, 2)
