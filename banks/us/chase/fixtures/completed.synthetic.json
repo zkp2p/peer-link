@@ -1,0 +1,42 @@
+{
+  "provenance": "synthetic",
+  "description": "Completed outgoing domestic ACH transfer from Chase web activity",
+  "input": {
+    "account": {
+      "accountId": "chase-synthetic-acct-1001",
+      "accountType": "TOTAL_CHECKING",
+      "mask": "1001"
+    },
+    "transactions": [
+      {
+        "transactionId": "chase-tx-20261002-001",
+        "transactionType": "ACH_OUTGOING",
+        "paymentMethod": "ACH",
+        "direction": "DEBIT",
+        "status": "POSTED",
+        "amount": "125.50",
+        "currency": "USD",
+        "postedTimestamp": "2026-10-02T14:30:00Z",
+        "counterparty": {
+          "routingNumber": "021000021",
+          "accountNumber": "000000000001",
+          "name": "Synthetic Recipient LLC"
+        },
+        "memo": "Synthetic payment for peer-link test invoice"
+      }
+    ]
+  },
+  "transactionId": "chase-tx-20261002-001",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "chase-synthetic-acct-1001",
+    "payeeId": "021000021:000000000001",
+    "amountMinor": "12550",
+    "currency": "USD",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "status": "POSTED",
+    "timestamp": "2026-10-02T14:30:00Z",
+    "timestampMeaning": "postedTimestamp"
+  }
+}
