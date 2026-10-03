@@ -1,6 +1,6 @@
 # Manual verification architecture
 
-Status: implementation and synthetic testing in progress; no approved live release.
+Status: protected infrastructure and synthetic hardware flow verified; no approved live bank release.
 The current release manifest refuses bank sessions. No three-user gate applies.
 
 ```mermaid
@@ -27,8 +27,9 @@ flowchart LR
   Expiry[External expiry guard + host shutdown] -->|terminate, delete volume| Host
 ```
 
-The diagram describes the release design, not evidence that every component has
-been deployed. The existing account is shared with Peer, at the owner's request.
+The diagram describes the release design. The [October 4 operational evidence](../verification/infra/evidence/2026-10-04-operational-activation.json)
+records the deployed controller, signed image, protected workflow, alerts and cleanup;
+the bank policies remain disabled. The existing account is shared with Peer, at the owner's request.
 The VPC has no peering or inbound rules. The worker has a dedicated role and no
 production secret, KMS or role-assumption authority. The manual worker can read
 only one pinned version of its private reviewed S3 bundle. The external expiry role
@@ -79,15 +80,17 @@ can terminate only instances belonging to its exact CloudFormation stack.
 
 Infrastructure has a separate **$50 task authorization**, unrelated to the bounty
 pool. Reserve a conservative cost before each launch and retain the reservation
-after a failed attempt until billing is reconciled. The synthetic pilot/controller validation reserves
-$6, allows one c6i.xlarge with an encrypted 24 GB root volume and no NAT gateway, and
+after a failed attempt until billing is reconciled. The retained task ledger reserves
+$20 as of October 4 (including earlier tests and persistent resources through November 15),
+allows one c6i.xlarge with an encrypted 24 GB root volume and no NAT gateway, and
 shuts down after 110 minutes. An independent five-minute sweep terminates expired
 or stopped instances in that exact stack; root volumes delete on termination.
 
 Monitor stack state, instance age, the expiry Lambda's error alarm and the durable
 cost ledger. An alarm without a tested notification route is not unattended
-incident coverage. Public dispatch stays disabled until durable global admission,
-concurrency, monitoring, rollback and cleanup have hardware evidence.
+incident coverage. Protected operational dispatch passed durable admission,
+concurrency, monitoring, rollback and cleanup checks. The public bank release remains
+disabled. Reservations are conservative authority limits, not actual AWS bills.
 
 ## Release and rollback
 

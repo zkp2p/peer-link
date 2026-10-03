@@ -1,13 +1,27 @@
 # Verification and agent maintenance
 
+## October 4 operational activation
+
+The [operational drill](../verification/infra/evidence/2026-10-04-operational-activation.json)
+passed through Kohai's protected GitHub request, owner approval, a numeric controller
+version and a temporary signed Nitro worker. Dedicated signing authority, private
+versioned artifacts, persistent human alerts and automatic cleanup are provisioned.
+Self-review, unauthorized requests, concurrency, replay and worker privilege tests
+passed. Real error and missing-heartbeat alerts reached the confirmed operator inbox.
+
+The tested image deliberately disables bank access. The public bank release remains
+unreleased; this infrastructure test is not a live account verification or approval
+to share a company session. Exact source-policy/release approval and account-owner
+consent remain separate. There is no three-user requirement.
+
 ## October 2 manual-flow update
 
 The current launch candidate connects authenticated acquisition, minimized guest
 input, the independent oracle and signed receipts behind a disabled manual runtime
 policy. The local owner client verifies the release before consent and validates
 the final attested receipt. Credential-free PR CI remains separate from the new
-manual workflow, which has no checkout and is disabled until its protected
-environment and invoke-only controller are deployed and verified.
+manual workflow, which has no checkout. Its protected environment and invoke-only
+controller were deployed and verified in the October 4 operational drill.
 
 See [architecture and residual risks](architecture.md), [private adoption contract](attestation-adoption.md)
 and [current incentives](incentives.md). Historical experiments below describe their

@@ -1,0 +1,114 @@
+{
+  "testOnly": true,
+  "liveBankTested": false,
+  "sourceCommit": "6860d76430d68d2e7572a5059c6407432f08cbc6",
+  "eifSha384": "55b2fa70492d253bd36eb1786a7681ccb2a4fe17867e665cff6230593322bd8006b38fb6ec5e9922149d34f26eac03d6",
+  "measurements": {
+    "0": "1e5557f99909611f974f7726d720944e5a322ba9a3698fd9288232e348d161196ad609dda4bac1f35025c91be8b4c0b6",
+    "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
+    "2": "29b626598ab567278c7218c0d19b737563986056116daf00e2489319fbb4cbb727b762aacb3b5daf94b3c992244c5ef7",
+    "8": "6975f2f9c1235352686b5a8682441c550d1944d1b2c8f5b61994820f4230649d883816139780c0602ba3ea91d897c831"
+  },
+  "policyDigest": "a92c879393c6e9f574b28f62cd558216223eec594f5d1b4898482dcc4930616b",
+  "releaseDigest": "ca94ef236c6cac8dddaf3d8e07122b188b6106237ebcc1dfa270a265f4e4ecfb",
+  "checks": [
+    "real_aws_nitro_chain_signature",
+    "pcr0_pcr1_pcr2_pcr8_match_signed_reviewed_image",
+    "fresh_nonce_policy_public_key_binding",
+    "raw_nonce_rejected",
+    "wrong_nonce_rejected",
+    "wrong_public_key_rejected",
+    "wrong_policy_rejected",
+    "unreleased_manifest_rejected",
+    "expired_manifest_rejected",
+    "wrong_pcr0_rejected",
+    "wrong_pcr1_rejected",
+    "wrong_pcr2_rejected",
+    "wrong_pcr8_rejected",
+    "unapproved_challenge_rejected",
+    "bank_execution_refused_with_disabled_measured_policy"
+  ],
+  "result": "passed",
+  "recordedAt": "2026-10-03T19:19:10.603425+00:00",
+  "scope": "Protected workflow and signed operational image. Bank, external model and operator policies remain disabled.",
+  "productionBankReleaseApproved": false,
+  "independentBuildRun": "https://github.com/zkp2p/peer-link/actions/runs/37144809184",
+  "protectedWorkflowRun": "https://github.com/zkp2p/peer-link/actions/runs/37146842710",
+  "workflowSourceCommit": "345cada830f4f8a2f23dc1d8b303841d91e839a8",
+  "signing": {
+    "nonExportableKmsKey": true,
+    "separateSigningRole": true,
+    "temporaryHostTrustRemoved": true,
+    "signingHostAndDiskDeleted": true
+  },
+  "githubGate": {
+    "triggerActor": "kohai-peer",
+    "soleReviewer": "0xSachinK",
+    "selfReviewBlocked": true,
+    "adminBypassDisabled": true,
+    "mainOnly": true,
+    "immutableRepositorySubjectVerified": true,
+    "invokeOnlyNumericControllerVersion": true
+  },
+  "isolationChecks": [
+    "kms_access_denied",
+    "parameter_access_denied",
+    "role_assumption_denied",
+    "unapproved_artifact_version_denied",
+    "secret_access_denied",
+    "shutdown_timer_scheduled",
+    "one_non_debug_enclave",
+    "gateway_loopback_only",
+    "signed_image_crc_verified"
+  ],
+  "controllerChecks": [
+    "disabled_dispatch_refused",
+    "unknown_approval_refused",
+    "expired_approval_refused",
+    "wrong_release_refused",
+    "deployment_override_refused",
+    "paused_admission_refused_without_spending",
+    "concurrent_worker_refused",
+    "consumed_approval_replay_refused",
+    "one_atomic_two_dollar_reservation"
+  ],
+  "monitoring": {
+    "realLambdaFailureAlertDelivered": true,
+    "missingHeartbeatAlertDelivered": true,
+    "confirmedHumanInboxObserved": true,
+    "encryptedQueueObserved": true,
+    "acceleratedSilenceTestPeriodSeconds": 60,
+    "normalSilenceWindowRestoredSeconds": 900,
+    "missingIntervalsFilledWithZero": true,
+    "normalScheduleRestored": true
+  },
+  "cleanup": {
+    "normalWorkerLifetimeSeconds": 6600,
+    "acceleratedShutdownTestSeconds": 60,
+    "workerSelfTerminated": true,
+    "encryptedDiskDeleted": true,
+    "leaseReleasedByScheduledReaper": true,
+    "costReservationRetained": true
+  },
+  "infrastructureBudget": {
+    "capMicroUsd": 50000000,
+    "committedMicroUsd": 20000000,
+    "isReservationNotBilledCost": true,
+    "persistentResourceReservationThrough": "2026-11-15",
+    "bountyBudgetSeparate": true
+  },
+  "limitations": [
+    "No live bank session was used.",
+    "This signed operational image cannot acquire bank data.",
+    "The complete synthetic bank-acquisition and receipt flow was tested separately on October 2.",
+    "AWS billing and shared-account administrators remain outside the admission cap.",
+    "Exact bank policy and release approval plus local owner consent remain required."
+  ],
+  "rollback": {
+    "ledgerPauseRefusedNewRequests": true,
+    "unusedApprovalsRevoked": true,
+    "disabledWorkflowSkippedBeforeCredentials": true,
+    "disabledWorkflowRun": "https://github.com/zkp2p/peer-link/actions/runs/37147341818",
+    "reservedSpendingPreserved": true
+  }
+}
