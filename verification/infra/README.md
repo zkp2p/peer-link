@@ -173,13 +173,13 @@ and allow only `lambda:InvokeFunction` on that version ARN. It must have no
 `PassRole`, deployment, SSM, secret or bank-data permissions. Record the live
 protection responses; merely adding CODEOWNERS or YAML is not enforcement.
 
-The workflow requests GitHub's OIDC token directly and exchanges it through the
-runner's AWS CLI for a 15-minute session. This keeps the organization rule that
+The workflow requests GitHub's OIDC token directly and exchanges it with the
+fixed regional STS HTTPS endpoint for a 15-minute session. This keeps the organization rule that
 permits only GitHub/Peer-owned Actions intact. It verifies the account, role and
 numeric controller version before requesting a token, rejects redirects and
 unexpected assumed identities, and passes credentials only to the invocation
 subprocess. No token file, cross-step credential export or repository checkout is
-used. Failures are redacted and are never retried automatically.
+used. STS exchange stays in memory; the Lambda CLI has retries explicitly disabled. Failures are redacted and are never retried automatically.
 
 Cleanup: pause the budget and disable dispatch first; let the owning reaper
 terminate the exact test worker, verify its disk deletion and lease clearance,
@@ -195,7 +195,7 @@ reservation until billing reconciliation. Never delete by broad name prefix.
 Generate `verification.infra.operations_template` for a private, versioned artifact
 bucket, a dedicated non-exportable P-384 KMS signing key, a signing-only role and
 persistent CloudWatch → SNS → encrypted SQS delivery. The operator ARN is explicit;
-no worker, GitHub workflow or Peer production role can sign. An email subscription
+no runtime worker, GitHub workflow or Peer production role can sign. An email subscription
 must be confirmed by its recipient and tested before unattended dispatch.
 The operator permission key is separate Ed25519 authority kept outside the checkout
 in an owner-only file; only its public key belongs in an approved image.
@@ -241,3 +241,21 @@ permits can survive up to two minutes. Terminate only workers tagged with this
 controller stack ID, verify volume deletion, then let the owning reaper clear the
 matching lease. Preserve reserved spending and signing/artifact evidence. Do not
 delete retained ledgers, keys or artifact versions as part of an ordinary rollback.
+
+
+### Signing a reproduced image
+
+Create and retain one public X.509 certificate for the dedicated KMS key with
+`python -m verification.infra.signing_certificate --help`. The tool uses a
+15-minute signing-only session, verifies the returned certificate signature and
+refuses to overwrite a certificate. Keep the certificate unchanged for its validity
+period: PCR8 identifies the certificate, so generating another changes PCR8.
+The KMS private key is never exportable and is not placed in CI or on workers.
+
+A disposable signing host may temporarily assume only the dedicated signing role
+while it signs an already reproduced, digest-checked EIF. Pin its S3 input version
+and output object, keep the normal expiry guard, and remove that exact host from
+the signing-role trust before launching the signed worker. Do not run submitted
+adapter code on the signing host. Compare PCR0/1/2 before and after signing; record
+PCR8 and the complete signed EIF hash. Runtime workers have neither signing nor
+role-assumption permissions.
