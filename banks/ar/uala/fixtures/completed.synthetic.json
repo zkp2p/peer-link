@@ -1,0 +1,46 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented completed outgoing ARS transfer with synthetic 22-digit CVU identifiers and alias.",
+  "input": {
+    "account": {
+      "id": "synthetic-uala-0001",
+      "cvu": "0000003100000000000123",
+      "alias": "synthetic.uala.alias"
+    },
+    "transactions": [
+      {
+        "id": "uala-tx-00000001",
+        "type": "cvuTransfer",
+        "direction": "debit",
+        "status": "APROBADA",
+        "amount": "3250.75",
+        "currency": "ARS",
+        "coelsaId": "COELSA0000123456",
+        "timestamp": "2026-01-15T12:00:00Z",
+        "payer": {
+          "cvu": "0000003100000000000123"
+        },
+        "payee": {
+          "cvu": "0000003100000000000456",
+          "alias": "synthetic.dest.alias",
+          "name": "Synthetic Payee"
+        }
+      }
+    ]
+  },
+  "transactionId": "uala-tx-00000001",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "0000003100000000000123",
+    "payeeId": "0000003100000000000456",
+    "amountMinor": "325075",
+    "currency": "ARS",
+    "status": "APROBADA",
+    "timestamp": "2026-01-15T12:00:00Z",
+    "payerScheme": "ar-cvu",
+    "payeeScheme": "ar-cvu",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "timestampMeaning": "operationTime"
+  }
+}

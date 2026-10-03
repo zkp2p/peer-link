@@ -1,0 +1,36 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented transaction with unsupported card purchase type.",
+  "input": {
+    "account": {
+      "id": "synthetic-uala-0001",
+      "cvu": "0000003100000000000123",
+      "alias": "synthetic.uala.alias"
+    },
+    "transactions": [
+      {
+        "id": "uala-tx-00000001",
+        "type": "cardPurchase",
+        "direction": "debit",
+        "status": "APROBADA",
+        "amount": "3250.75",
+        "currency": "ARS",
+        "coelsaId": "COELSA0000123456",
+        "timestamp": "2026-01-15T12:00:00Z",
+        "payer": {
+          "cvu": "0000003100000000000123"
+        },
+        "payee": {
+          "cvu": "0000003100000000000456",
+          "alias": "synthetic.dest.alias",
+          "name": "Synthetic Payee"
+        }
+      }
+    ]
+  },
+  "transactionId": "uala-tx-00000001",
+  "expected": {
+    "outcome": "unsupported",
+    "reason": "Only outgoing ARS CVU and alias transfers are supported"
+  }
+}

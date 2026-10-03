@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1",
+  "id": "ar/uala",
+  "name": "Uala Argentina",
+  "country": "AR",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "app-receipt-detail",
+  "capability": "Interpret outgoing ARS transfers by CVU and alias as sender reported debits",
+  "entrypoint": "interpretUala",
+  "maintainers": ["aipd506"],
+  "currencies": ["ARS"],
+  "unsupported": [
+    "incoming received transfers",
+    "credit and prepaid card purchases",
+    "utility and bill payments",
+    "crypto and investment operations",
+    "cash deposits and withdrawals",
+    "cryptographic source authentication"
+  ],
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/uala.png"
+}

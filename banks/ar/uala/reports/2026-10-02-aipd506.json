@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1",
+  "provider": "ar/uala",
+  "adapterRevision": "ce23aad5f8bb74649150db0a796636e677c596f8",
+  "harnessRevision": "ce23aad5f8bb74649150db0a796636e677c596f8",
+  "testedAt": "2026-10-02T22:35:00Z",
+  "reporter": "aipd506",
+  "surface": "app-receipt-detail",
+  "capability": "outgoing-ars-cvu-alias-transfer",
+  "outcome": "pass",
+  "evidenceClass": "contributor-live",
+  "fixtureRefs": [
+    "fixtures/completed.synthetic.json",
+    "fixtures/failed.synthetic.json",
+    "fixtures/pending.synthetic.json",
+    "fixtures/unsupported-type.synthetic.json"
+  ],
+  "limitations": [
+    "One contributor account; no independent multi-party reproduction.",
+    "Only completed outgoing ARS CVU and alias transfers validated; card purchases, utility payments, crypto trades, cash operations, and incoming transfers stay unsupported.",
+    "Source authenticity, legal person identity, recipient credit and irreversible settlement are not proven.",
+    "Raw receipt payload remained in local mobile session inspection memory and is not published."
+  ],
+  "summary": "Account owner authorized session inspected Uala Argentina transfer receipt records and executed the repository transformer in memory against synthetic and live shape transfer records. Completed status, ARS amount in centavos, payer CVU and alias identifier, recipient CVU and alias identifier, COELSA tracking reference, and UTC timestamps matched the official Uala Argentina receipt details exactly. Pending transfers and unsupported types abstain cleanly without throwing."
+}
