@@ -22,6 +22,7 @@ const validate = (files: Record<string, string>) =>
     read: (file) => files[file],
     exists: () => true,
     revision: () => "ok",
+    adapterMatchesRevision: () => true,
     now: Date.now(),
   }).errors;
 const temp = mkdtempSync(join(tmpdir(), "peer-link-scaffold-"));

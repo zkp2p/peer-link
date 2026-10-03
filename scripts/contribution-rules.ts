@@ -257,7 +257,7 @@ const REPORT_FIELDS = [
 export type ReportContext = {
   manifestSurface?: string;
   fixtureExists: (ref: string) => boolean;
-  /** "ok" when the commit is an ancestor of HEAD and contains the bank's manifest. */
+  /** "ok" when the commit is an ancestor of HEAD and contains the bank's manifest and transformer. */
   revision: (sha: string) => "ok" | "missing-commit" | "not-ancestor" | "missing-bank";
   now: number;
 };

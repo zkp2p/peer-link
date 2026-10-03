@@ -31,7 +31,7 @@ A report records exactly what was tested. Save it as
 | Field | Rule |
 | --- | --- |
 | `provider` | The bank folder ID, equal to the manifest `id`. |
-| `adapterRevision` | Full SHA of the commit whose adapter you ran. It must be in the branch's history and contain the bank's `manifest.json`. |
+| `adapterRevision` | Full SHA of the commit whose adapter you ran. It must be in the branch's history and contain the bank's `manifest.json` and `transformer.js`. |
 | `harnessRevision` | Full SHA of the repository tooling you ran it with (`npm run try:bank` or `npm run bundle:bank`). When you run from a clean checkout, both revisions are the same commit; `try:bank` prints it with `revisionClean`. |
 | `testedAt` | UTC time of the live run, not in the future. |
 | `reporter` | Your public GitHub handle; the file name ends with it in lowercase. |
@@ -44,6 +44,14 @@ A report records exactly what was tested. Save it as
 | `summary` | At most 2,000 characters, no banking data or transcripts. |
 
 `npm run validate` enforces these rules and rejects unknown fields.
+
+Validation also prints advisory warnings when an adapter has no live report or its
+manifest/transformer differs from the revision cited by a live report. Historical
+reports remain valid records of earlier attempts; a newer report is not required just
+to edit documentation or add tests. Missing live evidence does not fail the experimental
+adapter checks. Maintainers still apply the issue's acceptance criteria and inspect the
+observed source shape, outcome and limitations. These warnings do not authenticate a
+response or turn a self-reported pass into verified compatibility.
 
 ## Revisions and merging
 

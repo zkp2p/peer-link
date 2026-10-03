@@ -42,7 +42,7 @@ if (range) {
   let commits: string[] = [];
   try {
     commits = list(
-      execFileSync("git", ["rev-list", "--no-merges", range], {
+      execFileSync("git", ["rev-list", range], {
         encoding: "utf8",
         stdio: ["ignore", "pipe", "ignore"],
       }).replaceAll("\n", "\0"),
@@ -57,6 +57,9 @@ if (range) {
         "--no-commit-id",
         "-r",
         "--root",
+        // For merges, scan resolutions changed from all parents. Ordinary parent
+        // commits are scanned separately; don't re-scan unchanged upstream history.
+        "-c",
         "--name-only",
         "--diff-filter=ACMR",
         "-z",

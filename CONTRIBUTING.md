@@ -65,3 +65,24 @@ implementation code. No copyright assignment is requested.
 Report broken integrations with the failure issue template and security or privacy issues
 through [private reporting](SECURITY.md). Maintainer: @0xSachinK. Merging an adapter does
 not certify a bank, a payer or settlement finality, and does not enable it in Peer.
+
+## What the automatic checks cover
+
+CI runs layout and privacy checks before adapter tests. It also scans every changed file
+version in a pull request, including data removed in a later commit and new content in
+merge resolutions. Run `npm run privacy -- --range origin/main..HEAD` before pushing;
+the CI scan cannot undo an initial public disclosure.
+
+The required `verify` status includes the repository checks and, for fork PRs, checks
+using the base branch's tooling. A failed or unexpectedly skipped check blocks that status.
+Code-owner review still protects changes to the workflow and shared check definitions.
+
+The shared adapter suite perturbs nested fixture fields to check that malformed input
+does not throw or produce an invalid observation. It deliberately does not assume common
+field names, status vocabularies, amount units or bank identifier formats. Keep testing
+those semantics in your adapter, including missing/negated statuses, masked identifiers,
+contradictory currency fields, invalid amount grouping and duplicate selection. Coverage
+and green checks do not replace review of an observed bank response.
+
+Missing or stale live reports produce advisory messages, not an automatic rejection of
+experimental work. See [evidence](docs/evidence.md) for revision and acceptance boundaries.

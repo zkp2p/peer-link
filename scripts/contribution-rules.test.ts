@@ -236,19 +236,38 @@ describe("repository validation", () => {
     "banks/us/mercury/transformer.test.ts": 'import { interpretMercury } from "./transformer.js";',
     "banks/us/mercury/fixtures/sent.synthetic.json": JSON.stringify(mercuryFixture),
   };
-  const run = (files: Record<string, string>) =>
+  const run = (files: Record<string, string>, matches = true) =>
     validateRepository({
       files: Object.keys(files),
       read: (file) => files[file],
       exists: () => true,
       revision: () => "ok",
+      adapterMatchesRevision: () => matches,
       now: Date.now(),
     });
   it("accepts a complete adapter", () =>
     expect(run(base)).toEqual({
       errors: [],
+      warnings: [expect.stringContaining("no live report")],
       counts: { adapters: 1, fixtures: 1, reports: 0 },
     }));
+  it("keeps missing, fixture-only and historical live evidence advisory", () => {
+    const file = "banks/us/mercury/reports/2026-09-23-0xsachink.json";
+    const report = readFileSync(file, "utf8");
+    const current = run({ ...base, [file]: report });
+    expect(current.errors).toEqual([]);
+    expect(current.warnings).toEqual([]);
+    const stale = run({ ...base, [file]: report }, false);
+    expect(stale.errors).toEqual([]);
+    expect(stale.warnings.join("\n")).toContain("historical report does not cover");
+    expect(stale.warnings.join("\n")).toContain("no live report covers");
+    const fixtureOnly = run({
+      ...base,
+      [file]: report.replace("contributor-live", "fixture-only"),
+    });
+    expect(fixtureOnly.errors).toEqual([]);
+    expect(fixtureOnly.warnings.join("\n")).toContain("no live report");
+  });
   it("requires each adapter component", () => {
     const errors = run({
       "banks/us/mercury/manifest.json": base["banks/us/mercury/manifest.json"],

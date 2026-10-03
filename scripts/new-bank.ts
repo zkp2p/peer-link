@@ -153,7 +153,7 @@ export function ${entry}(input, transactionId) {
       currency: CURRENCY,
       currencyExponent: EXPONENT,
       direction: "outgoing",
-      status: "completed",
+      status: row.status,
       timestamp: row.bookedAt,
       timestampMeaning: "bookedAt",
       sourceAuthenticated: false,

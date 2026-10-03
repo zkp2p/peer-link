@@ -11,6 +11,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 import { toAttestationCandidate } from "../lib/attestation-candidate";
 import type { Interpretation, PaymentObservation } from "../lib/types";
+import { malformedInputs } from "../scripts/adapter-mutations";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 type Fixture = {
@@ -204,6 +205,28 @@ describe.each(adapters)("adapter contract: $id", (adapter) => {
       expect(result.outcome, `${label} must not be supported`).not.toBe("supported");
     }
   });
+
+  it.each(adapter.fixtures.filter((f) => f.expected?.outcome === "supported"))(
+    "handles malformed nested fields in $file without throwing",
+    (fixture) => {
+      for (const probe of malformedInputs(fixture.input)) {
+        let result: Interpretation | undefined;
+        expect(() => {
+          result = adapter.interpret(deepFreeze(probe.input), fixture.transactionId);
+        }, `${fixture.file}: ${probe.label} must not throw or mutate input`).not.toThrow();
+        if (!result) throw new Error(`${fixture.file}: ${probe.label} returned no result`);
+        checkInterpretation(result);
+        // Some fields are optional or unrelated to the selected transaction. Do
+        // not require every mutation to abstain, or invent a universal bank schema.
+        if (result.outcome === "supported")
+          checkObservation(
+            adapter,
+            { ...fixture, file: `${fixture.file}: ${probe.label}` },
+            result.payment,
+          );
+      }
+    },
+  );
 });
 
 it("discovers at least one adapter", () => expect(adapters.length).toBeGreaterThan(0));

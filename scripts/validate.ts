@@ -23,6 +23,7 @@ export type Repository = {
   read(file: string): string;
   exists(file: string): boolean;
   revision(sha: string, bankFolder: string): ReturnType<ReportContext["revision"]>;
+  adapterMatchesRevision(sha: string, bankFolder: string): boolean;
   now: number;
 };
 
@@ -31,6 +32,7 @@ type Bank = BankPath & { files: Set<string> };
 /** Validate every tracked or new file below banks/. Returns all errors, not just the first. */
 export function validateRepository(repo: Repository) {
   const errors: string[] = checkRepositoryLayout(repo.files);
+  const warnings: string[] = [];
   const banks = new Map<string, Bank>();
   for (const file of repo.files) {
     const kind = classifyBankPath(file);
@@ -104,6 +106,8 @@ export function validateRepository(repo: Repository) {
       errors.push(
         `${bank.bank}: adapters need at least one fixture whose expected.outcome is supported`,
       );
+    let hasLiveReport = false;
+    let hasCurrentLiveReport = false;
     for (const report of [...bank.files].filter((f) => f.startsWith("reports/")).sort()) {
       const value = json(report);
       if (value === undefined) continue;
@@ -115,12 +119,36 @@ export function validateRepository(repo: Repository) {
           now: repo.now,
         }),
       );
+      const evidence = value as { evidenceClass?: string; adapterRevision?: string };
+      if (["contributor-live", "reviewer-live"].includes(evidence?.evidenceClass ?? "")) {
+        hasLiveReport = true;
+        const sha = evidence.adapterRevision;
+        if (
+          typeof sha === "string" &&
+          /^[a-f\d]{40}$/.test(sha) &&
+          repo.revision(sha, bank.bank) === "ok"
+        ) {
+          if (repo.adapterMatchesRevision(sha, bank.bank)) hasCurrentLiveReport = true;
+          else
+            warnings.push(
+              `${at(report)}: adapter manifest or transformer differs from the reported revision; this historical report does not cover the current adapter`,
+            );
+        }
+      }
       counts.reports++;
     }
+    if (manifest && !hasLiveReport)
+      warnings.push(
+        `${bank.bank}: no live report; fixture tests alone do not demonstrate compatibility with an observed bank response`,
+      );
+    else if (manifest && !hasCurrentLiveReport)
+      warnings.push(
+        `${bank.bank}: no live report covers the current adapter files; rerun after implementation changes before claiming live verification`,
+      );
   }
   if (!counts.adapters || !counts.fixtures)
     errors.push("banks/: at least one adapter and one fixture are required");
-  return { errors: [...new Set(errors)], counts };
+  return { errors: [...new Set(errors)], warnings, counts };
 }
 
 function gitRevision(sha: string, bankFolder: string) {
@@ -135,9 +163,8 @@ function gitRevision(sha: string, bankFolder: string) {
     return "not-ancestor" as const;
   }
   try {
-    execFileSync("git", ["cat-file", "-e", `${sha}:${bankFolder}/manifest.json`], {
-      stdio: "ignore",
-    });
+    for (const file of ["manifest.json", "transformer.js"])
+      execFileSync("git", ["cat-file", "-e", `${sha}:${bankFolder}/${file}`], { stdio: "ignore" });
     return "ok" as const;
   } catch {
     return "missing-bank" as const;
@@ -181,13 +208,32 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   const files = git(["ls-files", "--cached", "--others", "--exclude-standard", "-z"]).filter(
     (file) => existsSync(file),
   );
-  const { errors, counts } = validateRepository({
+  const { errors, warnings, counts } = validateRepository({
     files,
     read: (file) => readFileSync(file, "utf8"),
     exists: (file) => existsSync(resolve(file)),
     revision: gitRevision,
+    adapterMatchesRevision: (sha, bankFolder) => {
+      try {
+        execFileSync("git", [
+          "diff",
+          "--quiet",
+          sha,
+          "--",
+          `${bankFolder}/manifest.json`,
+          `${bankFolder}/transformer.js`,
+        ]);
+        return true;
+      } catch {
+        return false;
+      }
+    },
     now: Date.now(),
   });
+  if (warnings.length)
+    console.warn(
+      `Evidence review (advisory, not an acceptance or authenticity check):\n${warnings.map((w) => `- ${w}`).join("\n")}\n`,
+    );
   const base = contributionBase();
   if (base) {
     const added = new Set([
