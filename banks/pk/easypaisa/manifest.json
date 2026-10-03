@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1",
+  "id": "pk/easypaisa",
+  "name": "Easypaisa",
+  "country": "PK",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "mobile-app-receipt",
+  "capability": "Interpret outgoing completed PKR Easypaisa money transfers as sender-bank-reported debits",
+  "entrypoint": "interpretEasypaisa",
+  "maintainers": ["Simultech369"],
+  "currencies": ["PKR"],
+  "unsupported": [
+    "mobile-load",
+    "bill-payment",
+    "cash-withdrawal",
+    "incoming-credits",
+    "merchant-payments",
+    "recipient-credit confirmation",
+    "cryptographic source authentication"
+  ],
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/easypaisa.png"
+}
