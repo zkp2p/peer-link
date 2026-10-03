@@ -1,0 +1,42 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic completed outgoing USD ACH transfer record with formatted amount from Chase Online Banking",
+  "input": {
+    "account": {
+      "id": "100000000001",
+      "accountNumber": "100000000001",
+      "name": "Synthetic Chase Customer"
+    },
+    "transactions": [
+      {
+        "id": "CHASE-ACH-20261002-00004",
+        "type": "achDebit",
+        "direction": "debit",
+        "status": "COMPLETED",
+        "amount": "$1,250.00",
+        "currency": "USD",
+        "postedAt": "2026-10-02T16:35:00Z",
+        "payer": {
+          "accountNumber": "100000000001",
+          "name": "Synthetic Chase Customer"
+        },
+        "payee": {
+          "accountNumber": "300000000003",
+          "routingNumber": "021000021",
+          "name": "Synthetic Vendor Services"
+        },
+        "memo": "Synthetic vendor ACH transfer"
+      }
+    ]
+  },
+  "transactionId": "CHASE-ACH-20261002-00004",
+  "expected": {
+    "outcome": "supported",
+    "amountMinor": "125000",
+    "currency": "USD",
+    "status": "COMPLETED",
+    "payerId": "100000000001",
+    "payeeId": "021000021:300000000003",
+    "timestamp": "2026-10-02T16:35:00Z"
+  }
+}

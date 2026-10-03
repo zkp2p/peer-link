@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1",
+  "provider": "us/chase",
+  "adapterRevision": "8126d648812e071f89e02d94fbb21e797d8e6c65",
+  "harnessRevision": "8126d648812e071f89e02d94fbb21e797d8e6c65",
+  "testedAt": "2026-10-02T21:15:00Z",
+  "reporter": "aipd506",
+  "surface": "web-activity-detail",
+  "capability": "outgoing-domestic-usd-ach",
+  "outcome": "pass",
+  "evidenceClass": "contributor-live",
+  "fixtureRefs": [
+    "fixtures/ach-transfer.synthetic.json",
+    "fixtures/completed.synthetic.json",
+    "fixtures/failed.synthetic.json",
+    "fixtures/pending.synthetic.json"
+  ],
+  "limitations": [
+    "One contributor account; no independent multi-party reproduction.",
+    "Only completed outgoing domestic USD ACH transfers validated; Zelle, wires, and incoming transfers stay unsupported.",
+    "Source authenticity, legal person identity, recipient credit and irreversible settlement are not proven.",
+    "Raw activity payload remained in local browser agent evaluation memory and is not published."
+  ],
+  "summary": "Account-owner-authorized session inspected Chase Online Banking account activity records and executed the repository transformer in memory against synthetic and live-shape transfer records. Completed status, USD amount in minor cents, payer account identifier, counterparty routing and account numbers, and UTC timestamps matched the official Chase transaction details exactly. Pending transfers and unsupported types abstain cleanly without throwing."
+}

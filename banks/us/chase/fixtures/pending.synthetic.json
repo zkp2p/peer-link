@@ -1,0 +1,39 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic pending outgoing USD ACH transfer record from Chase Online Banking",
+  "input": {
+    "account": {
+      "id": "100000000001",
+      "accountNumber": "100000000001",
+      "routingNumber": "021000021",
+      "name": "Synthetic Chase Customer"
+    },
+    "transactions": [
+      {
+        "id": "CHASE-ACH-20261002-00002",
+        "type": "achTransfer",
+        "direction": "debit",
+        "status": "PENDING",
+        "amount": "120.00",
+        "currency": "USD",
+        "postedAt": "2026-10-02T16:25:00Z",
+        "payer": {
+          "accountNumber": "100000000001",
+          "routingNumber": "021000021",
+          "name": "Synthetic Chase Customer"
+        },
+        "payee": {
+          "accountNumber": "200000000002",
+          "routingNumber": "122000049",
+          "name": "Synthetic Payee Corp"
+        },
+        "memo": "Synthetic pending transfer test"
+      }
+    ]
+  },
+  "transactionId": "CHASE-ACH-20261002-00002",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is still pending bank execution"
+  }
+}

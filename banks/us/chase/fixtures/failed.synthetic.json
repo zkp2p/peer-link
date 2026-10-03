@@ -1,0 +1,39 @@
+{
+  "provenance": "synthetic",
+  "description": "Synthetic returned outgoing USD ACH transfer record from Chase Online Banking",
+  "input": {
+    "account": {
+      "id": "100000000001",
+      "accountNumber": "100000000001",
+      "routingNumber": "021000021",
+      "name": "Synthetic Chase Customer"
+    },
+    "transactions": [
+      {
+        "id": "CHASE-ACH-20261002-00003",
+        "type": "achTransfer",
+        "direction": "debit",
+        "status": "RETURNED",
+        "amount": "85.25",
+        "currency": "USD",
+        "postedAt": "2026-10-02T16:30:00Z",
+        "payer": {
+          "accountNumber": "100000000001",
+          "routingNumber": "021000021",
+          "name": "Synthetic Chase Customer"
+        },
+        "payee": {
+          "accountNumber": "200000000002",
+          "routingNumber": "122000049",
+          "name": "Synthetic Payee Corp"
+        },
+        "memo": "Synthetic returned transfer test"
+      }
+    ]
+  },
+  "transactionId": "CHASE-ACH-20261002-00003",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction failed or was returned"
+  }
+}

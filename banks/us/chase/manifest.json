@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1",
+  "id": "us/chase",
+  "name": "Chase",
+  "country": "US",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "web-activity-detail",
+  "capability": "Interpret outgoing domestic USD ACH transfers as sender-bank-reported debits",
+  "entrypoint": "interpretChase",
+  "maintainers": ["aipd506"],
+  "currencies": ["USD"],
+  "unsupported": [
+    "Zelle transfers",
+    "wire transfers",
+    "card transactions",
+    "bill payments",
+    "incoming ACH credits",
+    "recipient-credit confirmation",
+    "cryptographic source authentication"
+  ],
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/chase.jpg"
+}
