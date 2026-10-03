@@ -188,3 +188,56 @@ disposable synthetic ledger. An artifact stack with `DeletionPolicy: Retain`
 requires separate cleanup of its exact owned object versions and bucket; do not
 leave it behind assuming stack deletion removes it. Keep the task-wide cost
 reservation until billing reconciliation. Never delete by broad name prefix.
+
+
+## Persistent operations and owner approval
+
+Generate `verification.infra.operations_template` for a private, versioned artifact
+bucket, a dedicated non-exportable P-384 KMS signing key, a signing-only role and
+persistent CloudWatch → SNS → encrypted SQS delivery. The operator ARN is explicit;
+no worker, GitHub workflow or Peer production role can sign. An email subscription
+must be confirmed by its recipient and tested before unattended dispatch.
+The operator permission key is separate Ed25519 authority kept outside the checkout
+in an owner-only file; only its public key belongs in an approved image.
+
+The fixed controller accepts `LedgerTableName` to reuse the retained canonical
+ledger. Verify its existing budget and active lease before deployment; never seed
+or replace an existing row. `ControllerName` allows an exact stable function name.
+Deploy disabled, inspect the exact bundle version/digest, test refusal, then publish
+an immutable numeric Lambda version. The old disabled version remains a rollback
+coordinate, but ledger pause is the immediate stop for every published version.
+
+Create or reuse the account's GitHub OIDC provider only after checking its URL and
+`sts.amazonaws.com` audience. Generate `verification.infra.invoke_template` with
+that numeric controller version. Its role permits only that invocation, with explicit
+denies preventing another resource policy from widening it. Apply these variables:
+
+- Repository `PEER_LINK_DISPATCH_ENABLED`: `false` until the activation gates pass.
+- Protected environment `PEER_LINK_AWS_ACCOUNT`: the verified account ID.
+- Protected environment `PEER_LINK_INVOKE_ROLE`: the stack's invoke-role ARN.
+- Protected environment `PEER_LINK_CONTROLLER_VERSION_ARN`: the numeric version ARN.
+
+For the initial Peer Link operation, Kohai (`kohai-peer`) triggers the main-branch
+workflow and Sachin (`0xSachinK`) is the sole required environment reviewer. Keep
+`prevent_self_review` enabled and deployment branches restricted to `main`. Kohai
+cannot approve, write AWS admission rows, deploy, sign or access bank credentials
+through this workflow. GitHub repository administrators remain a trust boundary.
+
+A synthetic operational drill may use the independently reproduced, signed image
+whose bank and operator policies are disabled. Confirm real hardware attestation,
+fixed deployment identity, denial of source overrides, approval replay, concurrent
+launches and budget exhaustion. This drill grants no live bank access. The earlier
+full synthetic acquisition/adapter/receipt test is separate evidence; neither
+substitutes for an approved bank policy and account-owner consent.
+
+Before live activation, freeze and review the source policy, operator public key,
+image hash, PCR0/1/2/8, artifact and release digests together. Rebuild independently,
+verify the exact hardware release, and obtain owner consent on the owner's device.
+Never transplant synthetic measurements into a bank release.
+
+Rollback: set the repository dispatch variable false and atomically pause the
+existing DynamoDB budget. Revoke unconsumed approvals; already issued offline
+permits can survive up to two minutes. Terminate only workers tagged with this
+controller stack ID, verify volume deletion, then let the owning reaper clear the
+matching lease. Preserve reserved spending and signing/artifact evidence. Do not
+delete retained ledgers, keys or artifact versions as part of an ordinary rollback.

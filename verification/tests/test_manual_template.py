@@ -44,6 +44,17 @@ class ManualTemplateTests(unittest.TestCase):
         self.assertTrue(ledger['Properties']['DeletionProtectionEnabled'])
         self.assertTrue(ledger['Properties']['PointInTimeRecoverySpecification']['PointInTimeRecoveryEnabled'])
 
+    def test_existing_ledger_is_used_by_controller_reaper_and_roles(self):
+        selected = {'Fn::If': ['CreateLedger', {'Ref': 'Ledger'}, {'Ref': 'LedgerTableName'}]}
+        for name in ('Controller', 'Expiry'):
+            self.assertEqual(self.resources[name]['Properties']['Environment']['Variables']['TABLE'], selected)
+        for name in ('ControllerRole', 'ExpiryRole'):
+            statements = self.resources[name]['Properties']['Policies'][0]['PolicyDocument']['Statement']
+            ddb = [s for s in statements if any(a.startswith('dynamodb:') for a in actions(s))]
+            self.assertEqual(len(ddb), 1)
+            self.assertEqual(ddb[0]['Resource']['Fn::If'][0], 'CreateLedger')
+        self.assertEqual(self.resources['Ledger']['Condition'], 'CreateLedger')
+
     def test_reaper_failure_and_silence_both_alarm_through_optional_route(self):
         pattern = self.stack['Parameters']['AlarmTopicArn']['AllowedPattern']
         self.assertTrue(re.fullmatch(pattern, ''))
