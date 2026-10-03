@@ -55,8 +55,12 @@ raw capture and statement file types, and media or documents under `banks/`. In 
 folders it also flags non-reserved email addresses, checksum-valid IBANs and card numbers,
 US social security numbers and credential-bearing URLs; in fixtures, real-looking phone
 numbers, person names without a synthetic marker and missing provenance, and it warns about
-unexplained long numeric identifiers. Heuristics do not certify privacy: names, amounts and
-uncommon identifiers can evade them. CI runs the same checks too late to prevent the first
+unexplained long numeric identifiers. History scans also warn about files outside the
+current repository layout, including deleted images, documents or JSON captures that
+content heuristics may not inspect. Review those file versions locally before publishing;
+the warning is advisory because older legitimate layouts may differ. Heuristics do not
+certify privacy: names, amounts and uncommon identifiers can evade them. CI runs the same
+checks too late to prevent the first
 disclosure, so run them locally.
 
 ## Accidental exposure

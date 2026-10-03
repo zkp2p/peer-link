@@ -108,6 +108,7 @@ export function validateRepository(repo: Repository) {
       );
     let hasLiveReport = false;
     let hasCurrentLiveReport = false;
+    const staleReports: string[] = [];
     for (const report of [...bank.files].filter((f) => f.startsWith("reports/")).sort()) {
       const value = json(report);
       if (value === undefined) continue;
@@ -119,7 +120,11 @@ export function validateRepository(repo: Repository) {
           now: repo.now,
         }),
       );
-      const evidence = value as { evidenceClass?: string; adapterRevision?: string };
+      const evidence = value as {
+        evidenceClass?: string;
+        adapterRevision?: string;
+        outcome?: string;
+      };
       if (["contributor-live", "reviewer-live"].includes(evidence?.evidenceClass ?? "")) {
         hasLiveReport = true;
         const sha = evidence.adapterRevision;
@@ -128,9 +133,10 @@ export function validateRepository(repo: Repository) {
           /^[a-f\d]{40}$/.test(sha) &&
           repo.revision(sha, bank.bank) === "ok"
         ) {
-          if (repo.adapterMatchesRevision(sha, bank.bank)) hasCurrentLiveReport = true;
-          else
-            warnings.push(
+          if (repo.adapterMatchesRevision(sha, bank.bank)) {
+            if (["pass", "partial"].includes(evidence.outcome ?? "")) hasCurrentLiveReport = true;
+          } else
+            staleReports.push(
               `${at(report)}: adapter manifest or transformer differs from the reported revision; this historical report does not cover the current adapter`,
             );
         }
@@ -141,10 +147,12 @@ export function validateRepository(repo: Repository) {
       warnings.push(
         `${bank.bank}: no live report; fixture tests alone do not demonstrate compatibility with an observed bank response`,
       );
-    else if (manifest && !hasCurrentLiveReport)
+    else if (manifest && !hasCurrentLiveReport) {
+      warnings.push(...staleReports);
       warnings.push(
-        `${bank.bank}: no live report covers the current adapter files; rerun after implementation changes before claiming live verification`,
+        `${bank.bank}: no pass or partial live report covers the current adapter files; inspect outcomes and rerun before claiming live verification`,
       );
+    }
   }
   if (!counts.adapters || !counts.fixtures)
     errors.push("banks/: at least one adapter and one fixture are required");

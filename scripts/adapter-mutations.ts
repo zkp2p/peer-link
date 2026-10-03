@@ -27,8 +27,11 @@ export function* malformedInputs(input: unknown): Generator<{ label: string; inp
       let parent = copy as Record<string | number, unknown>;
       for (const part of path.slice(0, -1)) parent = parent[part] as typeof parent;
       const key = path[path.length - 1];
-      if (value === undefined) delete parent[key];
-      else parent[key] = structuredClone(value);
+      if (value === undefined) {
+        // JSON cannot contain sparse arrays. Removing an entry compacts the array.
+        if (Array.isArray(parent)) parent.splice(Number(key), 1);
+        else delete parent[key];
+      } else parent[key] = structuredClone(value);
       // Labels identify a field and mutation, never echo banking values.
       yield { label: `${path.join(".")} (${kind})`, input: copy };
     }

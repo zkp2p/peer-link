@@ -226,6 +226,8 @@ describe.each(adapters)("adapter contract: $id", (adapter) => {
           );
       }
     },
+    // Each nested mutation rechecks the full fixture; allow realistic history pages.
+    60_000,
   );
 });
 

@@ -45,10 +45,12 @@ A report records exactly what was tested. Save it as
 
 `npm run validate` enforces these rules and rejects unknown fields.
 
-Validation also prints advisory warnings when an adapter has no live report or its
-manifest/transformer differs from the revision cited by a live report. Historical
-reports remain valid records of earlier attempts; a newer report is not required just
-to edit documentation or add tests. Missing live evidence does not fail the experimental
+Validation also prints advisory warnings when an adapter has no live report or no
+`pass`/`partial` live report whose manifest/transformer matches the current files. A
+`fail`, `blocked` or `not-tested` outcome does not close this evidence gap. Stale-report
+details are printed only while that gap remains. Historical reports remain valid records
+of earlier attempts; a newer report is not required just to edit documentation or add tests.
+Missing live evidence does not fail the experimental
 adapter checks. Maintainers still apply the issue's acceptance criteria and inspect the
 observed source shape, outcome and limitations. These warnings do not authenticate a
 response or turn a self-reported pass into verified compatibility.

@@ -1,5 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, statSync } from "node:fs";
+import { checkRepositoryLayout, classifyBankPath } from "./contribution-rules";
 import { MAX_SCAN_BYTES, scanFile } from "./privacy-rules";
 
 /**
@@ -90,6 +91,13 @@ if (range) {
 const findings: string[] = [];
 const warnings: string[] = [];
 for (const target of targets) {
+  if (range) {
+    const bankPath = classifyBankPath(target.file);
+    if (checkRepositoryLayout([target.file]).length || (bankPath && "error" in bankPath))
+      warnings.push(
+        `${target.label}: historical file outside the current repository layout; inspect it locally for captures or personal data even if it was later deleted`,
+      );
+  }
   const { content, size } = target.load();
   const result = scanFile(target.file, content, size);
   const relabel = (line: string) => line.replace(target.file, target.label);

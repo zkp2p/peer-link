@@ -71,7 +71,9 @@ not certify a bank, a payer or settlement finality, and does not enable it in Pe
 CI runs layout and privacy checks before adapter tests. It also scans every changed file
 version in a pull request, including data removed in a later commit and new content in
 merge resolutions. Run `npm run privacy -- --range origin/main..HEAD` before pushing;
-the CI scan cannot undo an initial public disclosure.
+the CI scan cannot undo an initial public disclosure. Historical files outside the current
+layout receive an advisory review warning, including deleted captures that content rules
+may not recognize. A green scan does not certify redaction.
 
 The required `verify` status includes the repository checks and, for fork PRs, checks
 using the base branch's tooling. A failed or unexpectedly skipped check blocks that status.

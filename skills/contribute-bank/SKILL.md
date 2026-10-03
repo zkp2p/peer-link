@@ -167,7 +167,10 @@ Fixture files are `{ provenance, description, input, transactionId, expected }`.
 `payeeScheme`, `currencyExponent`, `direction`, `timestampMeaning`). Abstentions may add
 `reason`. `banks/adapter-contract.test.ts` runs every fixture against your adapter, checks
 the contract, checks that supported results convert with `toAttestationCandidate`, and
-feeds malformed input and absent IDs that must abstain.
+feeds malformed input and absent IDs that must abstain. For supported fixtures it also
+removes or replaces nested fields and array entries with JSON values. These probes must
+not throw, mutate the input or return an invalid observation. Unrelated or optional-field
+changes need not cause abstention; the suite does not assume a bank-specific schema.
 
 ## 5. Run the checks
 
@@ -249,6 +252,7 @@ Peer production support.
 | `"fetch" is not allowed` (or console, Date.now...) | Remove I/O, logging and clock use from the adapter. |
 | `expected.<field>` in a test failure | The fixture's expected value and the adapter disagree; re-derive from the bank record. |
 | `must return insufficient_evidence, not throw` | Guard every property access on malformed input. |
+| `must not throw or mutate input` | Check the named nested field mutation; validate container types and numeric ranges before reading or converting them. Do not modify the input. |
 | `not in this repository's history` | Cite the full SHA of a commit that exists in your branch. |
 | `not in this branch's history. Do not rebase` | You rebased or squashed after the live check; merge main instead, or rerun step 6 and cite the new commit. |
 | `possible <rule>` from privacy | Replace the value with an invented one and rewrite the commit. |
