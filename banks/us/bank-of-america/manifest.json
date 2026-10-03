@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1",
+  "id": "us/bank-of-america",
+  "name": "Bank of America",
+  "country": "US",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "web-activity-detail",
+  "capability": "Interpret outgoing USD Zelle payments as sender-bank-reported completed transfers",
+  "entrypoint": "interpretBankOfAmerica",
+  "maintainers": ["Primuez"],
+  "currencies": ["USD"],
+  "unsupported": [
+    "ACH",
+    "domestic and international wires",
+    "debit cards",
+    "checks",
+    "incoming Zelle payments",
+    "scheduled or pending transfers",
+    "recipient-credit confirmation",
+    "cryptographic source authentication"
+  ],
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/bank-of-america.png"
+}

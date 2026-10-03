@@ -1,0 +1,45 @@
+{
+  "provenance": "synthetic",
+  "description": "The same invented Bank of America Zelle transfer while still pending. Not a real payment.",
+  "input": {
+    "data": {
+      "activities": [
+        {
+          "id": "boa-zelle-synthetic-pending-001",
+          "type": "ZELLE_DEBIT",
+          "status": "PENDING",
+          "amount": -75.5,
+          "currency": "USD",
+          "postedAt": "2026-02-14T18:45:00.000Z",
+          "sender": {
+            "accountId": "boa-acct-checking-4921",
+            "accountMask": "4921"
+          },
+          "recipient": {
+            "token": "alice@example.com",
+            "tokenType": "EMAIL",
+            "name": "Synthetic Alice"
+          },
+          "details": {
+            "paymentMethod": "Zelle",
+            "confirmationNumber": "BOA-ZEL-CONF-987654",
+            "memo": "Dinner synthetic",
+            "hold": false
+          }
+        }
+      ],
+      "accounts": [
+        {
+          "id": "boa-acct-checking-4921",
+          "type": "CHECKING",
+          "name": "Synthetic Advantage Banking"
+        }
+      ]
+    }
+  },
+  "transactionId": "boa-zelle-synthetic-pending-001",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is not bank-reported completed"
+  }
+}

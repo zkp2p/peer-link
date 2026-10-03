@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1",
+  "provider": "us/bank-of-america",
+  "testedAt": "2026-10-02T12:00:00Z",
+  "adapterRevision": "821193a7b9230d347a2f71c1168665b79887919c",
+  "harnessRevision": "821193a7b9230d347a2f71c1168665b79887919c",
+  "surface": "web-activity-detail",
+  "capability": "outgoing-zelle-usd-transfer",
+  "evidenceClass": "contributor-live",
+  "fixtureRefs": ["fixtures/sent.synthetic.json", "fixtures/pending.synthetic.json"],
+  "reporter": "Primuez",
+  "outcome": "pass",
+  "limitations": [
+    "Input authenticity is not established by this parser.",
+    "COMPLETED is the sender-bank status, not proof of recipient credit or irreversible settlement.",
+    "Payer identity is a Bank of America account reference, not a verified legal person.",
+    "Payee identity is a Zelle email or telephone token, not a validated bank routing or legal entity."
+  ],
+  "summary": "Verified outgoing USD Zelle transaction extraction against Bank of America web activity detail parser."
+}
