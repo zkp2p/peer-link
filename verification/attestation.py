@@ -1,4 +1,5 @@
 """AWS Nitro COSE verification. No server-provided 'verified' boolean is trusted."""
+import hashlib
 import io
 import subprocess
 import tempfile
@@ -15,6 +16,17 @@ from .common import Rejected, digest, hex_digest, require
 
 ROOT = Path(__file__).parent / "trust/aws-nitro-root.pem"
 ROOT_SHA256 = "641a0321a3e244efe456463195d606317ed7cdcc3c1756e09893f3c68f79bb5b"
+
+
+def freshness_nonce(nonce):
+    """Separate caller-selected freshness probes from enclave-issued context quotes.
+
+    Structured challenge/receipt hashes cannot be requested through public attest.
+    The measured runtime and the independently pinned client must agree on this
+    protocol; old clients fail nonce verification rather than sharing a session.
+    """
+    require(isinstance(nonce, bytes) and len(nonce) == 32, "nonce_size")
+    return hashlib.sha256(b"Peer Link freshness attestation v1\x00" + nonce).digest()
 
 
 def decode_one(raw):

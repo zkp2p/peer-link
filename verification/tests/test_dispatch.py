@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+from verification.attestation import freshness_nonce
 from verification.common import Rejected, digest
 from verification.control import Ledger
 
@@ -61,7 +62,7 @@ class DispatchTests(unittest.TestCase):
         self.assertTrue(all(value == results[0] for value in results))
         self.assertEqual(self.db.db.execute('SELECT COUNT(*) FROM challenge_grants').fetchone()[0], 1)
         self.assertEqual(self.db.status()['budget']['committed'], 40000)
-        self.verify.assert_called_with(b'synthetic-test-quote', nonce=b'n' * 32,
+        self.verify.assert_called_with(b'synthetic-test-quote', nonce=freshness_nonce(b'n' * 32),
                                       public_key_der=b'synthetic-test-key', release=self.release)
 
     def test_challenge_cannot_move_to_new_enclave_or_extend_expiry(self):

@@ -6,8 +6,9 @@ import unittest
 from unittest.mock import Mock, patch
 
 from verification.acquisition import ReadDeadline
-from verification.attestation import policy_digest
-from verification.common import Rejected, b64, strict_json
+from verification.attestation import freshness_nonce, policy_digest
+from verification.channel import encrypt_session
+from verification.common import Rejected, b64, digest, strict_json
 from verification.admission import issue
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -50,6 +51,42 @@ class RuntimeTests(unittest.TestCase):
             changed = args.copy()
             changed[index] = "different"
             self.assertNotEqual(original, policy_digest(*changed))
+
+    def test_generic_probe_cannot_quote_an_issued_context_hash(self):
+        runtime = Runtime()
+        signer = Ed25519PrivateKey.generate()
+        runtime.operator = {"enabled": True, "permitPublicKey": b64(signer.public_key().public_bytes(
+            serialization.Encoding.Raw, serialization.PublicFormat.Raw))}
+        grant = issue({"audience": "peer-link-challenge-v1", "attempt": "attempt-1",
+            "bindingDigest": "a" * 64, "policyDigest": runtime.policy_digest,
+            "enclaveKeyDigest": hashlib.sha256(runtime.channel.public_key_der).hexdigest(),
+            "expiresAt": int(time.time()) + 60}, signer)
+        with patch('verification.runtime.attest', return_value=b'synthetic-document') as nsm:
+            setup = runtime.handle({'operation': 'challenge', 'grant': grant})
+            context = setup['context']
+            context_nonce = bytes.fromhex(digest(context))
+            self.assertEqual(nsm.call_args.args[0], context_nonce)
+            runtime.handle({'operation': 'attest', 'nonce': b64(context_nonce)})
+            self.assertEqual(nsm.call_args.args[0], freshness_nonce(context_nonce))
+            self.assertNotEqual(nsm.call_args.args[0], context_nonce)
+            runtime.handle({'operation': 'attest_challenge', 'context': context})
+            self.assertEqual(nsm.call_args.args[0], context_nonce)
+            self.assertEqual(runtime.channel.active_context(context)['expiresAt'], context['expiresAt'])
+            for changed in ({**context, 'nonce': 'f' * 64},
+                            {**context, 'bindingDigest': 'b' * 64},
+                            {**context, 'expiresAt': context['expiresAt'] + 1}):
+                with self.subTest(changed=changed), self.assertRaises(Rejected):
+                    runtime.handle({'operation': 'attest_challenge', 'context': changed})
+            self.assertEqual(nsm.call_count, 3)
+            with patch('time.time', return_value=context['expiresAt']):
+                with self.assertRaisesRegex(Rejected, 'expired_or_replayed_challenge'):
+                    runtime.handle({'operation': 'attest_challenge', 'context': context})
+            envelope = encrypt_session(runtime.channel.public_key_der, context,
+                                       {'synthetic': True}, consent=True)
+            runtime.channel.decrypt_once(envelope)
+            with self.assertRaisesRegex(Rejected, 'expired_or_replayed_challenge'):
+                runtime.handle({'operation': 'attest_challenge', 'context': context})
+            self.assertEqual(nsm.call_count, 3)
 
     def test_frame_absolute_deadline_is_not_reset_by_drip_data(self):
         stream = Mock()

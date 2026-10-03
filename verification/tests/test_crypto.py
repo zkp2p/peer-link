@@ -15,10 +15,10 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.asymmetric.utils import decode_dss_signature
 from cryptography.x509.oid import NameOID
 
-from verification.attestation import verify_document
+from verification.attestation import freshness_nonce, verify_document
 from verification.channel import SessionChannel, encrypt_session
 from verification.client import verified_session
-from verification.common import Rejected, b64, canonical, digest
+from verification.common import Rejected, b64, canonical, digest, unb64
 from verification.control import Ledger
 from verification.runtime import Runtime
 from verification.receipts import sign as sign_receipt, verify as verify_receipt
@@ -88,7 +88,8 @@ class AttestationTests(unittest.TestCase):
             signer = Ed25519PrivateKey.generate()
             operator_public_key = signer.public_key().public_bytes(
                 serialization.Encoding.Raw, serialization.PublicFormat.Raw)
-            initial_doc = {**self.doc, "public_key": channel.public_key_der}
+            initial_doc = {**self.doc, "public_key": channel.public_key_der,
+                           "nonce": freshness_nonce(self.doc["nonce"])}
             grant = ledger.authorize_challenge(attempt, attestation=self.encode(initial_doc),
                 nonce=self.doc["nonce"], public_key_der=channel.public_key_der, release=release,
                 binding=binding, private_key=signer)
@@ -102,9 +103,16 @@ class AttestationTests(unittest.TestCase):
             with patch("verification.runtime.attest", side_effect=synthetic_nsm):
                 setup = runtime.handle({"operation": "challenge", "grant": grant})
                 retry = runtime.handle({"operation": "challenge", "grant": grant})
+                forged_context = {**setup['context'], 'nonce': 'f' * 64}
+                forged_quote = runtime.handle({'operation': 'attest',
+                    'nonce': b64(bytes.fromhex(digest(forged_context)))})
+            with self.assertRaisesRegex(Rejected, 'nonce_mismatch'):
+                ledger.authorize_execution(attempt, context=forged_context,
+                    attestation=unb64(forged_quote['attestation']),
+                    public_key_der=channel.public_key_der, release=release,
+                    binding=binding, private_key=signer)
             context = setup["context"]
             self.assertEqual(context, retry["context"])
-            from verification.common import unb64
             document = unb64(setup["quote"]["attestation"])
             permit = ledger.authorize_execution(attempt, context=context, attestation=document,
                 public_key_der=channel.public_key_der, release=release, binding=binding, private_key=signer)
@@ -207,7 +215,10 @@ class AttestationTests(unittest.TestCase):
         ledger.judge(ticket["id"], actor="operator", version=0, decision="admit", evidence_digest="d"*64)
         attempt = ledger.reserve(ticket["id"], "request", binding, 50000)
         operator = Ed25519PrivateKey.generate()
-        ledger.authorize_challenge(attempt['id'], binding=binding, private_key=operator, **args)
+        initial_quote = self.encode({**self.doc, 'public_key': channel.public_key_der,
+                                     'nonce': freshness_nonce(args['nonce'])})
+        ledger.authorize_challenge(attempt['id'], binding=binding, private_key=operator,
+                                   **{**args, 'attestation': initial_quote})
         context = channel.challenge(attempt['id'], digest(binding))
         context_quote = self.encode({**self.doc, 'public_key': channel.public_key_der,
                                      'nonce': bytes.fromhex(digest(context))})

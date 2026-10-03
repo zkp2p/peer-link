@@ -17,9 +17,13 @@
   session from AWS is not attempted: it needs the session cookie outside the
   browser and may trip Mercury's device and IP controls. Prefer a read-only Mercury
   API token with its own reviewed adapter surface for the first live enclave run.
-- Still open: a second human code owner and environment reviewer, merging #81 and
-  creating the OIDC invoke role at activation, a tested alarm subscription, and the
-  attest/challenge nonce domain separation noted in the verifier review.
+- The generic attestation endpoint now separates caller-selected freshness nonces
+  from session-context quotes. The owner refreshes only an issued, unchanged,
+  active challenge; controller and client reject a generic quote for an invented
+  context. This protocol change needs new hardware evidence before live release.
+- Still open: a second human code owner and environment reviewer, creating the
+  OIDC invoke role at activation, a persistent tested human alert route and final
+  hardware validation. PR #81 has merged; bank access remains disabled.
 
 The sections below are the earlier launch review, kept for history.
 

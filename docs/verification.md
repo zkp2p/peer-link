@@ -87,6 +87,14 @@ digest. The AWS root certificate is pinned by its published SHA-256 fingerprint.
 Certificate-chain checks use OpenSSL; COSE signatures are verified locally. A boolean
 from the server is never accepted as attestation.
 
+Public freshness probes attest SHA-256 of `Peer Link freshness attestation v1`, a
+zero byte and the caller's 32-byte nonce. Session quotes instead attest SHA-256 of
+the canonical enclave-issued context. Only the admitted `challenge` operation and
+`attest_challenge` can produce that quote; refresh requires the unchanged, active
+context and never renews its expiry. The owner refreshes it before consent and
+again immediately before encryption. Clients for the earlier probe protocol fail
+nonce verification and must not fall back to accepting an unbound quote.
+
 After verification and explicit owner consent, the client encrypts the scoped session
 to the attested key. Each challenge expires after two minutes and can be consumed once.
 Credentials and original records are not written to the ledger, public logs, CI or Git.

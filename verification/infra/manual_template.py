@@ -31,6 +31,9 @@ def template():
  # The account is shared with Peer production. Explicit denies stop any resource policy
  # (S3, SQS, SNS, Lambda, ECR, ...) that names this role or "*" from widening it.
  host_policy=[allow(ssm,'*'),allow('s3:GetObjectVersion',bundle,Condition={'StringEquals':{'s3:VersionId':ref('ArtifactVersion')}}),{'Effect':'Deny','Action':['ssm:GetParameter*','secretsmanager:*','kms:*','sts:AssumeRole','iam:*'],'Resource':'*'},{'Effect':'Deny','NotAction':ssm+['s3:GetObjectVersion'],'Resource':'*'},{'Effect':'Deny','Action':'s3:*','NotResource':bundle}]
+ # An Allow condition is only an implicit deny for other versions. A same-account
+ # bucket policy can grant them, so explicitly reject every unapproved version.
+ host_policy.append({'Effect':'Deny','Action':'s3:GetObjectVersion','Resource':bundle,'Condition':{'StringNotEquals':{'s3:VersionId':ref('ArtifactVersion')}}})
  r['HostRole']={'Type':'AWS::IAM::Role','Properties':{'AssumeRolePolicyDocument':trust('ec2.amazonaws.com'),'Policies':[{'PolicyName':'OnlyApprovedWorkerAndSessionTransport','PolicyDocument':policy(host_policy)}]}}
  r['HostProfile']={'Type':'AWS::IAM::InstanceProfile','Properties':{'Roles':[ref('HostRole')]}}
  r['WorkerGroup']={'Type':'AWS::EC2::SecurityGroup','Properties':{'VpcId':ref('VpcId'),'GroupDescription':'Peer Link manual worker: no ingress, outbound TLS only','SecurityGroupEgress':[{'IpProtocol':'tcp','FromPort':443,'ToPort':443,'CidrIp':'0.0.0.0/0'}]}}

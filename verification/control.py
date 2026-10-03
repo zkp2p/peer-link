@@ -10,7 +10,7 @@ import time
 from contextlib import contextmanager
 
 from .common import canonical, digest, fields, hex_digest, identifier, require, strict_json
-from .attestation import verify_document
+from .attestation import freshness_nonce, verify_document
 from .admission import issue as issue_admission, validate as validate_admission
 from .permits import issue as issue_permit, validate as validate_permit
 from .receipts import verify as verify_receipt
@@ -182,7 +182,8 @@ class Ledger:
             hex_digest(value)
         require(release.get("liveVerification") is True and binding["release"] == digest(release) and
                 binding["policy"] == release.get("policyDigest"), "permit_release")
-        verify_document(attestation, nonce=nonce, public_key_der=public_key_der, release=release)
+        verify_document(attestation, nonce=freshness_nonce(nonce),
+                        public_key_der=public_key_der, release=release)
         key_digest = hashlib.sha256(public_key_der).hexdigest()
         with self.transaction():
             row = self.db.execute("SELECT * FROM attempts WHERE id=?", (attempt,)).fetchone()

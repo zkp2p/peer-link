@@ -128,7 +128,9 @@ EIF, parent relay and pinned dependencies; never build it from a contributor PR
 in a privileged job. The current synthetic pilot's image filename is
 `synthetic.eif`; this template is not an approved bank release.
 
-The worker role can read only that S3 object version and open SSM transport. It
+The worker role pins the S3 object version with an allow and an explicit deny for
+other or missing versions, so another bucket-policy grant cannot widen that pin.
+It can read only that S3 object version and open SSM transport. It
 cannot read Parameter Store or Secrets Manager, use KMS, assume roles or access
 other artifacts. Explicit denies cover every other action and S3 resource, so a
 resource policy elsewhere in the shared account cannot widen the role. User data verifies the bundle digest before extraction, starts

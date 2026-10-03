@@ -5,9 +5,10 @@ Only the AWS root is synthetic (see test_crypto.AttestationTests). No bank data.
 import hashlib
 import time
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from verification.channel import SessionChannel
+from verification.attestation import freshness_nonce
 from verification.common import Rejected, b64, digest, unb64
 from verification.owner_client import check_session, complete
 from verification.receipts import sign as sign_receipt
@@ -45,9 +46,10 @@ class OwnerClientFreshnessTests(unittest.TestCase):
 
     def call(self, request):
         self.operations.append(request['operation'])
-        if request['operation'] == 'attest':
-            key = self.quote_keys[min(self.operations.count('attest'), len(self.quote_keys)) - 1]
-            return self.quote(unb64(request['nonce'], 32), key)
+        if request['operation'] == 'attest_challenge':
+            context = self.channel.active_context(request['context'])
+            key = self.quote_keys[min(self.operations.count('attest_challenge'), len(self.quote_keys)) - 1]
+            return self.quote(bytes.fromhex(digest(context)), key)
         self.assertEqual(request['operation'], 'execute')
         self.received.append(self.channel.decrypt_once(request['envelope']))
         claims = {'audience': 'peer-link-contribution-verification-v1', 'attempt': 'attempt-1',
@@ -70,7 +72,7 @@ class OwnerClientFreshnessTests(unittest.TestCase):
         report = self.run_owner(61)
         self.assertEqual(report['receipt']['claims']['result'], 'verified')
         self.assertEqual(self.received, [self.session])
-        self.assertEqual(self.operations, ['attest', 'attest', 'execute'])
+        self.assertEqual(self.operations, ['attest_challenge', 'attest_challenge', 'execute'])
 
     def test_changed_enclave_key_after_consent_never_receives_secrets(self):
         self.quote_keys.append(SessionChannel().public_key_der)
@@ -79,9 +81,22 @@ class OwnerClientFreshnessTests(unittest.TestCase):
         self.assertNotIn('execute', self.operations)
 
     def test_expired_challenge_is_still_refused_before_encryption(self):
-        with self.assertRaisesRegex(Rejected, 'expired_challenge'):
+        with self.assertRaisesRegex(Rejected, 'expired_or_replayed_challenge'):
             self.run_owner(121)
         self.assertNotIn('execute', self.operations)
+
+    def test_generic_quote_for_invented_context_never_reaches_consent(self):
+        # A malicious gateway can ask public attest about any 32-byte value,
+        # including a context hash. It still cannot mint a challenge quote.
+        self.bundle['context'] = {**self.context, 'nonce': 'f' * 64}
+        expected = bytes.fromhex(digest(self.bundle['context']))
+        quote = self.quote(freshness_nonce(expected), self.channel.public_key_der)
+        collect = Mock(return_value=self.session)
+        with self.assertRaisesRegex(Rejected, 'nonce_mismatch'):
+            complete(self.bundle, release=self.release, expected_adapter=self.binding['revision'],
+                     call=lambda request: quote, collect_session=collect)
+        collect.assert_not_called()
+        self.assertEqual(self.received, [])
 
 
 class OwnerInputTests(unittest.TestCase):

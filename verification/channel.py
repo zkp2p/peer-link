@@ -74,6 +74,16 @@ class SessionChannel:
             self.challenges[context["nonce"]] = context
             return dict(context)
 
+    def active_context(self, context):
+        """Re-attest only an issued, unchanged, unexpired and unconsumed challenge."""
+        fields(context, ("protocol", "attempt", "bindingDigest", "nonce", "expiresAt"))
+        hex_digest(context["nonce"])
+        with self.lock:
+            expected = self.challenges.get(context["nonce"])
+            require(expected is not None and expected == context and
+                    expected["expiresAt"] > time.time(), "expired_or_replayed_challenge")
+            return dict(expected)
+
     def decrypt_authorized(self, envelope, permit, *, operator_public_key, policy_digest,
                            artifact_digest):
         """Live-session boundary: trust inputs come from measured runtime configuration.

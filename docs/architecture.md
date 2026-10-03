@@ -54,6 +54,10 @@ can terminate only instances belonging to its exact CloudFormation stack.
 - Operator permissions bind the exact artifact, policy, attempt, enclave key and
   one-use challenge. Reports bind the adapter/release/policy/prompt digest tuple.
   Replay and expiry fail closed. A report has no settlement or reward authority.
+- Generic freshness probes have a separate nonce domain. The owner requests a
+  quote for the exact issued challenge before consent and again before encryption;
+  only an unchanged, unexpired, unconsumed challenge can be re-attested. Refresh
+  never allocates a challenge or extends its lifetime.
 - AI review is disabled for bank records. An external model is unnecessary for
   the deterministic manual flow and is explicitly rejected by its runtime.
 
@@ -63,6 +67,7 @@ can terminate only instances belonging to its exact CloudFormation stack.
 | --- | --- | --- |
 | PR changes deployment script to steal AWS credentials | Credential-free PR CI; manual job has no checkout and only invokes a pinned controller; protected main/environment | A maintainer or account administrator can change controls; branch/environment protection must be verified before activation |
 | Substitute a verifier, session key or adapter | Pinned manifest, full measured image and signer PCRs, fresh AWS quote, artifact digest and bound permits | Compromised release approval, client or AWS trust infrastructure can defeat this boundary |
+| Forge a session context using public attestation | Domain-separated freshness probes; context quotes require stored challenge state; controller and owner verify the exact context hash | Host can delay or consume an otherwise valid attempt; a quote does not reserve future availability |
 | Adapter exfiltrates bank data | No guest network/files/env; Wasmtime fuel/memory/output/time limits; Linux UID/group drop; fixed report schema | Sandbox/kernel vulnerabilities; timing and coarse outcome covert channels; required identifiers remain sensitive |
 | Bank redirect, DNS rebinding or metadata-service request | Exact approved HTTPS origin and operation; public-address checks, certificate validation, bounded relay | Bank compromise or a mistaken allowlist; parent can delay or deny traffic |
 | Replay, duplicate workers or spending attack | One-use expiring session; transactional reservations; one active worker; independent expiry guard | Provider billing lag, administrator overrides and resource failures; AWS Budgets is an alert, not a hard spending cutoff |

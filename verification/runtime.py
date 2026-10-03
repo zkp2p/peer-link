@@ -10,7 +10,7 @@ import hashlib
 import resource
 from pathlib import Path
 
-from .attestation import policy_digest
+from .attestation import freshness_nonce, policy_digest
 from .channel import SessionChannel
 from .common import Rejected, b64, canonical, digest, fields, require, strict_json, unb64
 from .nsm import attest
@@ -132,7 +132,12 @@ class Runtime:
                     "policyDigest": self.policy_digest, "scheduledJudgment": False}
         if request.get("operation") == "attest":
             fields(request, ("operation", "nonce"))
-            return self.quote(unb64(request["nonce"], 32))
+            return self.quote(freshness_nonce(unb64(request["nonce"], 32)))
+        if request.get("operation") == "attest_challenge":
+            fields(request, ("operation", "context"))
+            require(self.operator.get("enabled") is True, "operator_not_approved")
+            context = self.channel.active_context(request["context"])
+            return self.quote(bytes.fromhex(digest(context)))
         if request.get("operation") == "execute":
             return self.execute(request)
         if request.get("operation") == "challenge":

@@ -9,7 +9,7 @@ import socket
 import time
 from pathlib import Path
 
-from .attestation import verify_document
+from .attestation import freshness_nonce, verify_document
 from .channel import encrypt_session
 from .common import Rejected, b64, digest, fields, hex_digest, require, strict_json, unb64
 from .runtime import receive, send
@@ -58,7 +58,7 @@ def main():
     release = strict_json(Path(args.release).read_bytes())
     nonce = secrets.token_bytes(32)
     response = call(args.cid, {"operation": "attest", "nonce": b64(nonce)})
-    result = verify_document(unb64(response["attestation"]), nonce=nonce,
+    result = verify_document(unb64(response["attestation"]), nonce=freshness_nonce(nonce),
                              public_key_der=unb64(response["publicKey"]), release=release)
     print(json.dumps(result, sort_keys=True))
 

@@ -20,7 +20,7 @@ from .acquisition import checked_credentials, checked_origin, request_plan
 from .acquisition_process import PROCESS_DEADLINE_SECONDS
 from .attestation import policy_digest, verify_document
 from .client import verified_session
-from .common import b64, canonical, digest, fields, identifier, require, strict_json, unb64
+from .common import canonical, digest, fields, identifier, require, strict_json, unb64
 from .receipts import verify as verify_receipt
 from .runtime import receive
 from .sandbox import MAX_MODULE, TIMEOUT_SECONDS as SANDBOX_SECONDS
@@ -73,7 +73,7 @@ def complete(bundle, *, release, expected_adapter, call, collect_session):
     fields(context, ('protocol', 'attempt', 'bindingDigest', 'nonce', 'expiresAt'))
     require(context['bindingDigest'] == digest(bundle['binding']), 'session_binding_mismatch')
     nonce = bytes.fromhex(digest(context))
-    quote = call({'operation': 'attest', 'nonce': b64(nonce)})
+    quote = call({'operation': 'attest_challenge', 'context': context})
     fields(quote, ('attestation', 'publicKey', 'policyDigest'))
     public_key = unb64(quote['publicKey'], 4096)
     verified = verify_document(unb64(quote['attestation'], 32768), nonce=nonce,
@@ -84,7 +84,7 @@ def complete(bundle, *, release, expected_adapter, call, collect_session):
     session = collect_session()
     # Reading the scope and typing hidden input can outlast the 60-second quote
     # window. Re-attest immediately before encryption, to the same verified key.
-    fresh = call({'operation': 'attest', 'nonce': b64(nonce)})
+    fresh = call({'operation': 'attest_challenge', 'context': context})
     fields(fresh, ('attestation', 'publicKey', 'policyDigest'))
     require(unb64(fresh['publicKey'], 4096) == public_key, 'session_key_changed')
     envelope = verified_session(fresh, nonce=nonce, release=release, context=context,
