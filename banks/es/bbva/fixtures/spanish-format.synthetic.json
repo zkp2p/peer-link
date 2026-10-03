@@ -1,0 +1,37 @@
+{
+  "provenance": "synthetic",
+  "description": "Completed outgoing BBVA Spain SEPA transfer with comma decimal amount and period thousands separator.",
+  "input": {
+    "account": {
+      "iban": "ES0000000000000000000001"
+    },
+    "transactions": [
+      {
+        "id": "bbva-es-tx-004",
+        "type": "domesticTransfer",
+        "direction": "debit",
+        "status": "COMPLETED",
+        "amount": "1.250,50 €",
+        "currency": "EUR",
+        "bookedAt": "2026-10-02T11:30:00Z",
+        "payee": {
+          "iban": "ES0000000000000000000003",
+          "name": "Synthetic Recipient"
+        },
+        "memo": "Services rendered"
+      }
+    ]
+  },
+  "transactionId": "bbva-es-tx-004",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "ES0000000000000000000001",
+    "payeeId": "ES0000000000000000000003",
+    "amountMinor": "125050",
+    "currency": "EUR",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "status": "COMPLETED",
+    "timestamp": "2026-10-02T11:30:00Z"
+  }
+}

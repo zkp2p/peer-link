@@ -1,0 +1,30 @@
+{
+  "provenance": "synthetic",
+  "description": "BBVA Spain SEPA transfer record with failed or cancelled execution status.",
+  "input": {
+    "account": {
+      "iban": "ES0000000000000000000001"
+    },
+    "transactions": [
+      {
+        "id": "bbva-es-tx-003",
+        "type": "sepaTransfer",
+        "direction": "debit",
+        "status": "RECHAZADA",
+        "amount": "50.00",
+        "currency": "EUR",
+        "bookedAt": "2026-10-02T10:15:00Z",
+        "counterparty": {
+          "iban": "ES0000000000000000000002",
+          "name": "Synthetic Recipient"
+        },
+        "memo": "Failed transfer"
+      }
+    ]
+  },
+  "transactionId": "bbva-es-tx-003",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is not bank-reported completed"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "provenance": "synthetic",
+  "description": "BBVA Spain SEPA transfer record while still in pending bank execution state.",
+  "input": {
+    "account": {
+      "iban": "ES0000000000000000000001"
+    },
+    "transactions": [
+      {
+        "id": "bbva-es-tx-002",
+        "type": "sepaTransfer",
+        "direction": "debit",
+        "status": "EN_TRAMITACION",
+        "amount": "100.00",
+        "currency": "EUR",
+        "bookedAt": "2026-10-02T10:00:00Z",
+        "counterparty": {
+          "iban": "ES0000000000000000000002",
+          "name": "Synthetic Recipient"
+        },
+        "memo": "Pending transfer"
+      }
+    ]
+  },
+  "transactionId": "bbva-es-tx-002",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is still pending bank execution"
+  }
+}

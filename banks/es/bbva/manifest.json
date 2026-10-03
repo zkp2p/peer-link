@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1",
+  "id": "es/bbva",
+  "name": "BBVA Spain",
+  "country": "ES",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "web-banking-receipt",
+  "capability": "Interpret outgoing domestic EUR SEPA transfers as sender-bank-reported debits",
+  "entrypoint": "interpretBbva",
+  "maintainers": ["aipd506"],
+  "currencies": ["EUR"],
+  "unsupported": [
+    "bizum-transfers",
+    "international-swift-non-sepa",
+    "direct-debits",
+    "card-payments",
+    "fx-exchanges",
+    "incoming-credits",
+    "recipient-credit-confirmation",
+    "cryptographic-source-authentication"
+  ],
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/24.png"
+}

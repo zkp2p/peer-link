@@ -1,0 +1,37 @@
+{
+  "provenance": "synthetic",
+  "description": "Completed outgoing BBVA Spain SEPA transfer with synthetic Spanish IBANs and standard EUR decimal amount.",
+  "input": {
+    "account": {
+      "iban": "ES0000000000000000000001"
+    },
+    "transactions": [
+      {
+        "id": "bbva-es-tx-001",
+        "type": "sepaTransfer",
+        "direction": "debit",
+        "status": "EJECUTADA",
+        "amount": "250.75",
+        "currency": "EUR",
+        "bookedAt": "2026-10-02T09:15:00Z",
+        "counterparty": {
+          "iban": "ES0000000000000000000002",
+          "name": "Synthetic Recipient"
+        },
+        "memo": "Monthly rent payment"
+      }
+    ]
+  },
+  "transactionId": "bbva-es-tx-001",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "ES0000000000000000000001",
+    "payeeId": "ES0000000000000000000002",
+    "amountMinor": "25075",
+    "currency": "EUR",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "status": "EJECUTADA",
+    "timestamp": "2026-10-02T09:15:00Z"
+  }
+}

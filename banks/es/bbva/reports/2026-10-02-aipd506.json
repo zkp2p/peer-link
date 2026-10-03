@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "1",
+  "provider": "es/bbva",
+  "adapterRevision": "16f668f0272ac2bc4209375a1e5f69ccae00280a",
+  "harnessRevision": "16f668f0272ac2bc4209375a1e5f69ccae00280a",
+  "testedAt": "2026-10-02T21:25:30Z",
+  "reporter": "aipd506",
+  "surface": "web-banking-receipt",
+  "capability": "outgoing-domestic-eur-transfer",
+  "outcome": "pass",
+  "evidenceClass": "contributor-live",
+  "fixtureRefs": [
+    "fixtures/completed.synthetic.json",
+    "fixtures/failed.synthetic.json",
+    "fixtures/pending.synthetic.json",
+    "fixtures/spanish-format.synthetic.json"
+  ],
+  "limitations": [
+    "One contributor account evaluated without independent multi party reproduction.",
+    "Only completed outgoing domestic EUR SEPA transfers validated.",
+    "Direct debits, card payments, and standing orders stay unsupported.",
+    "Source authenticity, legal person identity, recipient credit, and irreversible settlement are not proven.",
+    "Raw transaction payload remained in local browser agent evaluation memory and is not published."
+  ],
+  "summary": "Account owner authorized session inspected BBVA Spain web banking records and executed repository transformer in memory against synthetic and live shape transfer records. Completed status, EUR amount in euro cents, sender Spanish IBAN, counterparty IBAN, and UTC timestamps matched the official transaction payload exactly. Pending transfers and non completed records abstain cleanly without throwing."
+}
