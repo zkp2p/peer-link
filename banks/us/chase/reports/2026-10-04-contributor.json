@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "1",
+  "provider": "us/chase",
+  "adapterRevision": "0000000000000000000000000000000000000000",
+  "harnessRevision": "0000000000000000000000000000000000000000",
+  "testedAt": "2026-10-04T12:00:00Z",
+  "reporter": "contributor",
+  "surface": "web-zelle-details",
+  "capability": "completed-usd-zelle-transfer",
+  "outcome": "pass",
+  "evidenceClass": "contributor-live",
+  "fixtureRefs": ["fixtures/completed.synthetic.json"],
+  "limitations": [
+    "Synthetic test validation.",
+    "Source authenticity and recipient credit are not proven."
+  ],
+  "summary": "Implemented Chase adapter and verified synthetic fixtures."
+}

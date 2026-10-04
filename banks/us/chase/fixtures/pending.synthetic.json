@@ -1,0 +1,22 @@
+{
+  "provenance": "synthetic",
+  "description": "Pending Chase Zelle transfer which must abstain.",
+  "input": {
+    "transactions": [
+      {
+        "id": "chase-zelle-001",
+        "amount": -50.00,
+        "currency": "USD",
+        "status": "pending",
+        "postedAt": "2026-10-04T12:00:00.000Z",
+        "payerPartyId": "synthetic-chase-account",
+        "payeePartyId": "recipient@example.com"
+      }
+    ]
+  },
+  "transactionId": "chase-zelle-001",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is not completed or sent"
+  }
+}
