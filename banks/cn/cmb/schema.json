@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CMB transaction surface",
+  "description":
+    "Input schema for China Merchants Bank personal internet banking or CMB App transaction-detail surface. Foreign-currency sub-accounts are out of scope. Electronic receipts (电子回单) share this shape but may omit peer fields; only matched receipt-to-transfer pairs are accepted.",
+  "type": "object",
+  "required": ["surface", "currency", "amountCents", "status", "timestampUtc", "payer", "payee", "transactionId"],
+  "properties": {
+    "surface": {
+      "type": "string",
+      "enum": ["app", "web"],
+      "description": "Originating transaction-detail surface."
+    },
+    "currency": {
+      "type": "string",
+      "const": "CNY",
+      "description": "Only CNY yuan is supported."
+    },
+    "amountCents": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Amount in cents (yuan * 100). Two-decimal precision required."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "success",
+        "pending",
+        "processing",
+        "failed",
+        "cancelled",
+        "unknown"
+      ],
+      "description": "Bank-reported status. Only 'success' is accepted for final matching."
+    },
+    "timestampUtc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp in UTC as recorded by the bank surface."
+    },
+    "payer": {
+      "type": "object",
+      "required": ["name", "accountNumber"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description":
+            "Payer display name. May be partially masked on the surface."
+        },
+        "accountNumber": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Payer account number. Often partially masked; never post real values in Git."
+        }
+      }
+    },
+    "payee": {
+      "type": "object",
+      "required": ["name", "accountNumber"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description":
+            "Payee display name. May be partially masked on the surface."
+        },
+        "accountNumber": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Payee account number. Often partially masked."
+        }
+      }
+    },
+    "transactionId": {
+      "type": "string",
+      "minLength": 1,
+      "description":
+        "Bank-reported transaction ID (交易流水号). Scope is CMB internal; interbank IDs are not cross-bank normalized."
+    },
+    "memo": {
+      "type": ["string", "null"],
+      "default": null,
+      "description":
+        "Optional transfer memo (附言). Treated as untrusted text; never used for matching or validation beyond presence."
+    }
+  },
+  "additionalProperties": false
+}
