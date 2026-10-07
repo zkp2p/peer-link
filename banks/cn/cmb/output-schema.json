@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CMB normalized output",
+  "description":
+    "Normalized Peer adapter output for China Merchants Bank CNY transactions.",
+  "type": "object",
+  "required": [
+    "adapter",
+    "currency",
+    "precision",
+    "amount",
+    "status",
+    "timestampUtc",
+    "timezone",
+    "payer",
+    "payee",
+    "transactionId",
+    "source"
+  ],
+  "properties": {
+    "adapter": {
+      "type": "string",
+      "const": "cmb"
+    },
+    "currency": {
+      "type": "string",
+      "const": "CNY"
+    },
+    "precision": {
+      "type": "integer",
+      "const": 2
+    },
+    "amount": {
+      "type": "number",
+      "minimum": 0.01,
+      "description": "Amount in yuan to two decimal places."
+    },
+    "status": {
+      "type": "string",
+      "const": "success",
+      "description":
+        "Only bank-reported success is emitted. Non-final or unknown statuses fail closed."
+    },
+    "timestampUtc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "timezone": {
+      "type": "string",
+      "const": "Asia/Shanghai",
+      "description": "CMB surfaces report in China Standard Time (UTC+8); normalized to UTC here."
+    },
+    "payer": {
+      "type": "object",
+      "required": ["name", "accountNumber"],
+      "properties": {
+        "name": { "type": "string" },
+        "accountNumber": { "type": "string" }
+      }
+    },
+    "payee": {
+      "type": "object",
+      "required": ["name", "accountNumber"],
+      "properties": {
+        "name": { "type": "string" },
+        "accountNumber": { "type": "string" }
+      }
+    },
+    "transactionId": {
+      "type": "string",
+      "description": "CMB-internal transaction ID (交易流水号)."
+    },
+    "source": {
+      "type": "string",
+      "enum": ["app", "web"]
+    },
+    "memo": {
+      "type": ["string", "null"],
+      "description": "Raw memo text, preserved as-is and treated as untrusted."
+    }
+  },
+  "additionalProperties": false
+}
