@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1",
+  "id": "cn/cmb",
+  "name": "China Merchants Bank",
+  "country": "CN",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "web-internet-banking-transfer-detail",
+  "capability": "Interpret completed outgoing domestic CNY transfers from China Merchants Bank personal internet banking",
+  "entrypoint": "interpretChinaMerchantsBank",
+  "maintainers": ["libertarianweb3"],
+  "currencies": ["CNY"],
+  "unsupported": [
+    "cross-border remittances",
+    "foreign currency transfers",
+    "credit card payments",
+    "pending or scheduled transfers",
+    "failed or cancelled transfers",
+    "incoming transfers",
+    "cryptographic source authentication"
+  ],
+  "fixtureProvenance": "synthetic"
+}
