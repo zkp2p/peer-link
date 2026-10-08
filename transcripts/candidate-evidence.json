@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "status": "candidate_only",
+  "publicReleaseApproved": false,
+  "observedAt": "2026-10-08T18:55:50.850545+00:00",
+  "sourceCommit": "68e4dbbdb82094e888b691ce4dec4a570a78684d",
+  "mainMergeCommit": "39bfbbb56b5c800d9982ef86ad9112544918cb8e",
+  "policyDigest": "0ae7f9a28d4c4e50f50350541396f9d2c47233d8445638b0bd732a7a2db54458",
+  "candidateMeasurements": {
+    "0": "f48bd40448bdae715087262a67e24733323a2dd7922bc990e19bd1a048a52b392f34a1d1ff48b7539a22b47347a1af83",
+    "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
+    "2": "1dad80d19390c1539837c61d1b19c7ddd8c56dcf601918d25bb49d2c7ae7831ad7a76c5a8e018713f4ffd909efda054b",
+    "8": "eccafc00a9276e05379faae036ad632f18ca4fe8bdab1d3a203101f9cf752746a7edd3cede3452d4be8df1882f7e63ff"
+  },
+  "signedEifSha384": "2ad5e7518759da57cd579e5f82213a2d2e10c139bc60101c2a8f4e0033aeabbfe6cbf7ee6bb25b5755d20b57d2547b0b",
+  "buildVerification": {
+    "independentCIBuildsMatch": true,
+    "deployedPcr012MatchesCI": true,
+    "allMeasuredInputsMatchReviewedCheckout": true,
+    "ciSourceCommit": "d9601a4fbdc3003b3c155c7e131cfe240383d56e",
+    "ciRunUrl": "https://github.com/zkp2p/peer-link/actions/runs/37826253759"
+  },
+  "hardwareVerification": {
+    "awsCertificateChainVerified": true,
+    "coseSignatureVerified": true,
+    "freshNonceKeyPolicyEpochBindingsVerified": true,
+    "debugEnabled": false
+  },
+  "epoch": {
+    "budgetMinor": 50000000,
+    "chainId": 8453,
+    "epochId": "a5725a7223848f11bb34f774a102fdd2",
+    "maxGasFundingWei": 3000000000000000,
+    "nonRestorable": true,
+    "payoutWallet": "0x7a066148c77dd3d07232d42e591fe638f9998f15",
+    "persistence": "enclave_ram_only",
+    "usdcContract": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "version": 1
+  },
+  "admissionsOpen": false,
+  "payoutWalletFunded": false,
+  "liveEnclaveBankJobCompleted": false,
+  "paidInferenceCompleted": false,
+  "livePayoutCompleted": false,
+  "liveRefundCompleted": false,
+  "nearAttestation": {
+    "canonicalModel": "z-ai/glm-5.3-flash",
+    "keyedGatewayTcbStatus": "OutOfDate",
+    "keyedModelTcbStatus": "UpToDate",
+    "tlsBindingVerified": true,
+    "confidentialRouteApproved": false
+  },
+  "limitations": [
+    "Candidate evidence is not an approved release manifest or authorization to submit credentials.",
+    "CI tested the pull-request merge commit; every measured input and deployed PCR0/1/2 matches.",
+    "No bank credentials, raw bank values or inference keys are included.",
+    "The unfunded pilot has an automatic 24-hour infrastructure stop guard."
+  ]
+}

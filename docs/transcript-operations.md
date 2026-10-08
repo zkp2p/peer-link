@@ -90,10 +90,11 @@ On a disposable Linux amd64 build host:
 bash transcripts/infra/build_candidate.sh /opt/peer-link-transcripts/build
 ```
 
-This uses the existing immutable Python base and hash-pinned verification dependency
-lock, then installs the separately version-pinned transcript dependency lock with
-binary wheels only. Transcript wheel hashes are not yet pinned; an independently
-reproducible dependency supply chain remains a release gate. It produces an **unsigned candidate**, measurements
+This uses the immutable Python base and exact-version, hash-pinned verification
+and transcript dependency locks, installing binary wheels only with required hash
+verification. The Dockerfile has an explicit runtime-file allowlist; the published
+release manifest, host tools, tests and caches are outside the measured image.
+It produces an **unsigned candidate**, measurements
 and a complete image SHA-384. Compare independent rebuild PCR0/1/2; record complete
 EIF hashes separately. Volatile metadata can change whole-file hashes. The existing
 `verification/infra/normalize_eif.py` may normalize an unsigned v4 candidate before
