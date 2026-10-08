@@ -1,6 +1,7 @@
-# Peer Link instructions for Claude
+# PeerLink agent entrypoint
 
-Read and follow [AGENTS.md](AGENTS.md) for the repository's privacy boundaries, contribution rules, validation commands and deployment workflow. For bank work, follow [skills/contribute-bank/SKILL.md](skills/contribute-bank/SKILL.md) (new adapter), [skills/test-bank/SKILL.md](skills/test-bank/SKILL.md) (live report) or [skills/review-contribution/SKILL.md](skills/review-contribution/SKILL.md) (review).
+Read AGENTS.md and skills/contribute-transcript/SKILL.md. The active contribution program collects attested banking transcripts; provider-code bounties are retired.
+
 
 ## Required logos for main-page integrations
 

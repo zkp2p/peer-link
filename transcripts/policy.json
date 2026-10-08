@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "mode": "nitro-pilot",
+  "operatorPublicKey": "12e04ddbf7af5ff661e6dfe36aceb290c48df218b7ed1c6deb76691f77acdaa4",
+  "promptDigest": "0b914ee6f22a30b2c234c02e932eadb5dae8d181be57440733dda6566f018de2",
+  "payoutRpc": "https://mainnet.base.org/",
+  "egressHosts": [
+    "api.wise.com",
+    "api.openai.com",
+    "openrouter.ai",
+    "cloud-api.near.ai",
+    "mainnet.base.org"
+  ],
+  "campaigns": [
+    {
+      "version": 1,
+      "id": "wise-api-pilot-v1",
+      "bankId": "gb/wise",
+      "bankName": "Wise",
+      "country": "GB",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/64",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://api.wise.com",
+          "paths": [
+            "/v1/profiles",
+            "/v4/profiles/{id}/balances",
+            "/v1/profiles/{id}/balance-statements/{id}/statement.json"
+          ],
+          "methods": ["GET"],
+          "parameterNames": ["types", "currency", "intervalStart", "intervalEnd", "type"],
+          "headerNames": ["Content-Type"]
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["gpt-4o-mini-2024-07-18"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["openai/gpt-4o-mini-2024-07-18"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["z-ai/glm-5.3-flash"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "schema-usefulness-v1",
+      "evidenceRequirements": {
+        "historyPath": ["transactions"],
+        "minRecords": 1,
+        "requiredFields": ["type", "date", "referenceNumber"],
+        "minScore": 70
+      },
+      "safeSchemaFields": [
+        "transactions",
+        "id",
+        "type",
+        "date",
+        "amount",
+        "value",
+        "currency",
+        "details",
+        "referenceNumber",
+        "runningBalance",
+        "totalFees",
+        "fee",
+        "description",
+        "paymentReference",
+        "senderName",
+        "recipient",
+        "name",
+        "accountHolder",
+        "address",
+        "balance",
+        "statementPeriod",
+        "start",
+        "end",
+        "status",
+        "profileId",
+        "investmentState",
+        "creationTime",
+        "modificationTime",
+        "visible",
+        "primary",
+        "exchangeDetails",
+        "forAmount",
+        "rate",
+        "merchant",
+        "category",
+        "sourceAmount",
+        "targetAmount",
+        "issuer",
+        "bankDetails",
+        "endOfStatementBalance",
+        "query",
+        "intervalStart",
+        "intervalEnd",
+        "accountId",
+        "senderAccount",
+        "addressFirstLine",
+        "firstName",
+        "lastName",
+        "firstLine",
+        "city",
+        "postCode",
+        "stateCode",
+        "countryName",
+        "country",
+        "state",
+        "reservedAmount",
+        "cashAmount",
+        "totalWorth",
+        "icon"
+      ]
+    }
+  ],
+  "privacy": {
+    "rawRecords": "enclave_memory_only",
+    "inferenceInput": "redacted_structural_artifact",
+    "artifactStorage": "operator_host_fsync",
+    "inferenceBilling": "contributor_key_only",
+    "providerVisibleRecipients": {
+      "near": ["NEAR AI Cloud", "Chutes (possible upstream fallback)"]
+    },
+    "nearModelResponseAuthenticity": "unverified_gateway_assertions_only",
+    "confidentialNearEnabled": false
+  },
+  "epoch": {
+    "nonRestorable": true,
+    "budgetMinor": 50000000,
+    "noAutomaticRefill": true
+  }
+}

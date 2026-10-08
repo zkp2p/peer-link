@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Funded bank bounties
-    url: https://github.com/zkp2p/peer-link/issues/64
-    about: Claim a funded bank by commenting on its own issue, not by opening a new one.
-  - name: Contribution guide for agents and people
-    url: https://github.com/zkp2p/peer-link/blob/main/skills/contribute-bank/SKILL.md
-    about: The full runbook from an authorized bank session to a pull request.
+  - name: Bank transcript campaigns
+    url: https://github.com/zkp2p/peer-link/issues
+    about: Find the existing bank issue and its current access, reward and capacity terms. No claiming comment is required.
+  - name: Transcript contribution skill
+    url: https://github.com/zkp2p/peer-link/blob/main/skills/contribute-transcript/SKILL.md
+    about: Check release readiness, privacy, inference costs and the attested encrypted workflow.
   - name: Report a vulnerability or exposed data privately
     url: https://github.com/zkp2p/peer-link/security/advisories/new
     about: Never post secrets or banking records in a public issue.

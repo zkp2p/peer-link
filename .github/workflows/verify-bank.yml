@@ -1,4 +1,4 @@
-name: Request approved bank verification
+name: Legacy bank verification (retired)
 on:
   workflow_dispatch:
     inputs:
@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   request:
-    if: github.ref == 'refs/heads/main' && vars.PEER_LINK_DISPATCH_ENABLED == 'true'
+    if: ${{ false }} # Provider-PR verification retired; transcript service owns new jobs.
     environment: peer-link-verification
     runs-on: ubuntu-24.04
     timeout-minutes: 5

@@ -4,7 +4,7 @@
     "name": "Monobank",
     "country": "UA",
     "currency": "UAH",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/6",
     "logo": "/logos/monobank.png",
     "adapter": "ua/monobank"
@@ -14,7 +14,7 @@
     "name": "Vietcombank",
     "country": "VN",
     "currency": "VND",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/8",
     "logo": "/logos/vietcombank.png",
     "adapter": "vn/vietcombank"
@@ -24,7 +24,7 @@
     "name": "Chase",
     "country": "US",
     "currency": "USD",
-    "amount": 50,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/73",
     "logo": "/logos/chase.jpg",
     "adapter": "us/chase"
@@ -34,7 +34,7 @@
     "name": "Bank of America",
     "country": "US",
     "currency": "USD",
-    "amount": 50,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/74",
     "logo": "/logos/bank-of-america.png",
     "adapter": "us/bank-of-america"
@@ -44,7 +44,7 @@
     "name": "Wells Fargo",
     "country": "US",
     "currency": "USD",
-    "amount": 50,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/75",
     "logo": "/logos/wells-fargo.png",
     "adapter": "us/wells-fargo"
@@ -54,7 +54,7 @@
     "name": "OPay",
     "country": "NG",
     "currency": "NGN",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/4",
     "logo": "/logos/opay.png",
     "adapter": "ng/opay"
@@ -64,7 +64,7 @@
     "name": "Easypaisa",
     "country": "PK",
     "currency": "PKR",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/86",
     "logo": "/logos/easypaisa.png",
     "adapter": "pk/easypaisa"
@@ -74,7 +74,7 @@
     "name": "BCA",
     "country": "ID",
     "currency": "IDR",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/7",
     "logo": "/logos/bca.png",
     "adapter": "id/bca"
@@ -84,7 +84,7 @@
     "name": "Bancolombia",
     "country": "CO",
     "currency": "COP",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/9",
     "logo": "/logos/bancolombia.png",
     "adapter": "co/bancolombia"
@@ -94,7 +94,7 @@
     "name": "GCash",
     "country": "PH",
     "currency": "PHP",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/10",
     "logo": "/logos/gcash.png",
     "adapter": "ph/gcash"
@@ -104,7 +104,7 @@
     "name": "bKash",
     "country": "BD",
     "currency": "BDT",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/13",
     "logo": "/logos/bkash.png",
     "adapter": "bd/bkash"
@@ -114,7 +114,7 @@
     "name": "Safaricom M-Pesa",
     "country": "KE",
     "currency": "KES",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/14",
     "logo": "/logos/14.png",
     "adapter": "ke/mpesa"
@@ -124,7 +124,7 @@
     "name": "Kaspi Bank",
     "country": "KZ",
     "currency": "KZT",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/15",
     "logo": "/logos/kaspi.png",
     "adapter": "kz/kaspi"
@@ -134,7 +134,7 @@
     "name": "BBVA Mexico",
     "country": "MX",
     "currency": "MXN",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/16",
     "logo": "/logos/16.png",
     "adapter": "mx/bbva-mexico"
@@ -144,7 +144,7 @@
     "name": "Banco de Credito del Peru",
     "country": "PE",
     "currency": "PEN",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/17",
     "logo": "/logos/bcp.png",
     "adapter": "pe/bcp"
@@ -154,7 +154,7 @@
     "name": "Ziraat Bank",
     "country": "TR",
     "currency": "TRY",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/18",
     "logo": "/logos/ziraat.png",
     "adapter": "tr/ziraat"
@@ -164,7 +164,7 @@
     "name": "Uala Argentina",
     "country": "AR",
     "currency": "ARS",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/20",
     "logo": "/logos/uala.png",
     "adapter": "ar/uala"
@@ -174,7 +174,7 @@
     "name": "Itau Brazil",
     "country": "BR",
     "currency": "BRL",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/21",
     "logo": "/logos/itau.png",
     "adapter": "br/itau"
@@ -184,7 +184,7 @@
     "name": "MTN MoMo Ghana",
     "country": "GH",
     "currency": "GHS",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/32",
     "logo": "/logos/mtn-momo.png",
     "adapter": "gh/mtn-momo"
@@ -194,7 +194,7 @@
     "name": "BBVA Spain",
     "country": "ES",
     "currency": "EUR",
-    "amount": 50,
+    "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/24",
     "logo": "/logos/24.png",
     "adapter": "es/bbva-spain"

@@ -1,73 +1,100 @@
-# Privacy before publication
+# Transcript privacy
 
-Public PRs, comments and Git history are persistent. Deleting a file later does not undo a
-leak: every pushed commit stays retrievable.
+**Current status: unreleased. Do not send bank sessions or inference keys.** Use
+only the approved independently verified [release](../transcripts/release.json)
+and an active source campaign through the
+[contribution skill](../skills/contribute-transcript/SKILL.md).
 
-## Agent workflow
+## Where data goes
 
-- Before inspecting a bank, identify the minimum fields the capability requires. Tell the
-  account owner when their chosen cloud agent processes banking data; repository
-  instructions do not authorize sharing data with unrelated services.
-- Do not export whole HARs, cookie jars, browser profiles, account statements or agent
-  transcripts. Raw local files belong only in the Git-ignored `.local/` folder, with
-  restricted permissions and a deliberate cleanup plan.
-- Prefer learning a response's structure without its values:
-  `npm run try:bank -- --shape .local/<file>.json` prints keys and value descriptions and
-  keeps only enum-like status, type, direction and currency values. `npm run try:bank` and
-  the in-page harness print redacted summaries with masked identifiers.
-- Prefer independently invented synthetic fixtures. For sanitized observations, replace
-  names, account/routing IDs, transaction and organization IDs, dates, amounts, addresses,
-  emails, references and free-text memos. Remove unrelated transactions, headers and
-  metadata entirely. Preserve relevant sign, precision, duplicate/matching relationships
-  and status behavior. Do not hash real low-entropy account identifiers as a substitute for
-  redaction.
-- Mark fixture provenance `synthetic` or `sanitized` (also in the file name); explain
-  transformations and limitations. Never call sanitized bytes authenticated original
-  evidence.
-- Review expected outputs too. They can contain the same sensitive values as inputs.
-- Publish only minimum code, fixtures and structured reports. No original bank
-  screenshots, statements or transcript attachments.
-
-## Invented values that pass the checks
-
-| Kind | Use |
+| Boundary | Data it may receive |
 | --- | --- |
-| Names | Contain a marker: `Synthetic Payee`, `Example Account Holder`. |
-| Emails | Reserved domains: `payer@example.com`, `payee@bank.example`, `a@mail.test`. |
-| Account numbers | Runs of zeros: `000000000001`, `0000000000000000001`. |
-| IBANs | A published registry example (`GB82WEST12345698765432`, `UA213223130000026007233566001`) or check digits `00`. |
-| Card numbers | Network test numbers (`4111111111111111`) or a number that fails the Luhn check. |
-| Phone numbers | Obviously fictional with `0000`: `+380670000001`. |
-| Transaction IDs | `synthetic-transfer-001`, or a UUID you generated. |
-| Dates and amounts | Invented values that keep the original precision, sign and timezone format. |
+| Account owner's browser and local agent | Authorized transaction-history navigation and local bank content. |
+| PeerLink Nitro enclave | Application-encrypted submission after attestation verification; fresh authenticated bank responses, transient session and inference key. |
+| Approved ordinary inference provider | Validated redacted structural artifact and fixed grading instructions only; no raw bank response, session or payout key. |
+| Parent host/API infrastructure | Encrypted submission, public routing/status metadata, approved egress hostname and opaque TLS bytes. |
+| Retained/public outputs | Templated endpoints, allowlisted field paths/types, coverage, limitations and opaque receipt identifiers/digests. |
 
-## Required commands before publishing
+A cloud-backed local agent can separately process browser content. Explain that
+boundary and obtain the owner's consent before inspection; repository instructions
+do not authorize sharing banking data with an unrelated service.
+
+The pilot performs deterministic redaction **before inference**. Ordinary
+provider-visible inference requires explicit consent to the named provider/model
+and approved upstream routing even though the content is structural. Peer enclave
+protection does not establish the provider's confidentiality or retention policy.
+The ordinary NEAR route is implemented for canonical `z-ai/glm-5.3-flash`,
+with explicit consent to NEAR and its approved Chutes upstream. It requests no
+aliasing, rejects alias/model mismatches and unapproved serving-provider headers,
+and makes at most one grading call. Those gateway assertions over TLS are not
+independent model attestation. Live funded inference remains unverified.
+
+NEAR confidential inference is unavailable until its exact attestation and encrypted
+request/response adapter have been verified. Failed confidential verification must
+not downgrade to ordinary inference.
+
+## Credentials and acquisition
+
+The owner logs in and completes MFA. The encrypted job includes only the authorized
+session/API credential needed for approved reads, the recipe and the contributor's
+inference key; never passwords, MFA codes or private payout keys. Verify fresh
+Nitro attestation, the pinned approved image, encryption key and policy binding
+before encryption. Reject debug/unreleased images and changed scope or privacy mode.
+
+Bank/provider TLS and HTTP processing terminate inside the enclave. The host relay
+sees destination metadata and ciphertext. Submitted captures are hints; the enclave
+must acquire new bank responses and derive account identity from those authenticated
+responses. No payment initiation or account changes are permitted.
+
+Keys remain transient and are not read from an environment fallback, returned in
+errors, included in model prompts, or logged. After the job, revoke the inference
+key and use the bank's logout/session controls. Logout is not a universal bank-token
+revocation guarantee. Python reference removal is not guaranteed memory zeroization;
+enclave destruction is the final key-erasure boundary.
+
+## Redaction and retention
+
+Retain endpoint templates, safe parameter/header names, field paths and types,
+list/detail and authenticated Wise profile/balance/history relationships, read
+coverage and limitations. The policy allowlists 59 public schema field names;
+unknown or dynamic keys still become wildcards. Remove names, account
+numbers, balances, exact amounts, memos, transaction IDs and credentials, including
+values in URL segments, queries, nested bodies and dynamic object keys. Unknown
+field names become structural wildcards. Model free text is not retained as a
+supposedly safe banking transcript.
+
+Account deduplication uses purpose-scoped keyed identifiers derived from live bank
+account evidence. Never publish those identifiers or ordinary hashes of guessable
+banking values. Public receipts hash already-redacted artifacts only.
+
+The supervised pilot's enclave epoch is non-restorable. Losing its process loses
+its key, ledger and in-memory artifacts; public receipt/storage guarantees must
+match the published release. It is not a durable production storage service.
+
+## Local handling and publication
+
+Avoid exporting whole HARs, browser profiles, cookie jars, statements or agent
+transcripts. If temporary local files are necessary, keep them in ignored `.local/`
+with restricted permissions and an explicit cleanup plan. Never put secrets in
+command arguments, shell history, URLs, screenshots, GitHub, CI or support requests.
+Use invented synthetic values for repository fixtures, including expected outputs.
+Sanitized copies do not become authenticated original evidence.
+
+Before committing/pushing public maintenance changes:
 
 ```sh
-npm run privacy -- --staged                    # exact index contents before each commit
-npm run privacy -- --range origin/main..HEAD   # every file version in your branch history
-git diff origin/main...HEAD                    # read every line you are about to push
+npm run privacy -- --staged
+npm run privacy -- --range origin/main..HEAD
+git diff origin/main...HEAD
 ```
 
-The scanner never prints matching values. It flags private keys, tokens, API keys, cookies,
-authorization and CSRF headers (JSON, HAR and raw HTTP forms), JWTs, session cookie values,
-raw capture and statement file types, and media or documents under `banks/`. In bank
-folders it also flags non-reserved email addresses, checksum-valid IBANs and card numbers,
-US social security numbers and credential-bearing URLs; in fixtures, real-looking phone
-numbers, person names without a synthetic marker and missing provenance, and it warns about
-unexplained long numeric identifiers. History scans also warn about files outside the
-current repository layout, including deleted images, documents or JSON captures that
-content heuristics may not inspect. Review those file versions locally before publishing;
-the warning is advisory because older legitimate layouts may differ. Heuristics do not
-certify privacy: names, amounts and uncommon identifiers can evade them. CI runs the same
-checks too late to prevent the first
-disclosure, so run them locally.
+The privacy scanner flags many credential/capture patterns without printing matched
+values. It can miss names, amounts and uncommon identifiers. Review every changed
+file version yourself; deleting a file later does not remove a pushed leak.
 
-## Accidental exposure
+For exposure, stop sharing, have the owner revoke affected credentials, and report
+privately through [SECURITY.md](../SECURITY.md). Never repeat the secret in a comment.
+The landing page provides discovery/instructions and accepts no plaintext bank uploads.
 
-Stop sharing, revoke exposed credentials through the account owner, contact the maintainer
-privately (see [SECURITY.md](../SECURITY.md)) and follow GitHub's sensitive-data removal
-procedure. Never repeat the secret in an issue or PR comment.
-
-The landing page accepts no bank uploads and runs only a synthetic example. Hosting
-providers can receive ordinary access metadata; no analytics or tracking SDK is included.
+The former adapter publication workflow is [archived](https://github.com/zkp2p/peer-link/blob/31bba0e6c55f41ff08f31d30e728e1ef41d38a3b/docs/privacy.md);
+its shape-printing tools are reference utilities, not the transcript submission API.

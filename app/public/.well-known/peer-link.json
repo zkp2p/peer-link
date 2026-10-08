@@ -1,16 +1,57 @@
 {
-  "schemaVersion": "1",
-  "name": "Peer Link",
+  "schemaVersion": "2",
+  "name": "PeerLink",
   "repository": "https://github.com/zkp2p/peer-link",
+  "program": "transcript-contributions",
   "catalog": "/catalog.json",
   "agentInstructions": "/llms.txt",
+  "contributionSkill": "https://github.com/zkp2p/peer-link/blob/main/skills/contribute-transcript/SKILL.md",
+  "campaigns": "https://github.com/zkp2p/peer-link/issues",
   "verification": {
-    "status": "development",
+    "status": "unreleased",
     "endpoint": null,
     "acceptsSecrets": false,
     "scheduledJudgment": false,
     "automaticPayout": false,
-    "contract": "https://github.com/zkp2p/peer-link/blob/main/verification/agent-contract.json",
-    "release": "https://github.com/zkp2p/peer-link/blob/main/verification/release.json"
+    "release": "https://github.com/zkp2p/peer-link/blob/main/transcripts/release.json"
+  },
+  "rewards": {
+    "currency": "USDC",
+    "fixedCampaignAmounts": [5, 10],
+    "contributorsPerBank": {
+      "minimum": 1,
+      "maximum": 5
+    },
+    "paidContributionsPerAccountPerCampaign": 1,
+    "allCampaignsFunded": false,
+    "automaticRefill": false
+  },
+  "inference": {
+    "billing": "contributor",
+    "rejectedJobsStillBilled": true,
+    "peerKeyFallback": false,
+    "input": "validated_redacted_structural_artifact",
+    "privacyMode": "provider_visible",
+    "explicitConsentRequired": true,
+    "nearConfidentialAvailable": false,
+    "ordinaryNear": {
+      "status": "implemented_not_live_funded_verified",
+      "model": "z-ai/glm-5.3-flash",
+      "consentedUpstreams": ["near", "chutes"],
+      "aliasesAllowed": false,
+      "maximumCalls": 1
+    }
+  },
+  "pilot": {
+    "publicAcceptanceEnabled": false,
+    "nonRestorableEpoch": true,
+    "retirement": {
+      "status": "implemented_not_live_verified",
+      "admissionClosure": "irreversible",
+      "refund": "remaining_usdc_to_fixed_deployer",
+      "arbitraryRecipient": false,
+      "ethSweep": false,
+      "restartRecovery": false
+    }
   }
 }
