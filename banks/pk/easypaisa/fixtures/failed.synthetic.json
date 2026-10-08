@@ -1,0 +1,25 @@
+{
+  "description": "An invented wallet transfer the bank reports as failed. Failed transfers must abstain. Not a real payment.",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is not bank-reported SUCCESS"
+  },
+  "input": {
+    "account": { "id": "synthetic-account-0001", "msisdn": "03000000001" },
+    "transactions": [
+      {
+        "amount": "75.25",
+        "completedAt": "2026-10-06T09:40:00Z",
+        "counterparty": { "displayName": "Synthetic Payee", "msisdn": "03000000004" },
+        "currency": "PKR",
+        "direction": "debit",
+        "id": "SYN-TXN-0003",
+        "memo": "SYNTHETIC EXAMPLE ONLY",
+        "status": "FAILED",
+        "type": "walletTransfer"
+      }
+    ]
+  },
+  "provenance": "synthetic",
+  "transactionId": "SYN-TXN-0003"
+}

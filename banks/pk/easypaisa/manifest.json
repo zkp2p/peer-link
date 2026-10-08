@@ -1,0 +1,25 @@
+{
+  "capability": "Interpret completed outgoing Easypaisa-to-Easypaisa PKR wallet transfers as sender-reported payments",
+  "country": "PK",
+  "currencies": ["PKR"],
+  "entrypoint": "interpretEasypaisa",
+  "fixtureProvenance": "synthetic",
+  "id": "pk/easypaisa",
+  "logo": "/logos/easypaisa.png",
+  "maintainers": ["adnandispatch9-jpg"],
+  "name": "Easypaisa",
+  "schemaVersion": "1",
+  "status": "experimental",
+  "surface": "app-transaction-history",
+  "unsupported": [
+    "IBFT transfers",
+    "Raast transfers",
+    "bill payments",
+    "mobile top-ups",
+    "incoming transfers",
+    "pending, failed or reversed transfers",
+    "recipient-credit confirmation",
+    "cryptographic source authentication"
+  ],
+  "version": "0.1.0"
+}

@@ -1,0 +1,25 @@
+{
+  "description": "The same invented wallet transfer while Easypaisa still reports it as pending. A non-final status must abstain. Not a real payment.",
+  "expected": {
+    "outcome": "insufficient_evidence",
+    "reason": "Transaction is not bank-reported SUCCESS"
+  },
+  "input": {
+    "account": { "id": "synthetic-account-0001", "msisdn": "03000000001" },
+    "transactions": [
+      {
+        "amount": "500.00",
+        "completedAt": "2026-10-06T09:35:00Z",
+        "counterparty": { "displayName": "Synthetic Payee", "msisdn": "03000000003" },
+        "currency": "PKR",
+        "direction": "debit",
+        "id": "SYN-TXN-0002",
+        "memo": "SYNTHETIC EXAMPLE ONLY",
+        "status": "PENDING",
+        "type": "walletTransfer"
+      }
+    ]
+  },
+  "provenance": "synthetic",
+  "transactionId": "SYN-TXN-0002"
+}

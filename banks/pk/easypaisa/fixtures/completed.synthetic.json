@@ -1,0 +1,30 @@
+{
+  "description": "Invented Easypaisa wallet-transfer record: one completed outgoing PKR debit of 125.50. All identifiers, amounts and dates are invented. Not a real payment.",
+  "expected": {
+    "amountMinor": "12550",
+    "currency": "PKR",
+    "outcome": "supported",
+    "payeeId": "03000000002",
+    "payerId": "synthetic-account-0001",
+    "status": "SUCCESS",
+    "timestamp": "2026-10-06T09:30:00Z"
+  },
+  "input": {
+    "account": { "id": "synthetic-account-0001", "msisdn": "03000000001" },
+    "transactions": [
+      {
+        "amount": "125.50",
+        "completedAt": "2026-10-06T09:30:00Z",
+        "counterparty": { "displayName": "Synthetic Payee", "msisdn": "03000000002" },
+        "currency": "PKR",
+        "direction": "debit",
+        "id": "SYN-TXN-0001",
+        "memo": "SYNTHETIC EXAMPLE ONLY",
+        "status": "SUCCESS",
+        "type": "walletTransfer"
+      }
+    ]
+  },
+  "provenance": "synthetic",
+  "transactionId": "SYN-TXN-0001"
+}

@@ -3,6 +3,37 @@
   "providers": [
     {
       "schemaVersion": "1",
+      "id": "pk/easypaisa",
+      "name": "Easypaisa",
+      "country": "PK",
+      "status": "experimental",
+      "version": "0.1.0",
+      "surface": "app-transaction-history",
+      "capability": "Interpret completed outgoing Easypaisa-to-Easypaisa PKR wallet transfers as sender-reported payments",
+      "maintainers": [
+        "adnandispatch9-jpg"
+      ],
+      "currencies": [
+        "PKR"
+      ],
+      "unsupported": [
+        "IBFT transfers",
+        "Raast transfers",
+        "bill payments",
+        "mobile top-ups",
+        "incoming transfers",
+        "pending, failed or reversed transfers",
+        "recipient-credit confirmation",
+        "cryptographic source authentication"
+      ],
+      "fixtureProvenance": "synthetic",
+      "logo": "/logos/easypaisa.png",
+      "reportCount": 0,
+      "evidence": [],
+      "source": "https://github.com/zkp2p/peer-link/tree/main/banks/pk/easypaisa"
+    },
+    {
+      "schemaVersion": "1",
       "id": "us/mercury",
       "name": "Mercury",
       "country": "US",

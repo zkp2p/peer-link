@@ -1,0 +1,25 @@
+{
+  "description": "An invented IBFT interbank transfer. IBFT and Raast are explicitly out of scope for this adapter and must return unsupported. Not a real payment.",
+  "expected": {
+    "outcome": "unsupported",
+    "reason": "Only outgoing Easypaisa-to-Easypaisa wallet transfers are supported"
+  },
+  "input": {
+    "account": { "id": "synthetic-account-0001", "msisdn": "03000000001" },
+    "transactions": [
+      {
+        "amount": "1000.00",
+        "completedAt": "2026-10-06T09:45:00Z",
+        "counterparty": { "displayName": "Synthetic Bank Account", "iban": "SYNTHETICIBAN0001" },
+        "currency": "PKR",
+        "direction": "debit",
+        "id": "SYN-TXN-0004",
+        "memo": "SYNTHETIC EXAMPLE ONLY",
+        "status": "SUCCESS",
+        "type": "ibftTransfer"
+      }
+    ]
+  },
+  "provenance": "synthetic",
+  "transactionId": "SYN-TXN-0004"
+}
