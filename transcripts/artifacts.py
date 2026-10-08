@@ -129,10 +129,13 @@ def extract_artifact(campaign, reads):
         source, template, _ = permitted_endpoint(campaign, read.url, read.method)
         tool_flow.append({"step": index + 1, "origin": source["origin"], "path": template,
                           "method": read.method, "status": read.status})
+    # Eligibility is checked against private live history, but its cardinality is
+    # not part of the structural artifact sent to inference or retained publicly.
+    assess_history(campaign, reads)
     artifact = {"version": 1, "campaignId": campaign["id"], "bankId": campaign["bankId"],
                 "sourceOrigins": sorted(origins), "endpoints": normalized,
                 "relationships": relationships, "toolFlow": tool_flow,
-                "coverage": {"readCount": len(reads), "historyRecords": assess_history(campaign, reads)},
+                "coverage": {"readCount": len(reads), "historyMinimumSatisfied": True},
                 "limitations": sorted(LIMITATIONS)}
     validate_artifact(campaign, artifact)
     return artifact
@@ -186,10 +189,10 @@ def validate_artifact(campaign, artifact):
                 any(endpoint["origin"] == flow["origin"] and endpoint["path"] == flow["path"]
                     and endpoint["method"] == flow["method"] for endpoint in artifact["endpoints"]), "unsafe_artifact")
         integer(flow["status"], 200, 299, "unsafe_artifact")
-    fields(artifact["coverage"], {"readCount", "historyRecords"})
+    fields(artifact["coverage"], {"readCount", "historyMinimumSatisfied"})
     integer(artifact["coverage"]["readCount"], 1, 20, "unsafe_artifact")
     require(artifact["coverage"]["readCount"] == len(artifact["toolFlow"]), "unsafe_artifact")
-    integer(artifact["coverage"]["historyRecords"], campaign["evidenceRequirements"]["minRecords"], 200000, "unsafe_artifact")
+    require(artifact["coverage"]["historyMinimumSatisfied"] is True, "unsafe_artifact")
     require(isinstance(artifact["limitations"], list) and set(artifact["limitations"]) == LIMITATIONS, "unsafe_artifact")
     require(len(canonical(artifact)) <= 1_000_000, "unsafe_artifact")
     return artifact

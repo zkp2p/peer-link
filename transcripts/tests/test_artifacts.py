@@ -5,8 +5,10 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from transcripts.artifacts import WISE_PATH_BINDINGS,extract_artifact,validate_artifact
-from transcripts.common import Rejected,canonical
+from transcripts.artifacts import WISE_PATH_BINDINGS,extract_artifact,validate_artifact,validate_archive_record
+from transcripts.common import Rejected,canonical,digest
+from transcripts.epoch import CHAIN_ID,USDC_ADDRESS,MAX_GAS_FUNDING_WEI
+from transcripts.policy import MAX_BUDGET
 from transcripts.recipe import LiveRead
 from transcripts.tests.test_core import campaign as generic_campaign,read as synthetic_read
 
@@ -116,6 +118,65 @@ class ArtifactTests(unittest.TestCase):
         artifact=extract_artifact(policy,self.reads())
         self.assertEqual(artifact['relationships'],[])
         self.assertFalse(any(field['path']=='$[].id' for endpoint in artifact['endpoints'] for field in endpoint['fields']))
+
+    def test_private_history_cardinality_does_not_change_exported_structure(self):
+        one=self.reads()
+        many=self.reads()
+        many[2].body['transactions']*=37
+        one_artifact=extract_artifact(self.campaign,one)
+        many_artifact=extract_artifact(self.campaign,many)
+        self.assertEqual(canonical(one_artifact),canonical(many_artifact))
+        self.assertEqual(digest(one_artifact),digest(many_artifact))
+        self.assertEqual(one_artifact['coverage'],{'readCount':3,'historyMinimumSatisfied':True})
+
+    def test_minimum_history_is_still_checked_before_export(self):
+        policy=copy.deepcopy(self.campaign)
+        policy['evidenceRequirements']['minRecords']=2
+        for count in (0,1):
+            with self.subTest(count=count):
+                reads=self.reads();reads[2].body['transactions']*=count
+                with self.assertRaisesRegex(Rejected,'insufficient_history'):
+                    extract_artifact(policy,reads)
+        reads=self.reads();reads[2].body['transactions']*=2
+        self.assertIs(extract_artifact(policy,reads)['coverage']['historyMinimumSatisfied'],True)
+        # Merely having enough rows cannot replace the existing required-field checks.
+        reads[2].body['transactions']=[{},{}]
+        with self.assertRaisesRegex(Rejected,'insufficient_history'):
+            extract_artifact(policy,reads)
+
+    def test_coverage_rejects_counts_and_non_boolean_eligibility_flags(self):
+        original=extract_artifact(self.campaign,self.reads())
+        coverages=[{'readCount':3,'historyRecords':1},
+                   {'readCount':3,'historyMinimumSatisfied':True,'historyRecords':37},
+                   {'readCount':3,'historyMinimumSatisfied':True,'transactionCount':37},
+                   {'readCount':3}]
+        coverages.extend({'readCount':3,'historyMinimumSatisfied':flag}
+                         for flag in (False,1,0,'true',None))
+        for coverage in coverages:
+            with self.subTest(coverage=coverage):
+                artifact=copy.deepcopy(original);artifact['coverage']=coverage
+                with self.assertRaises(Rejected):validate_artifact(self.campaign,artifact)
+
+    def test_archive_rejects_private_counts_even_with_matching_artifact_digest(self):
+        artifact=extract_artifact(self.campaign,self.reads())
+        route=self.campaign['inferenceRoutes'][0]
+        grade={'rubricVersion':self.campaign['rubricVersion'],'score':100,'useful':True}
+        record={'version':1,'epoch':{'version':1,'epochId':'e'*32,'payoutWallet':'0x'+'2'*40,
+                    'chainId':CHAIN_ID,'usdcContract':USDC_ADDRESS,'budgetMinor':MAX_BUDGET,
+                    'maxGasFundingWei':MAX_GAS_FUNDING_WEI,'nonRestorable':True,'persistence':'enclave_ram_only'},
+                'job':{'jobId':self.job,'campaignId':self.campaign['id'],'state':'accepted',
+                    'bindingDigest':'b'*64,'expiresAt':1200,'rewardMinor':self.campaign['rewardMinor'],
+                    'payoutAddress':'0x'+'1'*40,'reason':None,'artifactDigest':digest(artifact),'transactionId':None},
+                'artifact':artifact,'modelResult':grade,'policyDigest':digest(self.campaign),
+                'inference':{'requestDigest':'d'*64,'responseDigest':digest(grade),'provider':route['provider'],
+                    'model':route['models'][0],'privacyMode':route['privacyModes'][0],'inputTokens':10,'outputTokens':10}}
+        validate_archive_record(self.campaign,record)
+        for coverage in ({'readCount':3,'historyRecords':1},
+                         {'readCount':3,'historyMinimumSatisfied':True,'historyRecords':37}):
+            with self.subTest(coverage=coverage):
+                unsafe=copy.deepcopy(record);unsafe['artifact']['coverage']=coverage
+                unsafe['job']['artifactDigest']=digest(unsafe['artifact'])
+                with self.assertRaises(Rejected):validate_archive_record(self.campaign,unsafe)
 
 
 if __name__=='__main__':unittest.main()
