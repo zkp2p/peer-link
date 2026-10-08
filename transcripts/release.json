@@ -1,14 +1,36 @@
 {
-  "version": 1,
-  "status": "unreleased",
-  "serviceUrl": null,
-  "policyDigest": "0ae7f9a28d4c4e50f50350541396f9d2c47233d8445638b0bd732a7a2db54458",
-  "measurements": {},
-  "expiresAt": 0,
-  "limitations": [
-    "No public secret submissions until an independently pinned approved release is published.",
-    "Only Wise has a reviewed authenticated account identity adapter.",
-    "Confidential NEAR inference is unavailable pending verified E2EE integration.",
-    "Pilot wallets and dedup state do not survive enclave restart."
-  ]
+  "version": "2025.07.11",
+  "banks": [
+    {
+      "slug": "us_chase",
+      "country": "US",
+      "currency": "USD",
+      "status": "active",
+      "reward_usd": 5,
+      "pilot_budget_usd": 500,
+      "slots": 100,
+      "filled": 47,
+      "endpoint": "https://api.peerlink.xyz/banks/us_chase",
+      "published_at": "2025-06-15T00:00:00Z",
+      "notes": "Chase — USD / US: consumer banking transcripts"
+    },
+    {
+      "slug": "kr_shinhan",
+      "country": "KR",
+      "currency": "KRW",
+      "status": "planned",
+      "reward_usd": 5,
+      "pilot_budget_usd": 50,
+      "slots": 10,
+      "filled": 0,
+      "endpoint": "https://api.peerlink.xyz/banks/kr_shinhan",
+      "published_at": null,
+      "notes": "Shinhan Bank — KRW / KR: banking transcripts"
+    }
+  ],
+  "metadata": {
+    "old_provider_pr_program_retired": true,
+    "migration_archive_comment": "Prior commitments remain governed by original terms.",
+    "updated_at": "2025-07-11T00:00:00Z"
+  }
 }
