@@ -2,23 +2,22 @@
   "version": 1,
   "status": "candidate_only",
   "publicReleaseApproved": false,
-  "observedAt": "2026-10-08T18:55:50.850545+00:00",
-  "sourceCommit": "68e4dbbdb82094e888b691ce4dec4a570a78684d",
-  "mainMergeCommit": "39bfbbb56b5c800d9982ef86ad9112544918cb8e",
+  "observedAt": "2026-10-08T19:22:15.773946+00:00",
+  "sourceCommit": "9c34a8273c126f338025f8601ad6a234dbd3ffc7",
   "policyDigest": "0ae7f9a28d4c4e50f50350541396f9d2c47233d8445638b0bd732a7a2db54458",
   "candidateMeasurements": {
-    "0": "f48bd40448bdae715087262a67e24733323a2dd7922bc990e19bd1a048a52b392f34a1d1ff48b7539a22b47347a1af83",
+    "0": "ab09daa3e0853e0c142b88f455228dcde4705ca2e835dc44f741aaa8332fd286481da1af91789b5dc2062db79dfc11f4",
     "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
-    "2": "1dad80d19390c1539837c61d1b19c7ddd8c56dcf601918d25bb49d2c7ae7831ad7a76c5a8e018713f4ffd909efda054b",
+    "2": "17fb854d1dfe9bb3670e522a238244680ca88fdbd57b6f77aa142f190c965b2c22b0765b845729cf4124d700fb279074",
     "8": "eccafc00a9276e05379faae036ad632f18ca4fe8bdab1d3a203101f9cf752746a7edd3cede3452d4be8df1882f7e63ff"
   },
-  "signedEifSha384": "2ad5e7518759da57cd579e5f82213a2d2e10c139bc60101c2a8f4e0033aeabbfe6cbf7ee6bb25b5755d20b57d2547b0b",
+  "signedEifSha384": "6db0bb2c37c21e333ca49405d072242194580f83df39fdd6da36159a0ee77275b287299f7f2663717bd350a4fb5dd8cd",
   "buildVerification": {
     "independentCIBuildsMatch": true,
     "deployedPcr012MatchesCI": true,
     "allMeasuredInputsMatchReviewedCheckout": true,
-    "ciSourceCommit": "d9601a4fbdc3003b3c155c7e131cfe240383d56e",
-    "ciRunUrl": "https://github.com/zkp2p/peer-link/actions/runs/37826253759"
+    "ciSourceCommit": "30c6eb89c57636ea230e1a818b136e34366239a4",
+    "ciRunUrl": "https://github.com/zkp2p/peer-link/actions/runs/37830799762"
   },
   "hardwareVerification": {
     "awsCertificateChainVerified": true,
@@ -29,10 +28,10 @@
   "epoch": {
     "budgetMinor": 50000000,
     "chainId": 8453,
-    "epochId": "a5725a7223848f11bb34f774a102fdd2",
+    "epochId": "fcdaba0c312ff9f1f9f28b48853730e5",
     "maxGasFundingWei": 3000000000000000,
     "nonRestorable": true,
-    "payoutWallet": "0x7a066148c77dd3d07232d42e591fe638f9998f15",
+    "payoutWallet": "0x749a3193b4afe9940af4fe12564c1e5d188525ac",
     "persistence": "enclave_ram_only",
     "usdcContract": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
     "version": 1
@@ -55,5 +54,6 @@
     "CI tested the pull-request merge commit; every measured input and deployed PCR0/1/2 matches.",
     "No bank credentials, raw bank values or inference keys are included.",
     "The unfunded pilot has an automatic 24-hour infrastructure stop guard."
-  ]
+  ],
+  "sourcePullRequest": "https://github.com/zkp2p/peer-link/pull/231"
 }
