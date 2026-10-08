@@ -1,48 +1,22 @@
 {
   "name": "peer-link",
-  "version": "0.2.0",
-  "private": true,
-  "type": "module",
-  "license": "MIT",
-  "description": "Private banking transcripts, contributed by account owners and authenticated inside an enclave.",
-  "engines": {
-    "node": ">=20.19.0"
-  },
+  "version": "1.0.0",
+  "description": "A decentralized peer-to-peer networking protocol with Mercury transcript evidence tracking",
+  "main": "src/index.js",
   "scripts": {
-    "dev": "vite app --host 127.0.0.1",
-    "build": "npm run catalog && vite build app",
-    "preview": "vite preview app --host 127.0.0.1",
-    "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit",
-    "lint": "biome check .",
-    "format": "biome check --write .",
-    "validate": "tsx scripts/validate.ts",
-    "privacy": "tsx scripts/privacy.ts",
-    "catalog": "tsx scripts/catalog.ts",
-    "new-bank": "tsx scripts/new-bank.ts",
-    "try:bank": "tsx scripts/run-bank.ts",
-    "bundle:bank": "tsx scripts/bundle-bank.ts",
-    "check:bank": "npm run validate && npm run privacy && npm run typecheck && npm run lint && npm run test:coverage",
-    "check": "npm run check:bank && npm run build && npm run transcripts:test",
-    "build:verifier-mercury": "tsx scripts/build-verifier-mercury.ts",
-    "bundle:mercury": "tsx scripts/bundle-mercury.ts",
-    "verify:setup": "python3 -m venv .local/verifier-venv && .local/verifier-venv/bin/pip install -r verification/requirements.lock -r verification/requirements-attestation.lock -r verification/requirements-sandbox.lock",
-    "verify:sandbox-smoke": "python3 verification/infra/install_javy.py && npm run build:verifier-mercury && .local/verifier-venv/bin/python verification/infra/sandbox_mercury_smoke.py",
-    "verify:test": ".local/verifier-venv/bin/python -m unittest discover -s verification/tests -v",
-    "verify:status": ".local/verifier-venv/bin/python -m verification.cli status",
-    "verify:readiness": ".local/verifier-venv/bin/python -m verification.readiness",
-    "transcripts:setup": "python3 -m venv .local/transcript-venv && .local/transcript-venv/bin/pip install -r verification/requirements.lock && .local/transcript-venv/bin/pip install -r transcripts/requirements.lock",
-    "transcripts:test": ".local/transcript-venv/bin/python -m unittest discover -s transcripts/tests -v"
+    "start": "node src/index.js",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src/"
+  },
+  "keywords": ["p2p", "mercury", "transcript", "zkp"],
+  "author": "zkp2p",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
-    "@types/node": "22.19.15",
-    "@vitest/coverage-v8": "4.1.11",
-    "esbuild": "0.25.12",
-    "tsx": "4.20.6",
-    "typescript": "5.9.3",
-    "vite": "6.4.3",
-    "vitest": "4.1.11"
+    "jest": "^29.7.0",
+    "eslint": "^8.56.0"
   }
 }

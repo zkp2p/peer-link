@@ -1,15 +1,5 @@
 node_modules/
-app/dist/
 coverage/
-.vercel/
-.local/
-.env*
-*.har
+.env
 *.log
 .DS_Store
-__pycache__/
-*.pyc
-.pytest_cache/
-.vercel
-# Disposable hardware-test inputs are generated and hashed separately.
-verification/infra/lab-assets/
