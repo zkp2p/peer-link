@@ -107,13 +107,23 @@ recovery handle without overwriting an existing file, before submitting secrets.
 Prefer `--prompt-secrets`: trusted local tooling supplies only this nonsecret
 recipe payload through stdin; the owner enters bank and inference keys on a
 controlling TTY with echo disabled after verified preflight. The placeholders below
-are schema examples, not working bank access:
+form a complete three-read recipe, using invented profile `100001` and balance
+`200001` IDs. Replace them only with IDs observed in the owner's authorized local
+responses, select that same profile in `profileId`, and choose the intended currency
+and statement interval. Do not submit these invented values unchanged:
 
 ```json
 {
   "credential": {"origin": "https://api.wise.com", "kind": "bearer"},
-  "profileId": null,
-  "recipe": {"version": 1, "reads": []},
+  "profileId": 100001,
+  "recipe": {
+    "version": 1,
+    "reads": [
+      {"method": "GET", "url": "https://api.wise.com/v1/profiles"},
+      {"method": "GET", "url": "https://api.wise.com/v4/profiles/100001/balances?types=STANDARD"},
+      {"method": "GET", "url": "https://api.wise.com/v1/profiles/100001/balance-statements/200001/statement.json?currency=USD&intervalStart=2026-09-01T00:00:00Z&intervalEnd=2026-10-01T00:00:00Z&type=COMPACT"}
+    ]
+  },
   "notes": "",
   "transcript": []
 }

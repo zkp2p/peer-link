@@ -137,6 +137,31 @@ request/response and byte/signature bindings independently.
 
 ## Contribution journey
 
+```mermaid
+sequenceDiagram
+  participant Owner as Owner and local agent
+  participant TEE as Verified PeerLink enclave
+  participant Bank as Bank API
+  participant AI as Approved inference provider
+  participant Store as Redacted archive
+  participant Base as Base USDC
+  Owner->>TEE: Reserve fixed terms and reward capacity
+  TEE-->>Owner: Fresh attestation binding code, policy and encryption key
+  Owner->>Owner: Verify independent release pin and consent
+  Owner->>TEE: Encrypt recipe, bank token and own inference key
+  TEE->>Bank: Approved authenticated read-only requests
+  Bank-->>TEE: Actual account and transaction-history responses
+  TEE->>TEE: Check identity, eligibility and duplicates; redact values
+  TEE->>AI: Fixed prompt and structural artifact, billed to owner's key
+  AI-->>TEE: Structured grade
+  TEE->>TEE: Apply fixed acceptance and reward rules
+  TEE->>Store: Signed redacted artifact and inference evidence
+  Store-->>TEE: Persisted-record acknowledgment
+  TEE->>Base: Sign and reconcile one fixed reward
+  TEE-->>Owner: Verifiable artifact and payment receipt
+  Owner->>Owner: Revoke dedicated credentials using provider controls
+```
+
 1. Check the approved release and active bank campaign, source compatibility,
    fixed reward, capacity, privacy terms and provider/model before gathering a session.
 2. The owner signs in and completes MFA. The local agent observes transaction
@@ -216,6 +241,8 @@ Artifacts retain verified origins, templated endpoints, safe parameter/header na
 field paths/types, list/detail relationships, coverage, limitations and redacted
 read flow. Remove raw cookies/tokens, account numbers, names, balances, exact amounts,
 memos and transaction IDs, including URL/query values and dynamic object keys.
+History eligibility is checked inside the enclave; the exported artifact contains
+only `historyMinimumSatisfied: true`, never the private transaction count.
 Unknown names become structural wildcards. Model free text is not stored as a
 supposedly safe transcript.
 
@@ -284,11 +311,12 @@ acceptance remains closed until the measured-release and remaining evidence gate
 
 | Area | Observed evidence | What remains unavailable or unproven |
 | --- | --- | --- |
-| Synthetic transcript suite | 117 credential-free tests passed across policy, bank/provider transports, redaction, epoch, ledger/payout, encrypted runtime, client recovery/receipt, Wise relationships, NEAR ordinary routing and retirement checks. | Fixtures/mocks do not prove live hardware, banking, inference or money movement. |
+| Synthetic transcript suite | 121 credential-free tests passed across policy, bank/provider transports, redaction, epoch, ledger/payout, encrypted runtime, client recovery/receipt, Wise relationships, NEAR ordinary routing and retirement checks. Private history counts are rejected at artifact and archive boundaries. | Fixtures/mocks do not prove live hardware, banking, inference or money movement. |
 | Wise read-only local acquisition | Three owner-authorized API reads succeeded for profiles, standard balances and a statement with valid nonempty history; extraction produced 79 structural field paths without retaining private values. | This was local/direct acquisition, not a Wise job executed inside the TEE. No personal identifiers or history counts are published. |
 | Nitro candidate hardware | The final committed candidate passed fresh AWS certificate, COSE signature, nonce/key/policy/epoch and PCR checks. Two independent CI builds matched, and deployed PCR0/1/2 plus every measured input match CI. See [candidate evidence](../transcripts/candidate-evidence.json). | Candidate verification is not a published approved release or live bank acceptance. The checked-in release remains unreleased and the wallet is unfunded. |
 | Inference | Ordinary pinned-provider adapter and usage/result checks have synthetic coverage. NEAR official-doc/source research and keyed hardware probes completed: the model quote was UpToDate, but the gateway quote was OutOfDate; TLS binding matched. | NEAR has a $0.25-limited key but no account credits; no funded live inference, billing receipt or verified NEAR E2EE route demonstrated for this release. |
 | Rewards | Fixed Base USDC signing, transaction/receipt validation, archive ordering and within-epoch retry invariants have synthetic coverage. | No live payout/refund demonstrated; the $50 limit is configuration, not evidence of deposited funds. No cross-epoch recovery guarantee. |
+| Contributor-agent trials | Claude Opus 5.5 high and Codex high reviewed the local contributor flow. Their findings drove safe secret prompts, clear release gates, recovery commands, receipt checks and Wise relationship fixes. Claude's final follow-up found the practical fixes intact and passed 33 targeted client/artifact tests. | These credential-free trials are not funded enrollment. Live same-job recovery, provider billing and payout still require the funded pilot. |
 | Public availability | Landing/docs/catalog describe the new contribution program with readiness gates. | No claim that all banks are ready, funded or supported in Peer. |
 
 Evidence must remain scoped to its actual source/image version and observation date.
@@ -296,6 +324,11 @@ Later tests or live checks update this matrix only with inspectable redacted pro
 Do not publish personal account identifiers, private values or personal history counts.
 
 ## GitHub migration and release roadmap
+
+Completed migration: all 41 existing campaign issues were updated in place, with
+their previous terms archived, and all 81 pre-migration PRs were closed with
+transition notices. The valid legacy assignment and its original $50 commitment
+remain preserved. Every issue/archive and PR/notice was read back after migration.
 
 Snapshot existing issues/open PRs and previous text before edits. Close the
 pre-migration PR set with a respectful program-change notice and new instructions;
@@ -323,10 +356,10 @@ Release work still requires:
   identity, redaction, provider grading and receipt checks before live acceptance.
 - Exact epoch funding, bounded real USDC transfer, recipient/chain receipt evidence,
   no duplicate payout, and safe supervised disposition of remaining funds.
-- Public-instructions trials by fresh Claude Opus 5.5 high and Codex high local
-  agents; fix complaints and retest same-job recovery without repeated submissions.
-- Reviewed commits, CI, merge and exact deployments, followed by accurate issue/PR
-  migration and activation of demonstrated source campaigns only.
+- A funded contributor trial that exercises same-job recovery without repeated
+  submissions, building on the completed credential-free Claude/Codex trials.
+- Activation of demonstrated source campaigns only, after the remaining evidence
+  gates; merged code, public docs and migrated issues do not activate collection.
 - For durable/broad service: persistent rollback-safe authority, cross-epoch dedup,
   recoverable custody, durable reconciliation and verified archive availability.
 
