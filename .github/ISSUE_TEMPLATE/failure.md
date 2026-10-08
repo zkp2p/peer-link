@@ -1,14 +1,20 @@
 ---
-name: Integration failure
-about: Report a regression in an existing adapter without exposing banking data
+name: Transcript contribution failure
+about: Report a structural or fixed-code failure without sharing banking data
 labels: bug
 ---
-<!-- Do not include raw responses, screenshots, tokens, cookies, account numbers or personal
-     transactions. Security and privacy issues go through private reporting (SECURITY.md). -->
+<!-- Raw bank responses, API keys, sessions, screenshots, account/transaction identifiers,
+request headers and unredacted model text must never appear here.
+Report security/privacy exposures privately through SECURITY.md. -->
 
-Provider (banks/<country>/<bank>), surface and payment type:
-Adapter revision (full commit SHA):
-Expected outcome and actual outcome (e.g. supported vs insufficient_evidence, with the reason string):
-What changed in the response shape (use `npm run try:bank -- --shape` output, never values):
-Synthetic reproducer or sanitized fixture (optional):
+Bank campaign issue:
+Public release/source revision:
+Step that failed (availability / attestation / reservation / acquisition / grading / receipt / payout):
+Fixed reason code:
+Expected and observed behavior (no private values):
+Synthetic structural reproducer (optional; invented data only):
 Limitations:
+
+Do not retry an uncertain payout by starting another job. Follow the current skill's
+status/reconciliation steps. The pilot is unreleased and non-restorable; a deployed
+host or legacy reference adapter does not establish live contribution support.

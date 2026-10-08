@@ -1,0 +1,31 @@
+# Exact build-context allowlist. No mutable release manifest, tests, cache,
+# local state, credentials, host tools or infrastructure configuration is sent.
+**
+!verification/
+!verification/__init__.py
+!verification/common.py
+!verification/nsm.py
+!verification/attestation.py
+!verification/requirements.lock
+!verification/trust/
+!verification/trust/aws-nitro-root.pem
+!transcripts/
+!transcripts/__init__.py
+!transcripts/artifacts.py
+!transcripts/channel.py
+!transcripts/common.py
+!transcripts/epoch.py
+!transcripts/eth_payout.py
+!transcripts/ledger.py
+!transcripts/payout.py
+!transcripts/policy.py
+!transcripts/providers.py
+!transcripts/recipe.py
+!transcripts/runtime.py
+!transcripts/storage.py
+!transcripts/transport.py
+!transcripts/wire.py
+!transcripts/policy.json
+!transcripts/requirements.lock
+!transcripts/infra/
+!transcripts/infra/boot.py

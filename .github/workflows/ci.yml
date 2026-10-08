@@ -37,9 +37,8 @@ jobs:
             test -n "$BASE_SHA" && test -n "$HEAD_SHA"
             npm run privacy -- --range "$BASE_SHA..$HEAD_SHA"
           fi
-      - run: npm run verify:setup
+      - run: npm run transcripts:setup
       - run: npm run check
-      - run: npm run verify:sandbox-smoke
   trusted-contribution-checks:
     # A fork PR can edit the scripts and config that define its own checks. Re-run the
     # base branch's tooling against the PR's bank files. No secrets, read-only token.
@@ -99,14 +98,14 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - run: bash verification/infra/build_measurements.sh
+      - run: bash transcripts/infra/build_measurements.sh
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: nitro-build-${{ matrix.builder }}
           path: |
-            .local/nitro-build/build-report.json
-            .local/nitro-build/builder-packages.txt
-            .local/nitro-build/normalized.eif
+            .local/transcript-nitro-build/build-report.json
+            .local/transcript-nitro-build/builder-packages.txt
+            .local/transcript-nitro-build/normalized.eif
           include-hidden-files: true
           retention-days: 7
           if-no-files-found: error

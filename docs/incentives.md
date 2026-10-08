@@ -1,98 +1,80 @@
-# Bounties
+# Transcript contribution rewards
 
-**$1,000 is funded for 20 bank integrations, $50 each, paid in USDC through
-[Merit](https://terminal.merit.systems/zkp2p/peer-link).** The
-[bounty index (#64)](https://github.com/zkp2p/peer-link/issues/64) is the live
-source of truth; each bank issue states its exact scope. There is no token and
-no automatic payout.
+**The service is unreleased: no new transcript jobs or rewards are available yet.**
+The [release manifest](../transcripts/release.json), independently verified release
+and active bank campaign control availability. A bank issue, logo, host deployment
+or synthetic test does not prove acceptance is open.
 
-## Funding — October 2, 2026
+## Campaign terms
 
-Two 500 USDC sponsor deposits on Base (chain 8453) were credited to the
-sponsor's Merit account and allocated to the `zkp2p/peer-link` Merit project:
-[deposit 1](https://basescan.org/tx/0x53902d363f347e888b63d5266b95da66f9f53ee1fa487331bef583c65ec695c9),
-[deposit 2](https://basescan.org/tx/0xbffb6d25d3b95463d3fe5d5a0739701a5d84f3224639eff164361f1fabe26145).
-Merit showed **$1,000 funded, $1,000 available and $0 paid out** after the
-second allocation. Awards are earmarked from that project pool, not escrowed per
-issue. The infrastructure budget for the verifier is separate.
+One campaign issue per bank publishes scope, approved source access, fixed reward,
+available capacity, provider/model and privacy choices, limits and the
+[contribution skill](../skills/contribute-transcript/SKILL.md). Existing bank issue
+URLs are retained where possible. There is no claim-comment, assignment, provider
+implementation or code PR requirement.
 
-## Funded banks
+- Fixed **$5 or $10 USDC for each accepted contribution**. Initial US campaigns
+  use $10; other rates are explicit campaign policy, not inferred from personal data.
+- Collect **1–5 distinct contributors per bank**, ordinarily targeting five but
+  stopping earlier when the evidence is sufficient.
+- At most one paid contribution per contributor/account per bank campaign.
+  Different wallets or GitHub accounts alone do not establish different people;
+  account deduplication is not proof of humanity.
+- Contributions require an active verified source campaign, available slots and
+  reserved funds. Campaigns can pause, complete or reject admission before inference.
+  Do not infer that all listed banks are funded.
 
-| Bank | Issue | Currency | Award |
-| --- | --- | --- | ---: |
-| Monobank | [#6](https://github.com/zkp2p/peer-link/issues/6) | UAH | $50 |
-| Vietcombank | [#8](https://github.com/zkp2p/peer-link/issues/8) | VND | $50 |
-| Chase | [#73](https://github.com/zkp2p/peer-link/issues/73) | USD | $50 |
-| Bank of America | [#74](https://github.com/zkp2p/peer-link/issues/74) | USD | $50 |
-| Wells Fargo | [#75](https://github.com/zkp2p/peer-link/issues/75) | USD | $50 |
-| OPay | [#4](https://github.com/zkp2p/peer-link/issues/4) | NGN | $50 |
-| Easypaisa | [#86](https://github.com/zkp2p/peer-link/issues/86) | PKR | $50 |
-| BCA | [#7](https://github.com/zkp2p/peer-link/issues/7) | IDR | $50 |
-| Bancolombia | [#9](https://github.com/zkp2p/peer-link/issues/9) | COP | $50 |
-| GCash | [#10](https://github.com/zkp2p/peer-link/issues/10) | PHP | $50 |
-| bKash | [#13](https://github.com/zkp2p/peer-link/issues/13) | BDT | $50 |
-| Safaricom M-Pesa | [#14](https://github.com/zkp2p/peer-link/issues/14) | KES | $50 |
-| Kaspi Bank | [#15](https://github.com/zkp2p/peer-link/issues/15) | KZT | $50 |
-| BBVA Mexico | [#16](https://github.com/zkp2p/peer-link/issues/16) | MXN | $50 |
-| Banco de Credito del Peru | [#17](https://github.com/zkp2p/peer-link/issues/17) | PEN | $50 |
-| Ziraat Bank | [#18](https://github.com/zkp2p/peer-link/issues/18) | TRY | $50 |
-| Uala Argentina | [#20](https://github.com/zkp2p/peer-link/issues/20) | ARS | $50 |
-| Itau Brazil | [#21](https://github.com/zkp2p/peer-link/issues/21) | BRL | $50 |
-| MTN MoMo Ghana | [#32](https://github.com/zkp2p/peer-link/issues/32) | GHS | $50 |
-| BBVA Spain | [#24](https://github.com/zkp2p/peer-link/issues/24) | EUR | $50 |
+The reserved job binds the campaign terms, reward, recipient, model/provider,
+privacy consent, limits and expiry. Later policy edits do not retroactively change
+those reserved terms. USDC has 6 decimals; code stores rewards as integer minor units.
 
-The list balances Peer's US demand with large P2P markets across Latin America,
-Africa, Asia and Europe, and only uses banks whose issues and logos already
-exist in this repository. See [integration priorities](integration-priorities.md).
-`app/bounties.json` mirrors this table for the website; keep both in sync with
-the GitHub `Merit` + `$50` labels, which Merit uses to list bounties.
+## Costs and acceptance
 
-History: the earlier unfunded $10,000 / 60-bank proposal ($150–$200 per bank)
-was retired on October 2, 2026 with no claims or payouts. The interim $25 US
-feasibility scopes were upgraded the same day to full $50 adapter awards.
+**The contributor pays inference even when the job fails or is rejected.** Review
+provider/model, limits, privacy mode, possible reward and provider spending controls
+before releasing the key. The ordinary NEAR route uses prepaid contributor
+credits and one canonical-model call, with consent naming NEAR and Chutes. Provider quota enforcement may lag; published token/call
+limits are not a guaranteed exact dollar ceiling. A reward may not cover inference cost.
+Peer pays infrastructure, payout gas and accepted rewards. There is no Peer
+inference key or fallback billing route.
 
-## How to claim
+Acceptance requires fresh authorized bank reads over verified TLS, authenticated
+account identity, useful history/schema evidence, approved provider/model and consent,
+safe redaction, no duplicate award and available reserved budget. The model grades
+only redacted structure. Code owns eligibility, amount, recipient and signing;
+the model cannot override mandatory checks. Unknown or insufficient evidence is rejected.
 
-1. Comment on the bank's issue with the surface (app or web page) and transfer
-   type you will cover, and confirm you or a collaborator are authorized to use
-   an account there. Never post credentials, real records or identity documents.
-2. A maintainer assigns one attempt for 14 days, extendable in writing.
-   Unassigned competing work creates no additional payment obligation.
-3. Build with your agent using [the contribution skill](../skills/contribute-bank/SKILL.md).
-   Open a PR that says `Closes #<issue>`. Submissions are due
-   **2026-11-15 23:59 UTC**.
+An enabled service automatically pays the fixed reward after acceptance and artifact
+receipt. Failed, rejected, expired or cancelled jobs receive no reward. A pending
+chain result must be reconciled against the same signed transaction; retrying does
+not authorize a new award. Acceptance does not enable a bank in Peer or establish
+recipient credit, final settlement or production approval.
 
-Maintainers track each bounty with the `bounty: assigned`, `bounty: in review` and
-`bounty: accepted` labels. Keep the `Merit` and `$50` labels only on funded bank
-issues; Merit lists every open issue that carries both.
+## Pilot budget and availability
 
-## Acceptance
+The configured pilot reward ceiling is **$50 USDC**, with separate bounded gas
+and no automatic refill. This is a budget policy, not a statement that funds are
+already deposited or that every bank has a funded slot. Admission stops when
+reserved capacity or funds run out.
 
-- Original, MIT-compatible, pure and deterministic adapter with a manifest and
-  acquisition notes. No network, credentials, filesystem access or payment
-  initiation in adapter code. Do not copy private Peer or third-party code.
-- Synthetic fixtures with independently justified expected outputs and
-  meaningful negative tests (wrong payer/payee, amount/currency mismatch,
-  nonfinal/unknown status, missing identifiers, malformed input, duplicate
-  selection, untrusted memo text). Ambiguity fails closed.
-- `npm run check` and `npm run privacy -- --staged` pass before every push.
-- One privacy-safe live report from the authorized account owner, bound to the
-  exact adapter and harness commits, using an existing transaction. Synthetic
-  tests alone are not a live report. **There is no three-user testing requirement.**
+The pilot wallet/key and ledger belong to a supervised, non-restorable enclave
+epoch. A restart loses them; the release does not promise durable public payments
+or recovery across restarts. Operators must verify release, funding, bank access,
+inference and payout evidence before enabling any campaign. A signed retirement
+action irreversibly closes admission, settles/archives existing obligations and
+refunds remaining USDC to the fixed deployer address. This has synthetic coverage,
+not a live refund demonstration; there is no ETH sweep or restart recovery.
 
-## Payment
+## Retired provider awards
 
-Maintainer @0xSachinK reviews against the written scope, records acceptance on
-the issue and pays through Merit. Merge, coverage, AI output and enclave reports
-never trigger payment by themselves, and bounty acceptance is separate from Peer
-production support. One award per bank, $50 total including any collaborator
-split agreed before starting. Disputes are judged against the written scope;
-disclose conflicts of interest.
+The $50-per-provider/Merit authoring program is retired for new work. Its
+[original terms](https://github.com/zkp2p/peer-link/blob/31bba0e6c55f41ff08f31d30e728e1ef41d38a3b/docs/incentives.md), including historical funding records,
+remain an immutable archive. The old assignment/deadline/PR procedure is not the
+new transcript enrollment flow.
 
-Contributors complete wallet, tax and payout-eligibility setup directly with
-Merit and should confirm that payouts are available in their country before
-starting. Never submit identity or banking documents in GitHub.
-
-Mercury is the internal baseline adapter; existing founder work does not earn a
-bounty. Integrations for any other bank are welcome without a reward promise —
-open a [bank request](https://github.com/zkp2p/peer-link/issues/new?template=bank-request.md).
+Previously earned or accepted awards retain their original written terms. A legacy
+PR closing with a program-change notice does not cancel an accepted obligation or
+prove an earlier disputed claim is invalid. Preserve prior acceptance, assignment,
+commit and discussion records; review disputes under their original scope rather
+than applying the new $5/$10 rules retroactively. Do not promise an automatic
+legacy award merely because work or a PR exists.

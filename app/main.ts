@@ -29,6 +29,7 @@ type Integration = {
   logo: string | null;
   mark: string;
   hasAdapter: boolean;
+  // Planned USDC per accepted transcript; the bank's issue holds live availability.
   bounty: number | null;
 };
 
@@ -115,7 +116,7 @@ function render(providers: Provider[], catalogUnavailable = false) {
       integration.hasAdapter
         ? `${integration.name}, ${place}. View experimental adapter.`
         : integration.bounty
-          ? `${integration.name}, ${place}. $${integration.bounty} bounty. View the bounty issue.`
+          ? `${integration.name}, ${place}. Planned $${integration.bounty} per accepted transcript. View the campaign issue for availability.`
           : `${integration.name}, ${place}. View bank integration discussion.`,
     );
     const logo = document.createElement("span");
@@ -146,6 +147,7 @@ function render(providers: Provider[], catalogUnavailable = false) {
       tag.className = "bounty-tag";
       tag.setAttribute("aria-hidden", "true");
       tag.textContent = `$${integration.bounty}`;
+      card.title = `Planned $${integration.bounty} per accepted transcript. Availability is on the issue.`;
       card.append(tag);
     }
     list.append(card);

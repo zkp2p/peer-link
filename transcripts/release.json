@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "status": "unreleased",
+  "serviceUrl": null,
+  "policyDigest": "0ae7f9a28d4c4e50f50350541396f9d2c47233d8445638b0bd732a7a2db54458",
+  "measurements": {},
+  "expiresAt": 0,
+  "limitations": [
+    "No public secret submissions until an independently pinned approved release is published.",
+    "Only Wise has a reviewed authenticated account identity adapter.",
+    "Confidential NEAR inference is unavailable pending verified E2EE integration.",
+    "Pilot wallets and dedup state do not survive enclave restart."
+  ]
+}

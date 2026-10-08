@@ -1,15 +1,20 @@
 ---
-name: Bank integration request
-about: Propose one bank surface and payment type that is not already an open issue
+name: Bank transcript campaign request
+about: Propose a bank not already represented by a campaign issue
 labels: bank-request
 ---
-<!-- Check https://github.com/zkp2p/peer-link/issues/64 first: funded banks already have an issue.
-     Never post credentials, account numbers, screenshots of real records or identity documents. -->
+<!-- Search existing bank issues first: one campaign issue per bank.
+Never post captures, credentials, account numbers, screenshots or identity documents. -->
 
 Bank / country:
-Surface (web history page, app detail screen, official API):
-Payment type (one transfer type) and why it matters:
-Can an authorized account owner test it? (yes / looking for a collaborator)
-What the surface shows for payer, payee, amount, currency, status and time (field names only, no values):
+Existing campaign search completed (link if already present):
+Accessible surface (history page, transaction details, official read-only API):
+Can you use your own account? (yes / no; no identifying details):
+Useful history/schema fields (names only, no values):
+Known access limitations:
 
-Opening a request does not create a reward. Paid work needs an issue labeled `Merit` with a written amount, and a maintainer assignment.
+Opening this request does not activate bank access, reserve a slot or promise funds.
+The transcript service is unreleased. Once enabled, each campaign publishes a fixed
+$5/$10 USDC reward and collects 1–5 distinct contributors. Enrollment uses the
+contribute-transcript skill and an attested encrypted job, not claiming comments
+or provider PRs. Contributors pay their inference costs even if rejected.

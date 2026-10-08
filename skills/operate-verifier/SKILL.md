@@ -3,6 +3,8 @@ name: operate-verifier
 description: Inspect Peer Link verification readiness, review contribution admission, and record bounded agent judgments through JSON interfaces. Does not enable a scheduler or authorize payouts.
 ---
 
+> Legacy provider workflow. New transcript contributions use `skills/contribute-transcript/SKILL.md`; this document is retained for historical component maintenance only.
+
 # Operate the verifier
 
 Read `AGENTS.md`, `verification/agent-contract.json`, `verification/release.json`,

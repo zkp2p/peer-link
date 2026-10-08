@@ -534,6 +534,7 @@ export const REPOSITORY_LAYOUT: RegExp[] = [
   /^scripts\/[a-z0-9-]+(\.test)?\.ts$/,
   /^skills\/[a-z0-9-]+\/SKILL\.md$/,
   /^verification\/[A-Za-z0-9_./-]+$/,
+  /^transcripts\/[A-Za-z0-9_./-]+$/,
 ];
 export const CONTRIBUTION_SHAPE =
   "A bank contribution adds files only under banks/<country>/<bank>/ (README.md, manifest.json, transformer.js, transformer.test.ts, fixtures/<case>.synthetic.json, reports/YYYY-MM-DD-<handle>.json) plus at most its logo in app/public/logos/. Restating an issue, adding top-level files or adding scripts is not a contribution. See CONTRIBUTING.md.";
@@ -570,4 +571,4 @@ export function checkContributorAdditions(added: string[]): string[] {
 
 /** Existing check-defining files whose modification by a fork deserves maintainer attention. */
 export const CHECK_DEFINITIONS =
-  /^(package(-lock)?\.json|vitest\.config\.ts|tsconfig\.json|biome\.json|\.github\/|scripts\/|lib\/|verification\/|banks\/adapter-contract\.test\.ts)/;
+  /^(package(-lock)?\.json|vitest\.config\.ts|tsconfig\.json|biome\.json|\.github\/|scripts\/|lib\/|verification\/|transcripts\/|banks\/adapter-contract\.test\.ts)/;

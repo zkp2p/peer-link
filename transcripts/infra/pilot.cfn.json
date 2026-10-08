@@ -1,0 +1,587 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Dedicated PeerLink Nitro transcript pilot, SSM only, encrypted-envelope HTTPS ingress; no production access or payout persistence",
+  "Parameters": {
+    "VpcId": {
+      "Type": "AWS::EC2::VPC::Id"
+    },
+    "SubnetId": {
+      "Type": "AWS::EC2::Subnet::Id",
+      "Description": "Public IPv4 subnet in VpcId, with an Internet Gateway route"
+    },
+    "ImageId": {
+      "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+      "Default": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
+    },
+    "LifetimeHours": {
+      "Type": "Number",
+      "Default": 24,
+      "MinValue": 1,
+      "MaxValue": 168,
+      "Description": "Stop this host after this supervised pilot lifetime; no automatic restart"
+    },
+    "AlarmTopicArn": {
+      "Type": "String",
+      "Default": "",
+      "AllowedPattern": "(arn:[a-z-]+:sns:[a-z0-9-]+:[0-9]{12}:[A-Za-z0-9_-]{1,256})?",
+      "Description": "Existing SNS topic with a confirmed and tested subscription; empty means operator-supervised alarms only"
+    }
+  },
+  "Conditions": {
+    "HasAlarmTopic": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "AlarmTopicArn"
+            },
+            ""
+          ]
+        }
+      ]
+    }
+  },
+  "Resources": {
+    "HostRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "peer-link-transcripts"
+          },
+          {
+            "Key": "Environment",
+            "Value": "pilot"
+          }
+        ],
+        "Policies": [
+          {
+            "PolicyName": "SSMTransportOnly",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ssm:UpdateInstanceInformation",
+                    "ssmmessages:CreateControlChannel",
+                    "ssmmessages:CreateDataChannel",
+                    "ssmmessages:OpenControlChannel",
+                    "ssmmessages:OpenDataChannel",
+                    "ec2messages:AcknowledgeMessage",
+                    "ec2messages:DeleteMessage",
+                    "ec2messages:FailMessage",
+                    "ec2messages:GetEndpoint",
+                    "ec2messages:GetMessages",
+                    "ec2messages:SendReply"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Deny",
+                  "NotAction": [
+                    "ssm:UpdateInstanceInformation",
+                    "ssmmessages:CreateControlChannel",
+                    "ssmmessages:CreateDataChannel",
+                    "ssmmessages:OpenControlChannel",
+                    "ssmmessages:OpenDataChannel",
+                    "ec2messages:AcknowledgeMessage",
+                    "ec2messages:DeleteMessage",
+                    "ec2messages:FailMessage",
+                    "ec2messages:GetEndpoint",
+                    "ec2messages:GetMessages",
+                    "ec2messages:SendReply"
+                  ],
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "HostProfile": {
+      "Type": "AWS::IAM::InstanceProfile",
+      "Properties": {
+        "Roles": [
+          {
+            "Ref": "HostRole"
+          }
+        ]
+      }
+    },
+    "HostGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VpcId"
+        },
+        "GroupDescription": "Ciphertext HTTP relay only; SSM administration, no SSH",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 8080,
+            "ToPort": 8080,
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Opaque application-encrypted API envelopes and public metadata"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "peer-link-transcripts"
+          },
+          {
+            "Key": "Environment",
+            "Value": "pilot"
+          }
+        ]
+      }
+    },
+    "Host": {
+      "Type": "AWS::EC2::Instance",
+      "DependsOn": ["ExpirySchedule", "ExpiryPermission"],
+      "Properties": {
+        "ImageId": {
+          "Ref": "ImageId"
+        },
+        "InstanceType": "c6i.xlarge",
+        "IamInstanceProfile": {
+          "Ref": "HostProfile"
+        },
+        "EnclaveOptions": {
+          "Enabled": true
+        },
+        "MetadataOptions": {
+          "HttpTokens": "required",
+          "HttpPutResponseHopLimit": 1
+        },
+        "InstanceInitiatedShutdownBehavior": "stop",
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/xvda",
+            "Ebs": {
+              "VolumeSize": 32,
+              "VolumeType": "gp3",
+              "Encrypted": true,
+              "DeleteOnTermination": true
+            }
+          }
+        ],
+        "NetworkInterfaces": [
+          {
+            "DeviceIndex": "0",
+            "AssociatePublicIpAddress": true,
+            "SubnetId": {
+              "Ref": "SubnetId"
+            },
+            "GroupSet": [
+              {
+                "Ref": "HostGroup"
+              }
+            ]
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "peer-link-transcripts"
+          },
+          {
+            "Key": "Environment",
+            "Value": "pilot"
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}-nitro"
+            }
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash\nset -euo pipefail\numask 077\ntrap 'shutdown -h now' ERR\ndnf install -y aws-nitro-enclaves-cli-1.5.0 aws-nitro-enclaves-cli-devel-1.5.0 docker python3.11 python3.11-pip\ntest \"$(nitro-cli --version)\" = \"Nitro CLI 1.5.0\"\nsystemctl enable --now amazon-ssm-agent docker\nprintf '%s\\n' '---' 'memory_mib: 2048' 'cpu_count: 2' > /etc/nitro_enclaves/allocator.yaml\nsystemctl enable --now nitro-enclaves-allocator.service\ninstall -d -m 700 /opt/peer-link-transcripts/releases /opt/peer-link-transcripts/build\n# Deliberately no application listener until an operator installs a checked EIF.\n"
+        }
+      }
+    },
+    "HostAddress": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc",
+        "InstanceId": {
+          "Ref": "Host"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "peer-link-transcripts"
+          },
+          {
+            "Key": "Environment",
+            "Value": "pilot"
+          }
+        ]
+      }
+    },
+    "Api": {
+      "Type": "AWS::ApiGatewayV2::Api",
+      "Properties": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-encrypted-api"
+        },
+        "ProtocolType": "HTTP",
+        "Description": "Application ciphertext plus public attestation/status only; no bank or inference plaintext"
+      }
+    },
+    "ApiIntegration": {
+      "Type": "AWS::ApiGatewayV2::Integration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "IntegrationType": "HTTP_PROXY",
+        "IntegrationMethod": "ANY",
+        "IntegrationUri": {
+          "Fn::Sub": "http://${HostAddress}:8080"
+        },
+        "PayloadFormatVersion": "1.0",
+        "TimeoutInMillis": 29000
+      }
+    },
+    "ApiRoute": {
+      "Type": "AWS::ApiGatewayV2::Route",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "RouteKey": "$default",
+        "Target": {
+          "Fn::Sub": "integrations/${ApiIntegration}"
+        }
+      }
+    },
+    "ApiStage": {
+      "Type": "AWS::ApiGatewayV2::Stage",
+      "Properties": {
+        "ApiId": {
+          "Ref": "Api"
+        },
+        "StageName": "$default",
+        "AutoDeploy": true,
+        "DefaultRouteSettings": {
+          "DetailedMetricsEnabled": true,
+          "ThrottlingBurstLimit": 5,
+          "ThrottlingRateLimit": 2
+        }
+      }
+    },
+    "ExpiryRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "StopOnlyThisStack",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "ec2:DescribeInstances",
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "ec2:StopInstances",
+                  "Resource": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/*"
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "ec2:ResourceTag/aws:cloudformation:stack-id": {
+                        "Ref": "AWS::StackId"
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "Expiry": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Runtime": "python3.12",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": ["ExpiryRole", "Arn"]
+        },
+        "Timeout": 30,
+        "MemorySize": 128,
+        "Environment": {
+          "Variables": {
+            "STACK_ID": {
+              "Ref": "AWS::StackId"
+            },
+            "LIFETIME_HOURS": {
+              "Ref": "LifetimeHours"
+            }
+          }
+        },
+        "Code": {
+          "ZipFile": "import boto3, datetime, os\ndef handler(event, context):\n    ec2 = boto3.client('ec2')\n    rows = ec2.describe_instances(Filters=[{'Name':'tag:aws:cloudformation:stack-id','Values':[os.environ['STACK_ID']]},{'Name':'instance-state-name','Values':['running']}])\n    now = datetime.datetime.now(datetime.timezone.utc)\n    expired = [i['InstanceId'] for r in rows['Reservations'] for i in r['Instances'] if (now-i['LaunchTime']).total_seconds() >= int(os.environ['LIFETIME_HOURS'])*3600]\n    if expired: ec2.stop_instances(InstanceIds=expired)\n    return {'stopped':len(expired)}\n"
+        }
+      }
+    },
+    "ExpirySchedule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "ScheduleExpression": "rate(5 minutes)",
+        "State": "ENABLED",
+        "Targets": [
+          {
+            "Arn": {
+              "Fn::GetAtt": ["Expiry", "Arn"]
+            },
+            "Id": "StopExpiredPilot",
+            "RetryPolicy": {
+              "MaximumRetryAttempts": 2,
+              "MaximumEventAgeInSeconds": 300
+            }
+          }
+        ]
+      }
+    },
+    "ExpiryPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Expiry"
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "events.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": ["ExpirySchedule", "Arn"]
+        },
+        "SourceAccount": {
+          "Ref": "AWS::AccountId"
+        }
+      }
+    },
+    "HostHealth": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Inspect only this transcript stack. No automatic reboot or live-wallet restore.",
+        "Namespace": "AWS/EC2",
+        "MetricName": "StatusCheckFailed",
+        "Dimensions": [
+          {
+            "Name": "InstanceId",
+            "Value": {
+              "Ref": "Host"
+            }
+          }
+        ],
+        "Statistic": "Sum",
+        "Period": 300,
+        "EvaluationPeriods": 1,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": {
+          "Fn::If": [
+            "HasAlarmTopic",
+            [
+              {
+                "Ref": "AlarmTopicArn"
+              }
+            ],
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        }
+      }
+    },
+    "ApiErrors": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Inspect only this transcript stack. No automatic reboot or live-wallet restore.",
+        "Namespace": "AWS/ApiGateway",
+        "MetricName": "5xx",
+        "Dimensions": [
+          {
+            "Name": "ApiId",
+            "Value": {
+              "Ref": "Api"
+            }
+          }
+        ],
+        "Statistic": "Sum",
+        "Period": 300,
+        "EvaluationPeriods": 1,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": {
+          "Fn::If": [
+            "HasAlarmTopic",
+            [
+              {
+                "Ref": "AlarmTopicArn"
+              }
+            ],
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        }
+      }
+    },
+    "ExpiryErrors": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Inspect only this transcript stack. No automatic reboot or live-wallet restore.",
+        "Namespace": "AWS/Lambda",
+        "MetricName": "Errors",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "Expiry"
+            }
+          }
+        ],
+        "Statistic": "Sum",
+        "Period": 300,
+        "EvaluationPeriods": 1,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": {
+          "Fn::If": [
+            "HasAlarmTopic",
+            [
+              {
+                "Ref": "AlarmTopicArn"
+              }
+            ],
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        }
+      }
+    },
+    "ExpiryNotRunning": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "Metrics": [
+          {
+            "Id": "calls",
+            "MetricStat": {
+              "Metric": {
+                "Namespace": "AWS/Lambda",
+                "MetricName": "Invocations",
+                "Dimensions": [
+                  {
+                    "Name": "FunctionName",
+                    "Value": {
+                      "Ref": "Expiry"
+                    }
+                  }
+                ]
+              },
+              "Period": 300,
+              "Stat": "Sum"
+            },
+            "ReturnData": false
+          },
+          {
+            "Id": "heartbeat",
+            "Expression": "FILL(calls, 0)",
+            "ReturnData": true
+          }
+        ],
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 3,
+        "Threshold": 1,
+        "ComparisonOperator": "LessThanThreshold",
+        "TreatMissingData": "breaching",
+        "AlarmActions": {
+          "Fn::If": [
+            "HasAlarmTopic",
+            [
+              {
+                "Ref": "AlarmTopicArn"
+              }
+            ],
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "InstanceId": {
+      "Value": {
+        "Ref": "Host"
+      }
+    },
+    "ApiUrl": {
+      "Value": {
+        "Fn::GetAtt": ["Api", "ApiEndpoint"]
+      }
+    },
+    "RelayAddress": {
+      "Value": {
+        "Fn::Sub": "http://${HostAddress}:8080"
+      }
+    },
+    "HostRoleArn": {
+      "Value": {
+        "Fn::GetAtt": ["HostRole", "Arn"]
+      }
+    },
+    "ExpiryFunction": {
+      "Value": {
+        "Ref": "Expiry"
+      }
+    }
+  }
+}

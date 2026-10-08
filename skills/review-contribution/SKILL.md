@@ -3,6 +3,8 @@ name: review-contribution
 description: Review a Peer Link bank adapter or report pull request for semantic correctness, privacy, scope and reproducibility before merge or bounty acceptance.
 ---
 
+> Legacy provider workflow. New transcript contributions use `skills/contribute-transcript/SKILL.md`; this document is retained for historical component maintenance only.
+
 # Review a contribution
 
 Read [AGENTS.md](../../AGENTS.md), [docs/evidence.md](../../docs/evidence.md) and
