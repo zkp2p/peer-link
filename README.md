@@ -71,9 +71,9 @@ it does not establish availability in the separate durable campaign.
 The revised payout design uses a non-exportable AWS KMS signing key. Authorized
 operator IAM and the host signing broker can sign outside the enclave and recover
 funds; this is not exclusive enclave custody. The completed one-slot pilot
-kept ledger and deduplication authority RAM-only. Restart requires operator review and does not make wallet reuse
-or old-job continuation safe. Live collection remains closed until the new measured
-release gates pass. The built
+kept ledger and deduplication authority RAM-only. Restart of that historical pilot
+requires operator review and does not make its wallet reuse or old-job continuation
+safe. The approved durable Wise release below has passed the new release gates. The built
 operator retirement flow permanently closes admission, finishes and archives
 existing obligations, and refunds remaining USDC only to the fixed deployer address.
 Its runtime accepts no arbitrary refund recipient or ETH sweep; its live refund
