@@ -46,7 +46,9 @@ and raw responses are never part of a prompt.
 - An inference API key for any OpenAI-compatible chat-completions endpoint. The
   owner pays for one call even when the job is rejected.
 - A Base address to receive USDC.
-- Python 3.11 or newer and OpenSSL.
+- Python 3.11 or newer, OpenSSL, and Node.js with npm for the setup script.
+  Setup downloads hash-locked Python packages from PyPI into
+  `.local/transcript-venv`; nothing else is installed.
 
 ## 1. Set up and pick a campaign
 
@@ -54,6 +56,11 @@ and raw responses are never part of a prompt.
 npm run transcripts:setup
 .local/transcript-venv/bin/python -m transcripts.cli campaigns --live
 ```
+
+If npm is not available, run the three commands behind `transcripts:setup` in
+`package.json` by hand. `preflight` checks the enclave's attestation against the
+pinned release without reserving anything; run it if any later command reports
+`service_unavailable`.
 
 `campaigns` lists each campaign with its `kind`, reward, allowed `domains` and
 inference routes. `--live` adds `availability`: remaining slots per campaign and
@@ -68,8 +75,7 @@ admits a job.
 | `open_recipe` | `<bank>-open-v1` for the listed banks | A version-3 recipe of the bank's own read requests, session headers or a token, and notes. Any model. |
 | `reviewed_descriptor` | `mercury-api-source-v1` | A read-only Mercury API token and account/date hints. Pinned models. See [Mercury](#mercury). |
 
-The `wise-open-validation-*` campaigns are Peer's internal test slots and are
-not open to contributors. If the owner's bank has no campaign, open a
+If the owner's bank has no campaign, open a
 [bank request](https://github.com/zkp2p/peer-link/issues/new?template=bank-request.md);
 if the bank's API lives on a domain the campaign does not list, say so on the
 bank's campaign issue.
@@ -109,8 +115,8 @@ by Git):
   also admits `https://secure.chase.com`.
 - `credential.kind` is `bearer` (one token, sent as an Authorization bearer
   header) or `headers` (an object of header name to value, sent as given). At
-  least one header must carry the session, such as a cookie, a token or a CSRF
-  header.
+  least one header must be something a browser does not send by itself, such as
+  a cookie, a token or a CSRF header.
 - `reads` holds at most the campaign's `maxBankReads` requests. A read is
   `{"url": ...}` for GET, or `{"url", "method": "POST", "contentType", "body"}`
   when the campaign's `methods` include POST. `contentType` is `application/json`
@@ -118,9 +124,24 @@ by Git):
 - `identity` selects a stable account or user id from one response; `history`
   selects the array of transaction records. A path is a list of object keys and
   array indexes, and `[]` means the whole response.
+- When a later URL needs an id from an earlier response, such as an account id,
+  fetch just that value with `lookup` (below) and write it into the URL. The
+  transcript replaces it with `{id}`.
 - `notes` is where you tell the model which field is which. It is kept, so it
   may not contain ids, emails, long digit runs or values copied from responses.
 - `profileId` is `null` and `transcript` is `[]` for open campaigns.
+
+`lookup` runs one read of the recipe from this machine and prints a single
+value, so you never have to dump a response to find an id:
+
+```sh
+.local/transcript-venv/bin/python -m transcripts.cli lookup \
+  --campaign <campaign-id> --read 0 --path '["accounts", 0, "id"]' \
+  --secrets-from-env < .local/payload.json
+```
+
+It needs only `credential` and `recipe.reads` to be filled in. The value is raw
+account data: use it in the URL and nowhere else.
 
 ## 3. Preview locally
 
@@ -152,21 +173,35 @@ Then write `.local/mapping.json`, a JSON object of role to one of those paths:
 ```
 
 Run `preview` again with `--mapping .local/mapping.json` added. The output gains
-`assessment`, the score the enclave would compute for that mapping. Code
+`assessment`, the score the enclave would compute for that mapping, and
+`observations`, facts computed on this machine and never uploaded: the record
+count, whether the list is `newest_first` or `oldest_first`, whether amounts are
+`all_positive`, `all_negative` or `mixed`, and how many records carry each kept
+status token. Use them to write the notes instead of guessing. Code
 verifies each role on the live records and adds its weight: `paymentId` 25,
 `amount` 25, `timestamp` 20, `counterparty` 15, `status` 10, `currency` 5. The
 first four are required and the minimum score is 85. Iterate until
 `assessment.useful` is `true`, then copy the verified paths into `notes`, one
 sentence per role, so the model repeats them. The model only proposes; it cannot
-raise the score.
+raise the score. Which status tokens mean "completed" is chosen by the model from
+your notes, so `preview` does not show it.
+
+The preview prints `"version": 2` on the transcript. That is the transcript
+format; the recipe you write is version 3.
 
 ## 4. Show the owner and get consent
 
 Before spending anything, show the owner the campaign and fixed reward, the
 provider and model their key will pay for, the transcript from `preview`, and
-the limits in [What to tell the owner](#what-to-tell-the-owner). Continue only
-on a clear yes. Passing `--consent` records that the owner agreed to the chosen
-provider seeing the notes and transcript.
+the limits in [What to tell the owner](#what-to-tell-the-owner). `terms
+--campaign <campaign-id> --provider <provider> --model <model-id>` prints the
+same terms as JSON. Continue only on a clear yes. Passing `--consent` records
+that the owner agreed to the chosen provider seeing the notes and transcript.
+
+If the owner is not present, continue only when their instructions already name
+the campaign, the provider and model, and say they accept that the provider sees
+the notes and transcript and that inference is billed even on rejection. If any
+of those is missing, stop and ask; do not infer consent.
 
 ## 5. Contribute
 
@@ -186,9 +221,13 @@ A reservation lasts ten minutes, so run this only after `preview` succeeds.
 | `--provider near` | `https://cloud-api.near.ai/v1/chat/completions` |
 | `--provider openai_compatible --base-url https://host/v1` | `<base-url>/chat/completions` on any public HTTPS host |
 
-`--model` is whatever id that endpoint expects. Add `--max-output-tokens 8000`
-for a reasoning model (default 2048, maximum 20000) and `--deadline 240` for a
-slow one (default 120 seconds, maximum 300).
+`--provider near` and `--provider openai_compatible --base-url
+https://cloud-api.near.ai/v1` reach the same endpoint and behave the same; use
+the named provider when there is one. `--model` is whatever id that endpoint
+expects. The answer itself is about 100 tokens, but a reasoning model spends
+output tokens thinking first: pass `--max-output-tokens 8000` for one (default
+2048, maximum 20000). The limit is a ceiling, and the owner pays only for tokens
+used. Add `--deadline 240` for a slow model (default 120 seconds, maximum 300).
 
 The command verifies the enclave's attestation against the pinned release,
 reserves the job, writes the public recovery handle to `--state` (the file must
@@ -201,14 +240,18 @@ payload and secrets, encrypts them to the attested key and submits.
 .local/transcript-venv/bin/python -m transcripts.cli job --state .local/job.json
 ```
 
-Poll every ten seconds for up to five minutes. `reportedState` moves through
+Poll every ten seconds for up to five minutes; most jobs finish within a
+minute. `reportedState` moves through
 `submitted`, `verifying`, `accepted`, `payout_pending` and ends at `paid`,
 `rejected`, `expired` or `cancelled`. When the job is paid, `job` returns
 `"verified": true` with the signed receipt; `receipt --state .local/job.json`
 prints it again. The receipt holds the transcript, the verified mapping and
-score, and `payload.job.transactionId`, the Base USDC transfer.
+score, and `payload.job.transactionId`, the Base USDC transfer, which anyone
+can check at `https://basescan.org/tx/<transactionId>`.
 
-A rejected job carries a fixed `reason` code and a `hint`. Fix the cause and
+A rejected job carries a fixed `reason` code and a `hint`. A rejection frees
+the slot, the budget and the payout address at once, and the account can try
+again; only an accepted or paid job counts against an account. Fix the cause and
 start a new contribution with a new `--state` path. Never resubmit a job whose
 outcome is unknown: keep polling the same state file, because a second
 submission pays inference again and cannot earn a second reward for the same
@@ -291,11 +334,11 @@ Every error and job reason is a fixed code, and the CLI prints a `hint` for most
 | `campaign_capacity`, `budget_exhausted` | No slot or budget is left. Check `campaigns --live` and stop. |
 | `invalid_fields`, `invalid_submission` | The payload has a missing or extra key. Match the shapes above exactly; open campaigns need `profileId: null` and `transcript: []`. |
 | `secrets_env_missing`, `secrets_already_in_payload` | Export `PEERLINK_BANK_CREDENTIAL` (and `PEERLINK_INFERENCE_KEY` to contribute) in the shell that runs the command, and keep `value` and `inferenceKey` out of the stdin payload when a secrets flag is used. |
-| `invalid_credential` | `credential.origin` must equal the host of every read and sit under the campaign domain. |
+| `invalid_credential` | `credential.origin` must be the `https://host` every read URL starts with, on the campaign domain or a subdomain of it, with a non-empty value. |
 | `credential_headers_invalid` | Use plain ASCII header names and values and drop Host, Content-Length, Connection and Accept-Encoding. |
 | `source_not_allowed`, `recipe_invalid` | A URL leaves the campaign domain or the single host, is a sandbox, test or developer host, has a port, fragment, percent-encoded path or repeated query name, or uses POST where the campaign lists only GET. |
 | `write_request_refused` | The POST names a state change; the exact rules are in the [recipe guide](../../docs/transcript-recipes.md). Use the request that lists history. |
-| `credential_not_secret` | No header in the credential carries a session. Include the cookie, token or CSRF header the request needs. |
+| `credential_not_secret` | The credential holds only headers every browser sends, such as `User-Agent`, `Accept` and `Referer`. Include the cookie, token or CSRF header the request needs. |
 | `anonymous_access_allowed` | The identity or history request returns the same data without the session headers. Choose an authenticated endpoint. |
 | `bank_http_unauthorized`, `bank_http_redirect` | The session expired or a required header is missing. Capture fresh headers and go straight to `contribute`. |
 | `bank_response_non_json`, `response_encoding` | The read returned HTML or a compressed body. Use the JSON API host the page calls. |
@@ -315,8 +358,10 @@ Every error and job reason is a fixed code, and the CLI prints a `hint` for most
 - The chosen model provider sees the notes and the value-free transcript.
   The enclave protects the session and raw data from Peer; it does not make the
   provider private.
-- Field names and status tokens are kept by heuristic rules. What `preview`
-  prints is what Peer keeps.
+- Field names, URL path words and status tokens are kept by heuristic rules: a
+  name is kept when it repeats across the records or is made of common
+  field-name words, and anything else is shown as `{key}` or `{id}`. What
+  `preview` prints is what Peer keeps.
 - Responses must be JSON and uncompressed, and a bank that blocks data-centre
   addresses may refuse the enclave's requests even though `preview` worked.
 - One contribution per bank account is paid per campaign. For open campaigns the

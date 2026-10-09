@@ -551,8 +551,13 @@ def _key_ok(key):
             and not (len(key) >= 16 and re.fullmatch(r"[0-9a-fA-F]+", key)))
 
 
+VERSION_SEGMENT = re.compile(r"v\d{1,3}|\d{4}Q[1-4]|\d{4}-\d{2}(?:-\d{2})?")
+
+
 def _segment_ok(part):
     """Static screen for a retained URL path segment; shared with the validator."""
+    if VERSION_SEGMENT.fullmatch(part):
+        return True  # An API version such as v2, 2026Q4 or 2026-10-01.
     base, dot, extension = part.rpartition(".")
     if dot:
         if extension.lower() not in SEGMENT_EXTENSIONS:

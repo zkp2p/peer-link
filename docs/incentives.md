@@ -17,8 +17,7 @@ issue, a logo or this page does not guarantee remaining capacity; run
 
 Mercury remains first-contributor [source validation](source-validation.md):
 its first positive live API acquisition is pending and would come from the
-contributor. Wise is an existing integration and is excluded from rewards; the
-`wise-open-validation-*` campaigns are Peer's internal test slots.
+contributor. Wise is an existing integration and is excluded from rewards.
 
 One campaign issue per bank publishes its scope and reward, and the
 [campaign index](https://github.com/zkp2p/peer-link/issues/64) lists them.
@@ -107,10 +106,9 @@ Wise is already an integration/reference and is excluded from new transcript
 incentivization. The completed operator-owned tests used bounded reward transfers
 to validate acquisition, grading, payout and restart recovery; they are not public
 campaigns or a promise of funded slots. See the separately scoped
-[durable evidence](../transcripts/durable-pilot-evidence.json). The
-`wise-open-validation-*` campaigns in the open-recipe release exist so Peer can
-exercise that flow end to end against a real account; they are not open to
-contributors.
+[durable evidence](../transcripts/durable-pilot-evidence.json). The open-recipe
+flow was exercised the same way, on separate validation releases whose only
+campaigns were operator-owned Wise slots; see [evidence](evidence.md).
 
 ## Retired provider awards
 

@@ -35,8 +35,7 @@ code, claim issues or open pull requests.
 Campaign kinds are `open_recipe` (the flow above, for the listed banks) and
 `reviewed_descriptor` (Mercury: a fixed API route, pinned models and
 [source validation](docs/source-validation.md) terms). Wise is already
-integrated and has no public reward; `wise-open-validation-*` are internal test
-slots.
+integrated and has no public reward.
 
 ## Boundaries for contributor agents
 

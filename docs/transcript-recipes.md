@@ -69,12 +69,13 @@ Do not include `Host`, `Content-Length`, `Content-Type`, `Connection`,
 sets or refuses those. Header names and values must be printable ASCII, with at
 most 24 headers.
 
-At least one header must carry the session: a cookie, an authorization or token
-header, or a CSRF header. The enclave first replays the identity and history
-requests with only the remaining headers, and refuses the job
-(`anonymous_access_allowed`) if that answer already contains the identity or the
-history rows. A credential made only of headers like `User-Agent` is rejected
-with `credential_not_secret`. Use the bank's production host: hosts named like a
+At least one header must carry the session. The enclave treats every header
+other than the ones any browser sends (`User-Agent`, `Accept`, `Accept-Language`,
+`Origin`, `Referer`, `X-Requested-With` and the `Sec-` headers) as part of the
+session. It first replays the identity and history requests with only those
+browser headers and refuses the job (`anonymous_access_allowed`) if the answer
+already contains the identity or the history rows. A credential made only of
+browser headers is rejected with `credential_not_secret`. Use the bank's production host: hosts named like a
 sandbox, test or developer environment are refused.
 
 For `credential.kind: "headers"` the secret is one JSON object of header name to
@@ -137,18 +138,16 @@ A POST read replays the body the site sent, as one line:
 `body` is the exact text to send, at most 16384 bytes. The enclave refuses a
 POST that names a state change:
 
-- a path whose last segment starts with a verb such as `send`, `pay`, `create`,
-  `update`, `cancel`, `submit` or `confirm`, is `now` or `new`, or is a bare
-  resource such as `/transfer`, `/transfers` or `/payments`. A verb earlier in
-  the path is accepted only when the last segment is a read word such as
-  `history`, `list`, `activity`, `search` or `details`;
-- a GraphQL document that does not start with `query` or `{` (JSON or
-  form-encoded);
-- a persisted GraphQL request (no document) whose `operationName` does not end
-  in `Query`;
-- an `operationName` containing `Mutation`, or starting with a write verb
-  without ending in `Query`;
-- an RPC-style body whose `method` names a write.
+- a path whose last segment (ignoring a trailing id or version) contains a write
+  word such as `send`, `pay`, `transfer`, `payments`, `beneficiaries`, `capture`
+  or `freeze` and no read word such as `history`, `list`, `activity`, `details`,
+  `transactions` or `search`. `/payment-history` and `/pay/activity/list` are
+  accepted; `/payments/send`, `/wire-transfers` and `/transfer/4821` are not;
+- a GraphQL document, JSON or form-encoded, that contains a `mutation` or
+  `subscription` operation;
+- a persisted GraphQL request (an id or hash instead of a document) whose
+  `operationName` does not end in `Query`;
+- an `operationName` or RPC `method` that names a write and has no read word.
 
 These rules cannot prove a request is read-only; replay only what the site
 issues while viewing history. If a read-only request is refused, say so on the
@@ -159,7 +158,9 @@ classes and the GraphQL operation name, not the document text or variables.
 
 `preview` prints the transcript the enclave would keep. Each request lists its
 response fields by path, where `[]` marks array elements and `{key}` replaces an
-object key that looks like an identifier:
+object key that is not kept. A key is kept when it repeats across the rows of a
+list, in any language, or when it is made of common field-name words; a handle,
+a nickname or an id used as a key becomes `{key}`:
 
 ```json
 {
@@ -195,8 +196,15 @@ object key that looks like an identifier:
 tokens, and never under an object that describes a person or address.
 `valuesIncomplete` means a token was withheld because the same text also
 occurred as an ordinary value. Path segments and query values that are not plain
-words become `{id}` or a format class. If anything personal still shows, change
-the reads or stop; do not contribute it.
+words become `{id}` or a format class; API versions such as `v2`, `2026Q4` or
+`2026-10-01` are kept. If a path word that matters was replaced, name it in the
+notes ("the second path segment is the product name"). If anything personal
+still shows, change the reads or stop; do not contribute it.
+
+When a URL needs an id from an earlier response, read just that value with
+`lookup --read N --path '[...]'` and write it into the URL. The transcript shows
+it as `{id}`, so say in the notes where it comes from ("the account id in the
+second URL is `$.accounts[].id` from the first response").
 
 ## Map the roles
 
@@ -240,7 +248,9 @@ engineer who will build the integration:
 - One sentence per role naming the exact path `preview` printed, for example
   "amount is $.activity.items[].amount".
 - The unit and sign of the amount, which time field means the payment is done,
-  and which status token means completed.
+  and which status token means completed. `observations` from
+  `preview --mapping` reports the sign, the list order and how often each status
+  token occurs; state only what it shows or what the bank documents.
 - How the payee field relates to what a sender types: handle, email, phone or
   account id.
 - Anything about the request an engineer could not see from the transcript:
@@ -274,7 +284,7 @@ use this as a pattern rather than a campaign. The ids below are invented.
     "identity": {"read": 0, "path": [0, "id"]},
     "history": {"read": 1, "path": []}
   },
-  "notes": "Public API with a personal read-only token. The transfers list is newest first. paymentId is $[].id. amount is $[].targetValue, a positive number in major units of $[].targetCurrency. timestamp is $[].created, a UTC time written without a zone. counterparty is $[].targetAccount, the recipient account id. status is $[].status and outgoing_payment_sent means completed.",
+  "notes": "Public API with a personal read-only token. The profile id in the second URL is $[].id from the first response. The transfers list is oldest first. paymentId is $[].id. amount is $[].targetValue, a positive number in major units of $[].targetCurrency. timestamp is $[].created, a UTC time written without a zone. counterparty is $[].targetAccount, the recipient account id. status is $[].status and outgoing_payment_sent means completed.",
   "transcript": []
 }
 ```
@@ -296,8 +306,16 @@ path is `[]` and every role path starts with `$[]`.
 }
 ```
 
-With the token in `PEERLINK_BANK_CREDENTIAL` and any non-empty value in
-`PEERLINK_INFERENCE_KEY`:
+The profile id for the second URL comes from the first read:
+
+```sh
+.local/transcript-venv/bin/python -m transcripts.cli lookup \
+  --campaign <campaign-id> --read 0 --path '[0, "id"]' \
+  --secrets-from-env < .local/payload.json
+```
+
+Then, with the token in `PEERLINK_BANK_CREDENTIAL` (`preview` and `lookup` do
+not need the inference key):
 
 ```sh
 .local/transcript-venv/bin/python -m transcripts.cli preview \
@@ -307,8 +325,14 @@ With the token in `PEERLINK_BANK_CREDENTIAL` and any non-empty value in
 
 The transcript shows the second request as `/v1/transfers` with query
 `profile={digits:8}` and `limit=20`, fields such as `$[].created` with format
-`datetime:iso8601:naive` and `$[].status` with its tokens, and an assessment of
-100 with all six roles verified.
+`datetime:iso8601:naive` and `$[].status` with its tokens, an assessment of
+100 with all six roles verified, and `observations` such as
+`"timestampOrder": "oldest_first"` and `"amountSign": "all_positive"`.
+
+Wise's current reference documents the same lists under a dated version prefix
+instead of `/v1`. Either works with a personal token; use whichever the bank's
+documentation or site uses today, and expect documented response shapes to
+differ slightly from live ones. Always trust `preview` over the documentation.
 
 ## Worked example: a web session with a POST
 

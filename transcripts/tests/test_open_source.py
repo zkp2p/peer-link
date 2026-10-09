@@ -509,6 +509,8 @@ class TranscriptTests(unittest.TestCase):
                 (ORIGIN + "/accounts/kQzmW7pLxa/history", ("kQzmW7pLxa",), "/accounts/{id}/history"),
                 (ORIGIN + "/u/alice.smith/activity", ("alice.smith",), "/u/{id}/activity"),
                 (ORIGIN + "/workspaces/acme-plumbing/activity", ("acme-plumbing",), "/workspaces/{id}/activity"),
+                (ORIGIN + "/2026Q4/alicesmith/feed", ("alicesmith",), "/2026Q4/{id}/feed"),
+                (ORIGIN + "/api/2026-10-01/svc/quickpay/activity", (), "/api/2026-10-01/svc/quickpay/activity"),
                 (ORIGIN + "/api/activity?state=Zx81TokenValue&type=CHK-0048213377&acct_4821337711=1&view=alicesmith",
                  ("Zx81TokenValue", "CHK-0048213377", "acct_4821337711", "alicesmith"), "/api/activity")):
             artifact = self.leak_check(url=url, secrets=secrets)
@@ -908,6 +910,36 @@ class HostAndCliTests(unittest.TestCase):
         self.assertIn("$.activity.items[].counterparty.handle", result["historyFieldPaths"])
         for secret in PRIVATE:
             self.assertNotIn(secret, json.dumps(result))
+        # Local, value-free facts for the notes; the model picks the completed tokens.
+        self.assertNotIn("completedStatus", result["assessment"])
+        self.assertEqual({key: result["observations"][key] for key in
+                          ("records", "timestampOrder", "amountForm", "amountSign", "statusUsage")},
+                         {"records": 3, "timestampOrder": "oldest_first", "amountForm": "text", "amountSign": "mixed",
+                          "statusUsage": {"completed": 2, "pending": 1}})
+    def test_lookup_returns_one_value_from_one_read(self):
+        from transcripts.cli import lookup
+        policy = {"campaigns": [campaign()]}
+        bank = Bank()
+        with patch("transcripts.transport.HTTPTransport", return_value=bank):
+            found = lookup(policy, "synthetic-open-v1", payload(), 0, ["user", "id"])
+            self.assertEqual((found["read"], found["value"]), (0, "user-48213377"))
+            # Only the chosen read is sent, with the session, and never a probe or model call.
+            self.assertEqual([call[0] for call in bank.calls], ["bank"])
+            self.assertTrue(bank.calls[0][1].endswith("/api/v2/me"))
+            for path in (["user"], ["user", "missing"], ["user", "address", "city", 0]):
+                with self.assertRaisesRegex(Rejected, "lookup_not_scalar"):
+                    lookup(policy, "synthetic-open-v1", payload(), 0, path)
+            with self.assertRaisesRegex(Rejected, "recipe_invalid"):
+                lookup(policy, "synthetic-open-v1", payload(), 2, ["user", "id"])
+            outside = payload()
+            outside["recipe"]["reads"][0]["url"] = "https://elsewhere.example/api/v2/me"
+            with self.assertRaisesRegex(Rejected, "source_not_allowed"):
+                lookup(policy, "synthetic-open-v1", outside, 0, ["user", "id"])
+            write = payload()
+            write["recipe"]["reads"][0] = {"url": ORIGIN + "/api/payments/send", "method": "POST",
+                                           "contentType": "application/json", "body": "{}"}
+            with self.assertRaisesRegex(Rejected, "write_request_refused"):
+                lookup(policy, "synthetic-open-v1", write, 0, ["id"])
     def test_secrets_from_env_fill_the_payload_after_admission(self):
         from transcripts.cli import secrets_from_env
         body = {key: value for key, value in payload().items() if key != "inferenceKey"}

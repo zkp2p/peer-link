@@ -77,8 +77,8 @@ inference endpoint can be allowed without letting a model award a reward.
 - **Mercury** is first-contributor source validation: one accepted organization,
   $10, through a read-only API token. Its first positive live acquisition is
   still pending. See [source validation](docs/source-validation.md).
-- **Wise** is already integrated in Peer and has no public reward. The
-  `wise-open-validation-*` campaigns are Peer's internal test slots.
+- **Wise** is already integrated in Peer and has no public reward. Peer used
+  it to test the open-recipe flow end to end on a separate validation release.
 
 Terms are in [docs/incentives.md](docs/incentives.md).
 
