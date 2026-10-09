@@ -30,12 +30,12 @@
     "adapter": "us/chase"
   },
   {
-    "issue": 74,
+    "issue": 235,
     "name": "Bank of America",
     "country": "US",
     "currency": "USD",
     "amount": 10,
-    "url": "https://github.com/zkp2p/peer-link/issues/74",
+    "url": "https://github.com/zkp2p/peer-link/issues/235",
     "logo": "/logos/bank-of-america.png",
     "adapter": "us/bank-of-america"
   },
