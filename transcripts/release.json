@@ -2,20 +2,18 @@
   "version": 1,
   "status": "approved",
   "serviceUrl": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
-  "policyDigest": "518e005aaa24e184e68be319f3ef1972dbd2bb42faa9857d5a3459eed7f83444",
+  "policyDigest": "bf71a7c226743323a8b7a2dc27e640eccb7cd21ff874cafbc395da6b641b686c",
   "measurements": {
-    "0": "d4823c3b9f4d92982825a432e177885832573c3f4ce7394ed5408bebf9f77c1aeabd1a03d3ae5a64c471cb5a5ce4776a",
+    "0": "1edc1e3b45452e036ae9160f06b3096e65bf52e05d65d53ab2dda953254d9c8cc2617d4e4332cf6a2782411b3fee5545",
     "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
-    "2": "a828060e402c2c0e0698e600a659587f19805fbd676afd99188a124ca838a22512dc3571e0a72e000e020499b459c82f",
+    "2": "d705994390a1a707f27aed42c0f1bcc6f73f5ce96622c3d101ef5ec1f6758b5b14e90a3587f979bfd6cc86a0a6182811",
     "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
   },
-  "expiresAt": 1794125696,
+  "expiresAt": 1791810125,
   "limitations": [
-    "Experimental Mercury API source-validation campaign only: one organization contribution, ten Base USDC. The first successful authenticated Mercury acquisition remains to be supplied by a contributor; Mercury is not a completed integration.",
-    "Wise is already integrated and is excluded from transcript incentives. Other bank campaigns remain planned. A successful live reservation is required; publication is not a capacity guarantee.",
-    "Only approved contributor-funded inference receives redacted structural evidence with consent. Rejected jobs may still incur inference costs. Confidential NEAR inference and per-request x402/NEAR Intents billing are not enabled.",
-    "Payout custody is operator-recoverable AWS KMS. AWS and account administrators remain trusted for infrastructure and key-policy control; this is not escrow.",
-    "The single-host service restores encrypted state and receipts with fresh ingress keys and paused admissions after restart. Operator resume is required; there is no automatic wallet refill.",
-    "Some interrupted jobs need expiry or operator reconciliation; see GitHub issue 241. No guarantee of immediate unattended recovery is made."
+    "Private validation epoch for the open-recipe release: three internal Wise slots, ten Base USDC in total. Not a public campaign.",
+    "Inference is billed to the contributor's own key at the endpoint they choose. Only the notes and the value-free transcript are sent to it.",
+    "Payout custody is operator-recoverable AWS KMS. Redaction of names and status tokens is heuristic.",
+    "This manifest expires within days and is replaced by the public release on main."
   ]
 }
