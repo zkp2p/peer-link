@@ -152,6 +152,8 @@ function render(providers: Provider[], catalogUnavailable = false) {
       const img = document.createElement("img");
       img.src = integration.logo;
       img.alt = "";
+      // Bank cards stay light; preserve official SVGs with adaptive dark-mode fills.
+      img.style.colorScheme = "light";
       img.loading = "lazy";
       img.addEventListener("error", () => {
         img.remove();

@@ -1,7 +1,12 @@
 # Transcript contribution rewards
 
-**No public paid campaign is currently available. Do not collect keys or spend on
-inference for planned contributions. Wise is excluded from reward recruitment.**
+**Mercury first-contributor source validation:** [$10 USDC for one accepted
+organization](https://github.com/zkp2p/peer-link/issues/1). Its first positive live
+API acquisition is pending and would come from the contributor; this is not a
+completed Peer integration. Other bank rewards remain planned. Wise is an existing
+integration/reference and is excluded from rewards; its paid tests are internal
+validation only. Independently verify the approved release and obtain a funded
+reservation before keys or inference. Static copy cannot guarantee capacity.
 The [release manifest](../transcripts/release.json), independently verified release
 and a successful live reservation control admission. Approval and static issue
 text cannot guarantee remaining capacity. A bank issue, logo, host deployment
@@ -22,8 +27,8 @@ lists planned rates and availability. The single [Merit project profile](https:/
 links to PeerLink for discovery; bank campaigns are not separate Merit bounties.
 Keeping either page visible does not open a paid slot.
 
-- Fixed **$5 or $10 USDC for each accepted contribution**. Initial US campaigns
-  use $10; other rates are explicit campaign policy, not inferred from personal data.
+- Fixed **$5 or $10 USDC for each accepted contribution**. The Mercury first-contributor campaign is capped at one organization for $10;
+  other US campaigns remain planned at $10; other rates are explicit campaign policy, not inferred from personal data.
 - Collect **1–5 distinct contributors per bank**, ordinarily targeting five but
   stopping earlier when the evidence is sufficient.
 - At most one paid contribution per contributor/account per bank campaign.
@@ -90,7 +95,7 @@ incentivization. The completed operator-owned tests used bounded reward transfer
 to validate acquisition, grading, payout and restart recovery; they are not public
 campaigns or a promise of funded slots. See the separately scoped
 [durable evidence](../transcripts/durable-pilot-evidence.json). Other bank rewards
-remain planned and require their own verified source adapter, release approval and
+remain planned and require their own reviewed source/identity checks, release approval and
 reserved funds before enrollment.
 
 ## Retired provider awards

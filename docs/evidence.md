@@ -3,9 +3,11 @@
 A submitted recipe or local capture is a navigation hint. Only fresh reads made by
 the enclave's authenticated bank transport establish source acquisition. Synthetic
 fixtures, browser self-reports, model inference and bank listings do not prove live
-acceptance. No public paid campaign is currently available; the
-[release](../transcripts/release.json) and a future successful reservation must
-permit collection before any secret input. Wise tests are internal validation only.
+acceptance. Mercury is an experimental first-contributor source-validation campaign;
+its first positive live API acquisition remains pending. The independently approved
+[release](../transcripts/release.json) and a successful funded reservation must
+permit collection before keys. Other banks remain planned. Wise tests are internal
+validation only and Wise is excluded from reward recruitment.
 
 ## Source and account identity
 
@@ -18,14 +20,17 @@ Account identity must come from fresh authenticated bank evidence, never an uplo
 account ID. In the Wise pilot, the authenticated profiles response must contain
 the selected profile; multiple profiles require explicit selection. Balance reads
 establish statement balance membership. All retained live reads bind to the same
-account and job. Other banks remain unavailable pending their own reviewed identity
-and acquisition adapters.
+account and job. The Mercury source-validation campaign instead derives organization
+identity and account/history membership from the exact reviewed API descriptor;
+see [source validation](source-validation.md). Organization deduplication is not
+proof of a unique human. Other banks remain planned.
 
 ## Redacted evidence
 
 The structural artifact contains campaign/bank identifiers, verified source origins,
 endpoint templates, safe parameter/header names, field paths/types, authenticated
-Wise profile-to-balance-to-history relationships,
+source-descriptor organization/account/history relationships or historical Wise
+profile-to-balance-to-history relationships,
 coverage and limitations. Dynamic object keys and URL/query values are redacted.
 No names, credentials, account numbers, balances, exact amounts, memos or transaction
 IDs remain. Code validates the artifact before it reaches the grader.

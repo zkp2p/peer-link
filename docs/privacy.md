@@ -1,7 +1,9 @@
 # Transcript privacy
 
-**Current status: no public paid campaign is available. Do not collect bank sessions
-or inference keys for planned contributions. Wise tests are internal validation only.**
+**Mercury source validation requires an independently approved release and a funded
+reservation before keys.** One authorized organization may earn $10 USDC if accepted;
+its first positive live API acquisition remains pending. Other campaigns are planned.
+Wise tests are internal validation only; Wise is excluded from rewards.
 Independently pin the [release](../transcripts/release.json), verify fresh attestation,
 and reserve a funded slot before collecting or sending keys. Follow the
 [contribution skill](../skills/contribute-transcript/SKILL.md).

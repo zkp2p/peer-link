@@ -2,17 +2,20 @@
 
 This is a dedicated PeerLink deployment. It does not change a production attestor,
 reuse its signing key, or inherit its approval. The deployment may expose public
-campaign/status/attestation metadata. No public paid campaign is available;
-Wise tests are internal validation and bank rewards remain planned. Infrastructure creation, a signed EIF and a successful synthetic job do not
-establish live bank acceptance.
+campaign/status/attestation metadata. Mercury is first-contributor source validation;
+its positive live API acquisition is pending. Other bank rewards remain planned and
+Wise tests are internal validation only. Infrastructure creation, a signed EIF and
+a synthetic job do not establish actual bank acquisition or guarantee admission.
 
-## Internal Wise validation; public incentives planned
+## Internal Wise validation; Mercury source-validation campaign
 
-**No public paid campaign is currently available.** Bank transcript rewards remain
-planned at the published fixed $5/$10 rates, with 1–5 distinct contributors per bank
-when enabled. Wise is an existing integration/reference, excluded from reward
-recruitment. Its completed paid tests are internal validation, not public enrollment.
-Do not collect credentials or spend on inference for a planned campaign.
+**Mercury first-contributor source validation:** [$10 USDC for one accepted
+organization](https://github.com/zkp2p/peer-link/issues/1). Its first positive live
+API acquisition is pending and would come from the contributor; this is not a
+completed Peer integration. Other bank rewards remain planned. Wise is an existing
+integration/reference and is excluded from rewards; its paid tests are internal
+validation only. Independently verify the approved release and obtain a funded
+reservation before keys or inference. Static copy cannot guarantee capacity.
 
 The internal validation service was `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
 with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
@@ -304,8 +307,9 @@ Missing or mismatched state must stop admission. KMS permits operator fund recov
 after enclave loss, but not safe continuation with a blank ledger. The prior enclave-only wallet
 already holds $50 USDC that remains unrecovered at this checkpoint. Leave that
 old live enclave intact while reconciling it; installing the KMS release cannot
-recover its old key. No public paid campaign is currently available; non-Wise banks require
-their own source, funding and release approval.
+recover its old key. Mercury's experimental source-validation campaign requires
+its own reviewed source, funding, hardware and release approval; other banks remain
+planned. Positive live Mercury acquisition is pending contributor evidence.
 
 Before a planned stop, use the implemented signed operator `retire` action. It
 irreversibly closes admission and cancels unused reservations, while submitted,

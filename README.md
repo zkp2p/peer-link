@@ -9,11 +9,12 @@ your inference API key to grade its usefulness. Peer engineers turn accepted evi
 into Curator metadata and attestation transformers. You do not write a provider or
 open a contribution PR.
 
-**Status: no public paid campaign is currently available.** A bank
-listing, a deployed host, or synthetic tests do not establish live availability.
-Only use an independently verified approved [release](transcripts/release.json)
-and a successful reservation in an enabled campaign before any secret collection.
-Bank rewards remain planned; Wise is excluded from reward recruitment.
+**Mercury: experimental first-contributor source validation, $10 USDC for one
+accepted organization.** Its first positive live API acquisition is pending;
+this is not a completed Peer integration. Check [Mercury #1](https://github.com/zkp2p/peer-link/issues/1)
+and the independently approved [release](transcripts/release.json), then obtain a
+funded reservation before keys or inference. Capacity is not guaranteed. Other
+bank rewards remain planned; Wise is excluded from reward recruitment.
 
 [Website](https://link.peer.xyz) · [Contribution guide](CONTRIBUTING.md) ·
 [Campaign issues](https://github.com/zkp2p/peer-link/issues) · [Rewards](docs/incentives.md) ·
@@ -94,13 +95,15 @@ release approval remains a separate gate. The
 verified the fixed deployer return and zero remaining USDC with the relay stopped;
 it does not prove the enclave retirement flow.
 
-## Internal Wise validation; public incentives planned
+## Internal Wise validation; Mercury source-validation campaign
 
-**No public paid campaign is currently available.** Bank transcript rewards remain
-planned at the published fixed $5/$10 rates, with 1–5 distinct contributors per bank
-when enabled. Wise is an existing integration/reference, excluded from reward
-recruitment. Its completed paid tests are internal validation, not public enrollment.
-Do not collect credentials or spend on inference for a planned campaign.
+**Mercury first-contributor source validation:** [$10 USDC for one accepted
+organization](https://github.com/zkp2p/peer-link/issues/1). Its first positive live
+API acquisition is pending and would come from the contributor; this is not a
+completed Peer integration. Other bank rewards remain planned. Wise is an existing
+integration/reference and is excluded from rewards; its paid tests are internal
+validation only. Independently verify the approved release and obtain a funded
+reservation before keys or inference. Static copy cannot guarantee capacity.
 
 The internal validation service was `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
 with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.

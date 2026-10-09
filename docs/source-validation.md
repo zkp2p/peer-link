@@ -3,10 +3,11 @@
 The Mercury candidate is an experiment to collect the first authenticated
 transcript for a reviewed API source. It is not a completed Peer integration.
 There has not yet been a positive live Mercury acquisition in this campaign.
-The candidate remains closed until its measured release, hardware checks and
-funding are approved. A successful live reservation determines availability.
+The experimental campaign requires its independently approved measured release,
+verified hardware and a successful funded reservation before keys or inference.
+A static page cannot guarantee availability.
 
-The proposed campaign is `mercury-api-source-v1`, linked to
+The experimental campaign is `mercury-api-source-v1`, linked to
 [Mercury #1](https://github.com/zkp2p/peer-link/issues/1): one accepted contribution
 from one authorized organization, for **10 USDC on Base**. Wise is already an
 existing integration and is excluded from incentives.
@@ -84,8 +85,8 @@ accounts endpoint and privately choose an observed active Mercury `account.id`.
 That local discovery is separate from the enclave's four reads. Do not send token
 values or raw output to chat, logs or a cloud service without separate informed
 consent. Continue the same unexpired reservation with `submit-reserved` and its
-original saved terms, not a second `contribute` call. The candidate remains closed;
-none of these steps authorize key collection now.
+original saved terms, not a second `contribute` call. Never collect keys unless
+release verification and funded reservation both pass.
 
 Fresh authenticated responses establish possession of API access to the observed
 organization. They do not prove legal ownership or a unique human. A private
@@ -111,5 +112,9 @@ unavailable; ordinary provider-visible inference requires explicit consent.
 The new `mercury-public-v1` state is independent of the permanently retired Wise
 epoch. The same operator-recoverable KMS payout wallet may be reused only after
 zero-balance/nonce checks, a new measured policy and hardware approval. This is
-not escrow or an enclave-exclusive signing key. The reviewed candidate starts
-with a 10 USDC budget and no automatic refill.
+not escrow or an enclave-exclusive signing key. The measured campaign budget is 10 USDC, capped at one organization with no
+automatic refill; successful reservation determines admission.
+
+The separately scoped [Mercury release evidence](../transcripts/mercury-source-evidence.json)
+records measured-source, hardware and funding checks; positive live bank acquisition
+remains pending until the first contributor provides verified evidence.
