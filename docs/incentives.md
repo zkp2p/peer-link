@@ -13,6 +13,11 @@ available capacity, provider/model and privacy choices, limits and the
 URLs are retained where possible. There is no claim-comment, assignment, provider
 implementation or code PR requirement.
 
+GitHub bank issues remain public campaign and discovery pages. New transcript
+rewards are paid through PeerLink, not Merit; contributors do not need to claim
+a Merit bounty. The [campaign index](https://github.com/zkp2p/peer-link/issues/64)
+lists planned rates and availability. Keeping a page visible does not open a paid slot.
+
 - Fixed **$5 or $10 USDC for each accepted contribution**. Initial US campaigns
   use $10; other rates are explicit campaign policy, not inferred from personal data.
 - Collect **1–5 distinct contributors per bank**, ordinarily targeting five but
@@ -53,12 +58,12 @@ recipient credit, final settlement or production approval.
 ## Pilot budget and availability
 
 The architecture reward ceiling is **$50 USDC**, with separate bounded gas
-and no automatic refill. The revised candidate has a measured **$5 USDC budget**
-and one available contributor slot in the paused Wise experiment, allocated only
-after a separate $1 recovery test confirms
-the return. These are budget and verification plans, not a statement that funds are
-already deposited or that every bank has a funded slot. Admission stops when
-reserved capacity or funds run out.
+and no automatic refill. The completed supervised Wise experiment used a measured
+**$5 USDC budget** and one contributor slot after a confirmed $1 recovery test.
+That $5 reward was paid; **remaining funded public capacity is zero**. The current
+replacement enclave is paused and unfunded. Future campaigns must publish available
+capacity and reserve their reward funds before accepting contributions. A budget
+ceiling or a planned per-transcript rate is not a funded award.
 
 The revised payout authority is a non-exportable AWS KMS key, recoverable through
 authorized operator IAM; the host broker can also request signatures. Runtime
@@ -75,6 +80,14 @@ enclave-only pilot's funded $50 remains unrecovered at this checkpoint; new cust
 does not restore its old signing key.
 
 ## Retired provider awards
+
+The only remaining Merit listing is the [legacy Bank of America award
+#74](https://github.com/zkp2p/peer-link/issues/74): **$50 total** for Primuez's
+existing provider assignment, due **October 16, 2026**, under its original terms.
+It is closed to new claims. Its amount is not reduced to the transcript rate.
+The new Bank of America campaign is [#235](https://github.com/zkp2p/peer-link/issues/235),
+at **$10 per accepted transcript**, with 1–5 distinct contributors when enabled.
+No new transcript campaigns are enrolled as Merit bounties.
 
 The $50-per-provider/Merit authoring program is retired for new work. Its
 [original terms](https://github.com/zkp2p/peer-link/blob/31bba0e6c55f41ff08f31d30e728e1ef41d38a3b/docs/incentives.md), including historical funding records,
