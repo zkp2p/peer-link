@@ -833,6 +833,23 @@ class RuntimeTests(unittest.TestCase):
         other["recipe"]["identity"]["path"] = ["user", "email"]
         _, status = self.run_job(wallet=2, body=other)
         self.assertEqual((status["state"], status["reason"]), ("rejected", "duplicate_account"))
+    def test_rows_as_long_as_a_real_bank_row_are_paid_and_still_deduplicated(self):
+        # Found on the validation enclave: a row witness built from the row text
+        # overran the account-id bound, so every realistic history was rejected.
+        rows = [{"id": "txn-%05d" % (100 + index), "amount": "-%d.50" % (index + 1), "currency": "USD",
+                 "createdAt": "2026-09-%02dT10:11:12Z" % (index + 1), "status": "completed",
+                 "counterparty": {"handle": "payee_%02d" % index, "name": "Person Example"},
+                 "details": {"reference": "invoice " + "lorem ipsum " * 60, "sourceCurrency": "USD",
+                             "targetCurrency": "USD", "rate": 1.0, "hasActiveIssues": False,
+                             "businessCategory": None, "quoteUuid": "0f8fad5b-d9cb-469f-a165-70867728950e"}}
+                for index in range(20)]
+        self.assertTrue(all(len(canonical(row)) > 800 for row in rows))
+        self.bank.bodies = {"/api/v2/me": ME, "/api/v2/users/user-48213377/activity": {"activity": {"items": rows}}}
+        self.assertEqual(self.run_job(wallet=1)[1]["state"], "paid")
+        other = payload()
+        other["recipe"]["identity"]["path"] = ["user", "email"]
+        _, status = self.run_job(wallet=2, body=other)
+        self.assertEqual((status["state"], status["reason"]), ("rejected", "duplicate_account"))
     def test_campaign_list_survives_an_unavailable_ledger(self):
         with patch.object(self.epoch.ledger, "availability", side_effect=Rejected("state_unavailable")):
             self.assertEqual(set(self.runtime.dispatch("campaigns", {})), {"policyDigest", "campaigns"})

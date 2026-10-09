@@ -350,7 +350,8 @@ class Ledger:
                 # under another identity still collides on its rows. "r:" marks a row
                 # witness, which only counts when two or more overlap.
                 from .open_source import row_witnesses
-                aliases=sorted(set(aliases) | {"r:"+account_fingerprint(dedup_key, campaign["id"], "row:"+item[:280]+digest(item))
+                # Keyed on the row digest alone: a real bank row is longer than an account id.
+                aliases=sorted(set(aliases) | {"r:"+account_fingerprint(dedup_key, campaign["id"], "row:"+digest(item))
                                                for item in row_witnesses(reads, context)})
             self._check_aliases(campaign['id'],aliases)
             require(self.db.execute("SELECT 1 FROM jobs WHERE campaign_id=? AND account_hmac=? AND state IN "
