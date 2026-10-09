@@ -17,6 +17,7 @@
 !transcripts/epoch.py
 !transcripts/eth_payout.py
 !transcripts/ledger.py
+!transcripts/kms_signer.py
 !transcripts/payout.py
 !transcripts/policy.py
 !transcripts/providers.py

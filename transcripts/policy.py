@@ -13,6 +13,15 @@ REQUEST_FIELDS = {"version", "campaignId", "payoutAddress", "provider", "model",
 LIMIT_FIELDS = {"maxCalls", "maxInputTokens", "maxOutputTokens", "maxBankReads", "deadlineSeconds"}
 
 
+def validate_payout_authority(value):
+    from .kms_signer import KEY_ARN
+    fields(value, {"kind", "keyId", "wallet"})
+    require(value["kind"] == "aws_kms" and isinstance(value["keyId"], str)
+            and len(value["keyId"]) <= 256 and KEY_ARN.fullmatch(value["keyId"]), "invalid_payout_authority")
+    require(value["wallet"] == address(value["wallet"]), "invalid_payout_authority")
+    return value
+
+
 def origin(value):
     require(isinstance(value, str), "invalid_source")
     parsed = urlsplit(value)

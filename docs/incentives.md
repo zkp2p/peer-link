@@ -52,18 +52,27 @@ recipient credit, final settlement or production approval.
 
 ## Pilot budget and availability
 
-The configured pilot reward ceiling is **$50 USDC**, with separate bounded gas
-and no automatic refill. This is a budget policy, not a statement that funds are
+The architecture reward ceiling is **$50 USDC**, with separate bounded gas
+and no automatic refill. The revised candidate has a measured **$5 USDC budget**
+and one available contributor slot in the paused Wise experiment, allocated only
+after a separate $1 recovery test confirms
+the return. These are budget and verification plans, not a statement that funds are
 already deposited or that every bank has a funded slot. Admission stops when
 reserved capacity or funds run out.
 
-The pilot wallet/key and ledger belong to a supervised, non-restorable enclave
-epoch. A restart loses them; the release does not promise durable public payments
-or recovery across restarts. Operators must verify release, funding, bank access,
+The revised payout authority is a non-exportable AWS KMS key, recoverable through
+authorized operator IAM; the host broker can also request signatures. Runtime
+payout rules apply to the measured service, not to independent operator signing.
+The ledger and deduplication state remain RAM-only. A restart requires operator
+review and does not safely restore old jobs or justify reusing the funded wallet.
+Operators must verify the new measured release, funding, bank access,
 inference and payout evidence before enabling any campaign. A signed retirement
 action irreversibly closes admission, settles/archives existing obligations and
 refunds remaining USDC to the fixed deployer address. This has synthetic coverage,
-not a live refund demonstration; there is no ETH sweep or restart recovery.
+not a live refund demonstration; the runtime performs no ETH sweep or ledger
+restore. Operator KMS recovery is a separate trust boundary. The earlier
+enclave-only pilot's funded $50 remains unrecovered at this checkpoint; new custody
+does not restore its old signing key.
 
 ## Retired provider awards
 

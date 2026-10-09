@@ -19,7 +19,7 @@ from transcripts.client import Client
 from transcripts.cli import main,prompt_secrets,save_state,terms
 from transcripts.common import Rejected, canonical, digest
 from transcripts.tests.test_core import campaign, read, NOW
-from transcripts.tests.test_runtime import FakeEpoch
+from transcripts.tests.test_artifacts import kms_descriptor,kms_policy
 from verification.common import b64
 
 
@@ -30,12 +30,12 @@ class ClientTests(unittest.TestCase):
         cls.channel=Channel()
 
     def setUp(self):
-        self.policy={'campaigns':[campaign()]}
+        self.policy=kms_policy(campaign())
         self.release={'status':'approved','serviceUrl':'https://synthetic.invalid',
                       'expiresAt':NOW+10000,'policyDigest':digest(self.policy)}
         self.clock=patch('transcripts.client.time.time',return_value=NOW);self.clock.start()
         self.client=Client(self.release['serviceUrl'],self.release,self.policy)
-        epoch=FakeEpoch();self.epoch=epoch.public_descriptor();epoch.ledger.close()
+        self.epoch=kms_descriptor()
         self.responses=[];self.sent=[];self.reservation=None;self.receipt_record=None
         self.verify=patch('transcripts.client.verify_document',side_effect=self.verify_quote);self.verify.start()
         self.calls=patch.object(self.client,'call',side_effect=self.call);self.calls.start()
@@ -243,6 +243,35 @@ class ClientTests(unittest.TestCase):
         result=self.client.preflight()
         self.assertEqual(result['releaseDigest'],digest(self.release))
         self.assertEqual(result['measurements'],self.release['measurements'])
+
+    def test_preflight_rejects_custody_mismatch_before_credentials_or_reservation(self):
+        original=copy.deepcopy(self.epoch)
+        for name,value in [('version',1),('payoutKeyCustody','enclave_only'),
+                           ('payoutKeyId',original['payoutKeyId'].replace('11111111-','22222222-',1)),
+                           ('payoutWallet','0x'+'3'*40),('operatorRecovery',False),
+                           ('restartRequiresOperatorReview',False),('ledgerPersistence','persistent')]:
+            self.epoch=dict(original,**{name:value});self.sent=[]
+            with self.subTest(name=name),self.assertRaises(Rejected):self.contribute()
+            self.assertFalse(self.client.preflight_verified)
+            self.assertNotIn('/v1/reservations',self.sent);self.assertNotIn('/v1/submissions',self.sent)
+        self.epoch=original
+
+    def test_local_handle_cannot_substitute_kms_custody(self):
+        self.contribute();state=copy.deepcopy(self.client.job)
+        state['epoch']['payoutKeyId']=state['epoch']['payoutKeyId'].replace('11111111-','22222222-',1)
+        restored=Client(self.release['serviceUrl'],self.release,self.policy)
+        with self.assertRaises(Rejected):restored.restore(state)
+        self.assertIsNone(restored.job);self.assertFalse(restored.preflight_verified)
+
+    def test_preflight_rejects_unmeasured_budget_before_reservation(self):
+        self.policy['pilotBudgetMinor']=5_000_000
+        self.release['policyDigest']=digest(self.policy)
+        self.client=Client(self.release['serviceUrl'],self.release,self.policy)
+        with patch.object(self.client,'call',side_effect=self.call):
+            with self.assertRaisesRegex(Rejected,'epoch_mismatch'):self.contribute()
+            self.assertNotIn('/v1/reservations',self.sent)
+            self.epoch['budgetMinor']=5_000_000
+            self.assertEqual(self.client.preflight()['epoch']['budgetMinor'],5_000_000)
 
     def prompt_payload(self):
         return {'credential':{'origin':'https://api.wise.com','kind':'bearer'},'profileId':None,

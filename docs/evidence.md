@@ -50,8 +50,12 @@ Code checks authenticated source acquisition, job binding/expiry, useful history
 redaction, duplicates and reserved budget independently of the model score. It
 reserves one fixed payout and reconciles uncertain chain submission using the same
 transaction identity. A model score alone is not acceptance or payment evidence.
-The pilot epoch is RAM-only and non-restorable: no durable storage, deduplication
-or payout-recovery claim may be carried across a process restart.
+The revised v2 epoch descriptor binds non-exportable AWS KMS payout custody, the
+exact key ARN and wallet, operator recovery, RAM-only ledger persistence and
+mandatory restart review to measured policy. Authorized operator IAM and the host
+broker can sign outside the enclave; attestation is not proof of exclusive custody
+or PCR-restricted signing. KMS recovery does not restore a lost ledger, deduplication
+history or safe wallet-reuse authority. Those claims need separate evidence.
 
 Keep separate evidence for:
 

@@ -12,7 +12,7 @@ from verification.common import unb64
 from .common import Rejected,canonical,digest,fields,require,strict_json
 from .channel import encrypt
 from .policy import validate_reservation
-from .artifacts import validate_archive_record
+from .artifacts import validate_archive_record, validate_epoch_descriptor
 
 SAFE_ERRORS = {'campaign_capacity','budget_exhausted','duplicate_recipient','duplicate_account',
                'campaign_unavailable','job_expired','job_replayed','job_not_found','receipt_unavailable',
@@ -77,9 +77,9 @@ class Client:
         fields(context,{'protocol','nonce','policyDigest','epoch'})
         require(context['protocol']=='peerlink-epoch-v1' and context['nonce']==nonce and context['policyDigest']==digest(self.policy),'context_mismatch')
         self.verify(quote,context)
+        validate_epoch_descriptor(context['epoch'],self.policy)
         if self.epoch is not None:require(context['epoch']==self.epoch,'enclave_restarted')
         self.epoch=context['epoch']
-        require(self.epoch.get('nonRestorable') is True and self.epoch.get('budgetMinor')==50_000_000,'epoch_mismatch')
         self.preflight_verified=True
         return {'verified':True,'releaseDigest':digest(self.release),'measurements':copy.deepcopy(self.release.get('measurements',{})),
                 'policyDigest':digest(self.policy),'epoch':self.epoch}
@@ -126,6 +126,7 @@ class Client:
         # verify an old quote or revive an expired job. A fresh preflight follows.
         validate_reservation(campaign,request,request['expiresAt']-600)
         require(state['bindingDigest']==digest({'jobId':state['jobId'],'campaign':campaign,'request':request}),'state_mismatch')
+        validate_epoch_descriptor(state['epoch'],self.policy,code='state_mismatch')
         self.key=unb64(state['publicKey'],1024);self.epoch=copy.deepcopy(state['epoch']);self.job=copy.deepcopy(state)
         self.preflight_verified=False
     def provisional(self,status):
@@ -160,7 +161,7 @@ class Client:
         try:key.verify(unb64(signed['signature'],512),canonical(record),padding.PSS(mgf=padding.MGF1(hashes.SHA256()),salt_length=32),hashes.SHA256())
         except Exception:raise Rejected('receipt_signature_invalid') from None
         campaign=next(item for item in self.policy['campaigns'] if item['id']==self.job['campaignId'])
-        validate_archive_record(campaign,record)
+        validate_archive_record(campaign,record,policy=self.policy)
         request=self.job['request']
         require(record['job']['bindingDigest']==self.job['bindingDigest']
                 and record['job']['payoutAddress']==request['payoutAddress'].lower()

@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "status": "candidate_only",
+  "status": "historical_candidate_retired_funds_unrecovered",
   "publicReleaseApproved": false,
-  "observedAt": "2026-10-08T19:22:15.773946+00:00",
+  "observedAt": "2026-10-09T02:14:41.598956+00:00",
   "sourceCommit": "9c34a8273c126f338025f8601ad6a234dbd3ffc7",
   "policyDigest": "0ae7f9a28d4c4e50f50350541396f9d2c47233d8445638b0bd732a7a2db54458",
   "candidateMeasurements": {
@@ -37,7 +37,7 @@
     "version": 1
   },
   "admissionsOpen": false,
-  "payoutWalletFunded": false,
+  "payoutWalletFunded": true,
   "liveEnclaveBankJobCompleted": false,
   "paidInferenceCompleted": false,
   "livePayoutCompleted": false,
@@ -53,7 +53,20 @@
     "Candidate evidence is not an approved release manifest or authorization to submit credentials.",
     "CI tested the pull-request merge commit; every measured input and deployed PCR0/1/2 matches.",
     "No bank credentials, raw bank values or inference keys are included.",
-    "The unfunded pilot has an automatic 24-hour infrastructure stop guard."
+    "The old enclave-only key remains in running enclave memory. Its 50 USDC is unrecovered; the old automatic stop deadline is2026-10-09T17:11:57Z. The new KMS key cannot recover this old wallet.",
+    "These historical measurements do not verify the new KMS candidate."
   ],
-  "sourcePullRequest": "https://github.com/zkp2p/peer-link/pull/231"
+  "sourcePullRequest": "https://github.com/zkp2p/peer-link/pull/231",
+  "fundingEvidence": {
+    "chainId": 8453,
+    "fundedMinor": 50000000,
+    "gasFundingWei": 5400000000000,
+    "usdcFundingTransaction": "0xfd42fac0165ba228f19e43938b1d792724d9fe7f0eb229cc53e44d5ac709dfc3",
+    "gasFundingTransaction": "0x270b5487c3b583a6a179608a35d038a0e648f78338f1923f22571a676932b9d7",
+    "refundedMinor": 0,
+    "refundTransaction": null,
+    "admissionsEverOpened": false,
+    "refundFailure": "Completed fixed-length HTTP responses close the socket before the old transport loop resets its timeout; immutable old image cannot be patched in place.",
+    "payoutKeyBackupAvailable": false
+  }
 }

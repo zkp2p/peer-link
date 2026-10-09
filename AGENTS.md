@@ -62,10 +62,25 @@ identifiers must not be published; ordinary hashes of guessable banking values
 are not privacy protection. Error/status output contains fixed codes only.
 
 Use a dedicated transcript Nitro service, never production attestor keys or hosts.
-The capped pilot uses a newly generated enclave-only wallet and RAM-only epoch;
-restart loses the key and state. It is not durable rollback-safe production payment.
+The revised capped pilot uses a non-exportable AWS KMS payout key with operator IAM
+recovery and a host signing broker. Signing authority is not exclusive to the enclave
+or PCR restricted. Attestation binds the exact KMS ARN and wallet in measured policy;
+it does not prevent an authorized operator from signing outside runtime rules.
+Ledger, dedup/integrity keys and in-process artifacts remain RAM-only. Restart requires
+operator review; recoverable custody is not durable rollback-safe payment state or
+permission to reuse the funded wallet with a blank ledger.
 Keep admission disabled until measured-release, hardware, inference, bank, payout
-and funding gates pass. No automatic wallet refill or restart recovery claim.
+and funding gates pass. No automatic wallet refill or ledger recovery claim. Preserve
+the old funded enclave while its unrecovered $50 is reconciled; the new KMS key cannot
+recover the old enclave-only key.
+Before new funding, require the signed paused operator preflight to exercise real
+Base RPC balances/nonce and KMS one-minor-unit refund signing at zero USDC. Code
+does not broadcast; the public response omits raw signed bytes. The host broker
+sees the signature/digest and can reconstruct that fixed refund. A valid quote or mock signer alone is insufficient.
+The measured `pilotBudgetMinor` is the exact epoch budget, bounded from $5 to the
+$50 architecture maximum. The revised candidate uses $5 after a separate confirmed
+$1 recovery test and capacity one for the current Wise experiment; do not silently
+fund the architecture maximum.
 The signed operator retirement action irreversibly closes admission, cancels unused
 reservations, finishes existing obligations and archives them before the fixed
 remaining-USDC refund to the deployer. No arbitrary destination or ETH sweep.

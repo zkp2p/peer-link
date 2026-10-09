@@ -1,8 +1,8 @@
-"""Non-restorable, RAM-only Nitro payout epoch for the capped pilot.
+"""RAM-only job epoch with an operator-recoverable AWS KMS payout authority.
 
-This deliberately offers no recovery/restore/seal/import API. Enclave restart loses
-keys, account dedup history and pending-payment reconciliation. A new epoch starts
-paused with a new unfunded wallet; operator approval is required for every funding.
+Restart loses account dedup and pending-payment state, but not the payout key.
+Every boot starts paused. Operators must reconcile the previous epoch before
+funding or activating a new one; key recovery does not restore the job ledger.
 The public descriptor MUST be bound into independently verified Nitro attestation.
 """
 import hashlib
@@ -19,7 +19,6 @@ CHAIN_ID = 8453
 DEPLOYER_REFUND_ADDRESS = "0x84e113087c97cd80ea9d78983d4b8ff61eca1929"
 USDC_ADDRESS = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
 MAX_GAS_FUNDING_WEI = 3_000_000_000_000_000  # 0.003 ETH; no automatic refill
-SECP256K1_ORDER = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
 
 
 def _require_nsm():
@@ -55,7 +54,7 @@ class _EpochAnchor:
 
 
 class BootEpoch:
-    """Construct only inside Nitro; no private-key/configuration inputs accepted.
+    """Construct only inside Nitro with a measured KMS signing authority.
 
     Internal enclave code receives ledger, accept(), and sign_transaction(). Public
     endpoints may return only public_descriptor(); never expose Python attributes.
@@ -63,32 +62,52 @@ class BootEpoch:
     never a contributor API. Caller must verify operator authorization and fresh
     attestation for this descriptor, then independently inspect funding evidence.
     """
-    def __init__(self):
-        _require_nsm()  # Fail before generating any wallet on a normal host.
-        from eth_account import Account
+    def __init__(self, payout_signer, *, budget_minor=MAX_BUDGET):
+        _require_nsm()
+        from .kms_signer import KmsSigner
+        require(isinstance(payout_signer, KmsSigner), "kms_signer_required")
+        self.budget_minor = integer(budget_minor, 5_000_000, MAX_BUDGET, "invalid_pilot_budget")
         self._lock = threading.RLock()
         self._alive, self._active, self._funded_once = True, False, False
         self._integrity_key, self._dedup_key = secrets.token_bytes(32), secrets.token_bytes(32)
-        key = secrets.token_bytes(32)
-        while not 0 < int.from_bytes(key, "big") < SECP256K1_ORDER:
-            key = secrets.token_bytes(32)
-        self._signer = Account.from_key(key)
+        self._signer = payout_signer
         self.epoch_id = secrets.token_hex(16)
         self.wallet = self._signer.address.lower()
         self._anchor = _EpochAnchor()
-        self.ledger = Ledger(":memory:", self._integrity_key, global_budget_minor=MAX_BUDGET, anchor=self._anchor)
+        self.ledger = Ledger(":memory:", self._integrity_key, global_budget_minor=self.budget_minor, anchor=self._anchor)
 
     @classmethod
-    def create(cls):
-        return cls()
+    def create(cls, payout_signer, *, budget_minor=MAX_BUDGET):
+        return cls(payout_signer, budget_minor=budget_minor)
 
     def public_descriptor(self):
         with self._lock:
             require(self._alive, "epoch_closed")
-            return {"version": 1, "epochId": self.epoch_id, "payoutWallet": self.wallet,
-                    "chainId": CHAIN_ID, "usdcContract": USDC_ADDRESS, "budgetMinor": MAX_BUDGET,
-                    "maxGasFundingWei": MAX_GAS_FUNDING_WEI, "nonRestorable": True,
-                    "persistence": "enclave_ram_only"}
+            return {"version": 2, "epochId": self.epoch_id, "payoutWallet": self.wallet,
+                    "chainId": CHAIN_ID, "usdcContract": USDC_ADDRESS, "budgetMinor": self.budget_minor,
+                    "maxGasFundingWei": MAX_GAS_FUNDING_WEI, "payoutKeyCustody": "aws_kms",
+                    "payoutKeyId": self._signer.key_id, "operatorRecovery": True,
+                    "ledgerPersistence": "enclave_ram_only", "restartRequiresOperatorReview": True}
+
+    def check_payout_signing(self, nonce):
+        """Operator-only pre-funding probe. Sign a one-unit refund without broadcast.
+
+        This validates real KMS signing against the measured public wallet while
+        paused. No raw transaction is returned or broadcast by this method. The
+        trusted host sees the digest and signature and can reconstruct it, just
+        as its IAM authority can sign independently of this enclave.
+        """
+        from .eth_payout import refund_data
+        with self._lock:
+            require(self._alive and not self._active, "preflight_requires_paused")
+            transaction = {"type": 2, "chainId": CHAIN_ID, "nonce": nonce,
+                           "to": USDC_ADDRESS, "value": 0, "data": refund_data(1),
+                           "gas": 100000, "maxFeePerGas": 10000000,
+                           "maxPriorityFeePerGas": 1000000, "accessList": []}
+            signed = self._signer.sign_transaction(transaction)
+            return {"keyId": self._signer.key_id, "wallet": self.wallet,
+                    "signingVerified": True, "broadcast": False,
+                    "transactionHash": "0x" + bytes(signed.hash).hex()}
 
     def binding_digest(self):
         return digest(self.public_descriptor())
@@ -98,7 +117,7 @@ class BootEpoch:
             require(self._alive and epoch_id == self.epoch_id and address(wallet) == self.wallet, "epoch_binding_mismatch")
             require(not self.ledger.retirement_status()["admissionsClosed"],"admissions_closed")
             require(not self._funded_once, "epoch_already_funded")
-            require(usdc_balance_minor == MAX_BUDGET, "epoch_funding_mismatch")
+            require(usdc_balance_minor == self.budget_minor, "epoch_funding_mismatch")
             integer(gas_balance_wei, 1, MAX_GAS_FUNDING_WEI, "epoch_gas_funding_mismatch")
             self._funded_once, self._active = True, True
 
@@ -188,8 +207,8 @@ class BootEpoch:
                 self._active, self._alive = False, False
                 self.ledger.close()
                 self._anchor._close()
-                # Drop references. Python does not guarantee zeroization; enclave
-                # destruction is the key-erasure boundary, not this convenience.
+                # Drop local references. The KMS key remains recoverable through
+                # operator IAM; only local job/dedup secrets die with this epoch.
                 self._signer = self._integrity_key = self._dedup_key = None
 
     def __repr__(self):

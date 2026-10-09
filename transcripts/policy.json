@@ -21,7 +21,7 @@
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/64",
       "status": "active",
       "rewardMinor": 5000000,
-      "maxContributors": 5,
+      "maxContributors": 1,
       "sources": [
         {
           "origin": "https://api.wise.com",
@@ -133,9 +133,10 @@
     "nearModelResponseAuthenticity": "unverified_gateway_assertions_only",
     "confidentialNearEnabled": false
   },
-  "epoch": {
-    "nonRestorable": true,
-    "budgetMinor": 50000000,
-    "noAutomaticRefill": true
-  }
+  "payoutAuthority": {
+    "kind": "aws_kms",
+    "keyId": "arn:aws:kms:us-east-1:411399509833:key/5e49914d-80d9-4140-a4c2-4bf00e3ac7ea",
+    "wallet": "0xd297f105b145cd1d4ddb1d31392300e934bc3559"
+  },
+  "pilotBudgetMinor": 5000000
 }

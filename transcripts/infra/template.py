@@ -30,6 +30,7 @@ def template():
         "ImageId": {"Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>", "Default": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"},
         "LifetimeHours": {"Type": "Number", "Default": 24, "MinValue": 1, "MaxValue": 168, "Description": "Stop this host after this supervised pilot lifetime; no automatic restart"},
         "AlarmTopicArn": {"Type": "String", "Default": "", "AllowedPattern": "(arn:[a-z-]+:sns:[a-z0-9-]+:[0-9]{12}:[A-Za-z0-9_-]{1,256})?", "Description": "Existing SNS topic with a confirmed and tested subscription; empty means operator-supervised alarms only"},
+        "PayoutKmsKeyArn": {"Type": "String", "Default": "", "AllowedPattern": "(arn:(aws|aws-us-gov|aws-cn):kms:[a-z0-9-]+:[0-9]{12}:key/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|mrk-[0-9a-f]{32}))?", "Description": "Exact dedicated nonexportable ECC_SECG_P256K1 SIGN_VERIFY key; authorized host/operator custody, no native PCR authorization for KMS Sign"},
     }
     tags = [{"Key": "Project", "Value": "peer-link-transcripts"}, {"Key": "Environment", "Value": "pilot"}]
     action = {"Fn::If": ["HasAlarmTopic", [ref("AlarmTopicArn")], ref("AWS::NoValue")]}
@@ -49,9 +50,11 @@ install -d -m 700 /opt/peer-link-transcripts/releases /opt/peer-link-transcripts
     r["HostRole"] = {"Type": "AWS::IAM::Role", "Properties": {
         "AssumeRolePolicyDocument": {"Version": "2012-10-17", "Statement": [{"Effect": "Allow", "Principal": {"Service": "ec2.amazonaws.com"}, "Action": "sts:AssumeRole"}]},
         "Tags": tags,
-        "Policies": [{"PolicyName": "SSMTransportOnly", "PolicyDocument": {"Version": "2012-10-17", "Statement": [
+        "Policies": [{"PolicyName": "SSMAndPayoutKmsOnly", "PolicyDocument": {"Version": "2012-10-17", "Statement": [
             {"Effect": "Allow", "Action": ssm, "Resource": "*"},
-            {"Effect": "Deny", "NotAction": ssm, "Resource": "*"},
+            {"Fn::If": ["HasPayoutKmsKey", {"Effect": "Allow", "Action": ["kms:GetPublicKey", "kms:Sign"], "Resource": ref("PayoutKmsKeyArn")}, ref("AWS::NoValue")]},
+            {"Effect": "Deny", "NotAction": {"Fn::If": ["HasPayoutKmsKey", ssm + ["kms:GetPublicKey", "kms:Sign"], ssm]}, "Resource": "*"},
+            {"Fn::If": ["HasPayoutKmsKey", {"Effect": "Deny", "Action": ["kms:GetPublicKey", "kms:Sign"], "NotResource": ref("PayoutKmsKeyArn")}, ref("AWS::NoValue")]},
         ]}}],
     }}
     r["HostProfile"] = {"Type": "AWS::IAM::InstanceProfile", "Properties": {"Roles": [ref("HostRole")]}}
@@ -110,7 +113,7 @@ def handler(event, context):
         "Metrics": [{"Id": "calls", "MetricStat": {"Metric": {"Namespace": "AWS/Lambda", "MetricName": "Invocations", "Dimensions": [{"Name": "FunctionName", "Value": ref("Expiry")}]}, "Period": 300, "Stat": "Sum"}, "ReturnData": False}, {"Id": "heartbeat", "Expression": "FILL(calls, 0)", "ReturnData": True}],
         "EvaluationPeriods": 3, "DatapointsToAlarm": 3, "Threshold": 1, "ComparisonOperator": "LessThanThreshold", "TreatMissingData": "breaching", "AlarmActions": action,
     }}
-    return {"AWSTemplateFormatVersion": "2010-09-09", "Description": "Dedicated PeerLink Nitro transcript pilot, SSM only, encrypted-envelope HTTPS ingress; no production access or payout persistence", "Parameters": params, "Conditions": {"HasAlarmTopic": {"Fn::Not": [{"Fn::Equals": [ref("AlarmTopicArn"), ""]}]}}, "Resources": r,
+    return {"AWSTemplateFormatVersion": "2010-09-09", "Description": "Dedicated PeerLink Nitro transcript pilot, SSM administration, encrypted-envelope HTTPS ingress; optional exact-key KMS operator custody", "Parameters": params, "Conditions": {"HasAlarmTopic": {"Fn::Not": [{"Fn::Equals": [ref("AlarmTopicArn"), ""]}]}, "HasPayoutKmsKey": {"Fn::Not": [{"Fn::Equals": [ref("PayoutKmsKeyArn"), ""]}]}}, "Resources": r,
             "Outputs": {"InstanceId": {"Value": ref("Host")}, "ApiUrl": {"Value": {"Fn::GetAtt": ["Api", "ApiEndpoint"]}}, "RelayAddress": {"Value": sub("http://${HostAddress}:8080")}, "HostRoleArn": {"Value": arn("HostRole")}, "ExpiryFunction": {"Value": ref("Expiry")}}}
 
 

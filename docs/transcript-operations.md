@@ -38,8 +38,11 @@ and port, replies exactly `OK\n`, then forwards opaque bytes. Bank/provider TLS,
 certificate verification, HTTP paths/methods and tool rules live inside the enclave.
 The parent cannot substitute a TLS certificate or read cookies/model content.
 
-The host IAM role allows SSM transport only and explicitly denies every other AWS
-API, including production secrets, S3, KMS, role assumption and Parameter Store.
+The revised host IAM role allows SSM transport and explicitly scoped
+`kms:GetPublicKey`/`kms:Sign` for the one policy-bound payout key. Production
+secrets, S3, other KMS keys, role assumption and Parameter Store remain outside
+that role. Native KMS signing is not restricted to enclave PCRs; authorized host
+and operator IAM are part of the custody trust boundary.
 There is no SSH key or port 22. Operators transfer reviewed source/EIF files through
 SSM or a short-lived presigned URL; the URL is access-bearing and must stay out of
 public docs and durable command-output captures.
@@ -124,7 +127,8 @@ The installer refuses an active release/enclave, verifies the signed file and al
 four PCRs against the manifest, installs pinned dependencies, and starts fixed
 CID 16 without debug. Services use `Restart=no` and are deliberately **not enabled**
 at boot. Reboot or enclave loss requires a new explicitly checked epoch. There is
-no automatic key restoration or wallet refill. Operational logs discard application
+no automatic ledger restoration, reactivation or wallet refill. KMS custody survives
+enclave loss, but wallet reuse requires operator review. Operational logs discard application
 stdout/stderr; diagnose only fixed status/reason codes and credential-free probes.
 
 The enclave invokes `transcripts.runtime --vsock-port 5100 --egress-port 5101`;
@@ -162,20 +166,43 @@ inference. Do not advertise unavailable modes.
 
 ## Wallet and state gates
 
-The pilot generates a new signing key **inside the enclave** for each epoch. No
-private key is imported, exported, restored or put on the parent. A live in-memory
-anchor can stop concurrent/replayed jobs in that epoch; it is not durable rollback-safe
-state across crashes. Host disk, snapshots, database rows and signed old state are
-not trusted rollback authority.
+The revised pilot uses a non-exportable AWS KMS payout key. Authorized operator
+IAM and the host broker can request signatures outside the enclave and recover
+funds. No exclusive-enclave or PCR-restricted key access is claimed. Verify the
+immutable key ARN, derived wallet and measured `payoutAuthority` against exact v2
+epoch metadata before approval. Do not send bank or inference credentials to KMS
+or the signing broker. Keep the changed release paused until independent image,
+policy, custody and live signing checks pass.
 
-Fund only an independently attested epoch address and only once within the authorized
-$50 USDC pilot plus bounded gas. Record address, epoch, funding transaction and chain
+Before allocating any funds, use the signed operator `preflight` action while
+paused with **zero USDC**. It must exercise real Base RPC balances/nonce and KMS
+signing of a one-minor-unit USDC refund. Code does not broadcast; the public
+operator response omits raw signatures/transaction bytes. The host broker sees
+the signature/digest and can reconstruct the fixed refund, so no signature secrecy
+from an authorized host/operator is claimed. Preserve that scoped result before funding; a synthetic signer or an old
+image's quote cannot establish the new route's availability. Real funding and
+confirmed transfers remain separate evidence gates.
+
+The in-memory anchor only prevents replay within its live epoch. Host snapshots,
+database rows, signed archives and a surviving KMS key do not restore trusted
+ledger/nonce/dedup authority. After restart, stop admissions and require operator
+review of old obligations, transactions and balances before any wallet reuse.
+
+After the paused signing preflight, complete a separately authorized $1 KMS recovery
+test and confirm its return before allocating the new candidate's measured $5 budget.
+The architecture maximum is $50; it is not the current funding amount. The paused
+Wise campaign capacity is one contributor. Require
+descriptor `budgetMinor` to match measured `pilotBudgetMinor` exactly. Fund only an
+independently attested epoch address and once within that exact budget plus bounded
+gas. Record address, epoch, funding transaction and chain
 receipt in the task's private spend ledger; public records contain no secrets.
 There is no automatic refill. A restarted enclave must stay closed to previously
-funded claims and old reservations. Restarting/losing the enclave can permanently
-lose access to remaining funds. Broad public acceptance and durable payouts remain
-closed until a verified persistent rollback-safe anchor and crash reconciliation are
-implemented. Do not describe an in-memory pilot as restart-safe production payment.
+funded claims and old reservations. KMS permits operator fund recovery after enclave
+loss, but not safe continuation with a blank ledger. The prior enclave-only wallet
+already holds $50 USDC that remains unrecovered at this checkpoint. Leave that
+old live enclave intact while reconciling it; installing the KMS release cannot
+recover its old key. Broad acceptance stays closed pending verified persistence,
+deduplication and reconciliation authority.
 
 Before a planned stop, use the implemented signed operator `retire` action. It
 irreversibly closes admission and cancels unused reservations, while submitted,
@@ -183,7 +210,8 @@ verifying and payment obligations must finish. Reconcile existing payouts and
 archive every pending redacted signed record before retirement finalizes. The
 runtime refunds remaining bounded USDC only to the fixed deployer address, using
 one immutable refund transaction identity. It accepts no arbitrary destination,
-performs no ETH sweep and cannot restore a key/state after restart. The flow has
+performs no ETH sweep or ledger restore. Operator KMS recovery is a separate path
+outside measured runtime payout rules. The flow has
 synthetic coverage; do not call its live refund verified until a real receipt and
 destination-balance check are recorded.
 
@@ -191,8 +219,45 @@ Independently confirm terminal job/archive state, retirement state, the exact US
 refund receipt and recipient before stopping a funded enclave. Refund confirmation
 is not permission to assume remaining ETH was swept. If retirement is blocked or
 uncertain, keep the funded epoch under supervision and reconcile the same operation;
-do not discard its process to update code. A new build or restored EBS volume cannot
-restore its key. Plan this before the infrastructure lifetime deadline.
+do not discard its process to update code. KMS recovery does not reconstruct its
+ledger; a new image or restored EBS volume cannot recover the old enclave-only key.
+Plan this before the infrastructure lifetime deadline.
+
+### Operator KMS recovery
+
+This recovery CLI is for the new policy-bound KMS wallet only. It cannot recover
+the old enclave-only wallet. Quiesce every signer for that KMS wallet, including
+the enclave and operators on other machines, before planning or executing recovery;
+the CLI's local file lock does not coordinate their nonces.
+
+```bash
+.local/transcript-venv/bin/python -m transcripts.operator_recovery \
+  --policy transcripts/policy.json --state .local/revamp/operator-recovery.json
+```
+
+The default is plan-only: read the KMS public key and Base balances, fees and
+nonce. It uses AWS profile `peer`, region `us-east-1`, and checks the exact
+policy-bound ARN/wallet, Base chain 8453, native USDC and fixed deployer refund
+recipient. Review the destination, balance and proposed bounded transfer before
+adding `--execute` under the task's fund-transfer authority. The maximum is $50
+USDC and residual ETH is not swept.
+
+Execution signs and fsyncs the raw transaction/hash to the ignored local state
+before broadcasting. Re-run the same command and state path to reconcile the
+same identity and confirm a two-block receipt. Never delete, replace or regenerate
+pending state, start another signer, or publish that file. Recovery can return
+funds but does not restore jobs, deduplication or payment ledger authority. Its
+live outcome requires actual chain evidence; implemented tooling alone is not a
+successful recovery.
+
+`confirmed_but_balance_nonzero` means the saved refund confirmed but the wallet
+still has USDC. Preserve the confirmed record; choose a new state path only after
+independently verifying that receipt and quiescing every signer. For
+`recovery_nonce_conflict` or `unknown_pending_nonce`, inspect latest/pending nonces
+and identify the competing pending or mined transaction. Preserve the saved raw
+bytes/hash and reconcile its receipt or verified replacement/failure. Do not delete
+state or re-sign blindly; establish that the original cannot later settle before
+starting a new operation.
 
 ## Monitoring, lifetime and rollback
 
@@ -207,16 +272,19 @@ but destroys enclave memory. The guard is a cost bound, not fund recovery.
 Reconcile the funded epoch **before** its lifetime deadline. Do not fund close to
 expiry or rely on the five-minute polling gap. The operator must plan the shutdown
 or explicitly extend the authorized supervised test through a reviewed stack update
-before risking the live key. No schedule alone guarantees complete cleanup or spend.
+before risking authoritative job state or the old enclave-only key. No schedule
+alone guarantees complete cleanup or spend.
 
 Rollback first stops admission/relay while keeping any funded enclave alive long
 enough for reviewed reconciliation. `systemctl stop peer-link-transcript-relay`
 removes network ingress without restarting the enclave. Once safe to discard its
-ephemeral key, stop `peer-link-transcript-enclave`; its stop helper targets only the
+ephemeral ledger state, stop `peer-link-transcript-enclave`; its stop helper targets only the
 recorded enclave ID. Do not use `nitro-cli terminate-enclave --all` on shared hosts.
 
 Delete only the named owning stack after verifying current account, tags and wallet
-disposition. Confirm stack deletion, EC2 termination, encrypted root deletion,
+disposition and a separate authorized KMS retention/recovery plan. Do not infer
+permission to delete or disable the payout key from permission to remove compute.
+Confirm stack deletion, EC2 termination, encrypted root deletion,
 Elastic IP release, API/roles/schedule/alarm removal, and no remaining artifact
 copies with credentials. The reused VPC/subnet remain outside this stack. Stopping
 the host alone leaves EBS, Elastic IP, API and alarm charges. Preserve redacted
