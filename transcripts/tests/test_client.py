@@ -109,6 +109,45 @@ class ClientTests(unittest.TestCase):
                          'maxOutputTokens':2048,'maxBankReads':10,'deadlineSeconds':120})
         self.assertEqual(self.client.job['request']['limits'],self.reservation['limits'])
 
+    def test_all_ledger_terminal_reasons_are_safe_terminal_client_outcomes(self):
+        from transcripts.ledger import REASONS
+        from transcripts.client import SAFE_ERRORS
+        self.assertLessEqual(REASONS,SAFE_ERRORS)
+        self.contribute()
+        for reason in sorted(REASONS):
+            with self.subTest(reason=reason):
+                status=self.status_record('rejected');status['reason']=reason
+                result=self.client.provisional(status)
+                self.assertEqual(result['reason'],reason)
+                self.assertEqual(result['nextAction'],'terminal_outcome_reported')
+                self.assertFalse(result['verified'])
+        status=self.status_record('rejected');status['reason']='SYNTHETIC-PRIVATE-ERROR'
+        with self.assertRaisesRegex(Rejected,'^service_unavailable$'):self.client.provisional(status)
+
+    def test_actual_mercury_terms_match_observed_reservation_limits(self):
+        policy=json.loads((Path(__file__).parents[1]/'policy.json').read_text())
+        campaign=next(item for item in policy['campaigns'] if item['bankId']=='us/mercury')
+        route=next(item for item in campaign['inferenceRoutes'] if item['provider']=='near')
+        # Synthetic service/attestation only; retain the actual measured policy.
+        release={**self.release,'policyDigest':digest(policy)}
+        client=Client(release['serviceUrl'],release,policy)
+        client.receipt_key=self.channel.public_key_der
+        sent=[]
+        def reserve_call(path,body):
+            self.assertEqual(path,'/v1/reservations');sent.append(copy.deepcopy(body))
+            return {'jobId':'a'*32,'campaignId':campaign['id'],'state':'reserved',
+                    'bindingDigest':digest({'jobId':'a'*32,'campaign':campaign,'request':body}),
+                    'expiresAt':body['expiresAt'],'rewardMinor':campaign['rewardMinor'],
+                    'payoutAddress':body['payoutAddress'].lower(),'reason':None,'artifactDigest':None,'transactionId':None}
+        preview=terms(release,policy,campaign['id'],route['provider'],route['models'][0],'provider_visible')
+        with patch.object(client,'preflight'),patch.object(client,'call',side_effect=reserve_call):
+            client.reserve(campaign['id'],'0x'+'1'*40,route['provider'],route['models'][0],'provider_visible',consent=True)
+        self.assertEqual(len(sent),1)
+        self.assertEqual(preview['defaultLimits'],sent[0]['limits'])
+        self.assertEqual(sent[0]['limits']['maxBankReads'],4)
+        self.assertEqual(client.job['request']['limits'],sent[0]['limits'])
+        self.assertEqual(sent[0]['policyDigest'],digest(campaign))
+
     def test_fixed_http_errors_preserved_without_raw_error_text(self):
         client=Client(self.release['serviceUrl'],self.release,self.policy)
         for code,expected in [('campaign_capacity','campaign_capacity'),('budget_exhausted','budget_exhausted'),

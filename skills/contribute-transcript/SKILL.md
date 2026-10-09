@@ -63,8 +63,9 @@ Before proceeding, show the owner:
   encoded-request input units, 2048 output tokens and 120 seconds. The Mercury
   candidate binds four bank reads from its measured source descriptor.
   NEAR requests low reasoning effort within the reserved output limit. An explicitly
-  lower limit in a reservation remains binding; the current CLI uses the fixed
-  defaults above. No automatic paid retry exists.
+  lower limit in a reservation remains binding. Inspect `terms` and the saved
+  reservation for the actual limits derived from the measured campaign; do not
+  substitute generic CLI defaults. No automatic paid retry exists.
   Provider quotas can lag; there is no guaranteed exact dollar ceiling.
 - Ordinary NEAR uses canonical `z-ai/glm-5.3-flash`, consent naming NEAR and Chutes,
   no aliases, and one call. Serving headers are gateway assertions, not independent
@@ -157,10 +158,13 @@ Prefer `--prompt-secrets`: trusted local tooling supplies only the recipe
 without key values through stdin; the owner enters bank and inference keys on a
 controlling TTY with echo disabled after verified preflight. The placeholders below
 show the future Mercury hint payload. `profileId` must be `null`; `accountId`
-must be the selected account's canonical UUID. Replace the invented UUID and dates
-only with the owner's authorized account and a nonempty date interval of at most
-30 days, ending no later than today. The date filters do not establish which bank
-transaction timestamp is filtered. Do not submit these invented values unchanged:
+must be the selected account's `account.id` UUID observed in an owner-authorized
+Mercury `/api/v1/accounts` response—not an account number, name, organization ID or
+guess. Replace the invented UUID and dates only with that observed ID and a nonempty
+UTC date interval of at most 30 days, ending no later than the current UTC day.
+Prefer an interval ending on the previous UTC day to avoid just-created transactions
+and clock skew: source checks compare `createdAt` with the start of enclave acquisition.
+The date filters do not establish which bank transaction timestamp is filtered. Do not submit these invented values unchanged:
 
 ```json
 {
@@ -169,17 +173,68 @@ transaction timestamp is filtered. Do not submit these invented values unchanged
   "recipe": {
     "version": 2,
     "accountId": "00000000-0000-4000-8000-000000000001",
-    "intervalStart": "2026-09-09",
-    "intervalEnd": "2026-10-09"
+    "intervalStart": "2026-09-08",
+    "intervalEnd": "2026-10-08"
   },
   "notes": "",
   "transcript": []
 }
 ```
 
+If the account UUID has not already been observed, do not collect the API token
+just to find it before admission. After the campaign opens, use the SDK to reserve
+and durably save a public recovery handle **before any bank/inference key collection**.
+The CLI has no standalone `reserve` command. This future example uses only public
+pins/terms and requires the reviewed checkout and explicit owner consent:
+
+```python
+import json
+from pathlib import Path
+from transcripts.client import Client
+from transcripts.cli import save_state
+
+release = json.loads(Path("transcripts/release.json").read_text())
+policy = json.loads(Path("transcripts/policy.json").read_text())
+state_path = Path(".local/transcript-job.json")
+if state_path.exists():
+    raise FileExistsError("Choose a new state path; preserve the existing job")
+client = Client(release["serviceUrl"], release, policy)
+client.reserve(
+    "mercury-api-source-v1", "YOUR_BASE_ADDRESS", "near", "z-ai/glm-5.3-flash",
+    "provider_visible", consent=True,
+    on_reserved=lambda state: save_state(state_path, state),
+)
+```
+
+Replace the payout placeholder with the owner's Base address, and verify the
+provider/model/privacy/limits from measured `terms` before consent. The currently
+unreleased manifest rejects this example before network/secret input. Stop on any
+reservation or state-save failure; never overwrite the handle or proceed to keys.
+
+Only after successful reservation and state saving, the owner may use a trusted
+local memory-only API tool to GET `https://api.mercury.com/api/v1/accounts?limit=100&order=asc`
+with their dedicated read-only token and privately select an observed active
+Mercury `account.id`. This extra local discovery is separate from the enclave's
+four reads. Do not send the token or raw response to chat, logs or a cloud agent
+without separate informed consent. No new secret-collection helper is supplied.
+Keep the UUID private, prepare the key-free hint payload, then continue the **same**
+reservation with its original terms:
+
+```sh
+.local/transcript-venv/bin/python -m transcripts.cli submit-reserved \
+  --state .local/transcript-job.json --consent --prompt-secrets < .local/recipe.json
+```
+
+The reservation expires after ten minutes. If discovery takes too long, stop and
+check the existing outcome; do not secretly extend or replace its terms. Do not
+use `contribute` again for this saved reservation or add payout/provider/model
+flags to `submit-reserved`.
+
 After the approved release and funded campaign checks pass, save only that
 recipe without keys in restricted ignored `.local/recipe.json`. Replace
-the payout placeholder with your own Base address and use a new state path:
+the payout placeholder with your own Base address and use a new state path. This
+`contribute` path is for an already observed account UUID; if you reserved through
+the SDK above, use `submit-reserved` instead:
 
 ```sh
 .local/transcript-venv/bin/python -m transcripts.cli contribute \

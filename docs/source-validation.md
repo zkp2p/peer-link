@@ -36,8 +36,12 @@ sequenceDiagram
 
 The measured policy contains the source descriptor. Contributors cannot supply
 executable tools, endpoint URLs, selectors, extra headers or a different host.
-Their version-2 recipe supplies only a canonical account UUID and a date range
-of at most 30 days, ending no later than today. Account identifiers stay private.
+Their version-2 recipe supplies only the `account.id` UUID observed in an
+owner-authorized Mercury `/api/v1/accounts` response and a nonempty UTC date
+interval of at most 30 days, ending no later than the current UTC day. An account
+number, name, organization ID or guessed UUID is not a substitute. Account
+identifiers stay private. Prefer an interval ending on the previous UTC day to
+avoid just-created transactions and clock skew.
 
 The enclave makes at most four bank requests:
 
@@ -53,7 +57,9 @@ All calls use `https://api.mercury.com`, verified TLS ending inside the enclave,
 bounded responses and time limits. Redirects, pagination and payment endpoints
 are unavailable. The documented date filters do not specify which transaction
 timestamp they use, so the implementation does not claim a `createdAt` versus
-`postedAt` range guarantee. It checks parseable, nonfuture `createdAt` values.
+`postedAt` range guarantee. It requires parseable timezone-aware `createdAt`
+values no later than the start of enclave acquisition; a transaction created
+during the reads can therefore fail this check.
 
 The source contract comes from Mercury's official
 [organization](https://docs.mercury.com/reference/getorganization),
@@ -68,6 +74,18 @@ The owner must authorize sharing the organization's data, create a dedicated
 it after the attempt. Logging out does not necessarily revoke an API token.
 The enclave executes reads only; it cannot prove that a supplied token lacks
 write permissions.
+
+If the account UUID is not already known, first obtain admission with
+`Client.reserve(..., on_reserved=...)` and save its public recovery handle before
+collecting keys. The CLI has no standalone reserve command; see the
+[SDK reservation example](../skills/contribute-transcript/SKILL.md#verify-reserve-and-encrypt).
+Only then use the owner's trusted local memory-only tool to GET the same approved
+accounts endpoint and privately choose an observed active Mercury `account.id`.
+That local discovery is separate from the enclave's four reads. Do not send token
+values or raw output to chat, logs or a cloud service without separate informed
+consent. Continue the same unexpired reservation with `submit-reserved` and its
+original saved terms, not a second `contribute` call. The candidate remains closed;
+none of these steps authorize key collection now.
 
 Fresh authenticated responses establish possession of API access to the observed
 organization. They do not prove legal ownership or a unique human. A private
