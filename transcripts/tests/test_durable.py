@@ -1,6 +1,7 @@
 """Durable state safety with real crypto/authority, no AWS, bank, or chain calls."""
 import copy
 import hashlib
+import time
 import unittest
 from unittest.mock import patch
 from cryptography.hazmat.primitives import serialization
@@ -385,6 +386,102 @@ class DurableReviewRegressions(DurableFixture):
         epoch.ledger.submit(status['jobId'],status['bindingDigest'],NOW+1)
         epoch._active=epoch._funded_once=True
         return status['jobId']
+
+    def test_paid_grade_survives_one_actual_preaccept_state_read_failure(self):
+        epoch=self.epoch();job=self.submitted(epoch);attempts=[]
+        def wrapper(original_accept):
+            def accept(*args,**kwargs):
+                attempts.append(1)
+                if len(attempts)>1:return original_accept(*args,**kwargs)
+                original_call=self.aws.call
+                def unavailable(service,action,payload):
+                    if payload['action']=='load':raise Rejected('http_transport_failed')
+                    return original_call(service,action,payload)
+                with patch.object(self.aws,'call',side_effect=unavailable):return original_accept(*args,**kwargs)
+            return accept
+        with patch('transcripts.runtime.time.sleep') as sleep:
+            runtime,bank,provider=self.process_runtime(epoch,job,accept_wrapper=wrapper)
+        self.assertEqual(len(attempts),2);sleep.assert_called_once_with(1)
+        self.assertEqual(epoch.ledger.status(job)['state'],'accepted')
+        runtime.settle.assert_called_once_with(job);bank.acquire.assert_called_once();provider.grade.assert_called_once()
+
+    def test_accept_retry_is_finite_deadline_bounded_and_does_not_retry_pause(self):
+        from unittest.mock import Mock
+        epoch=self.epoch();runtime=Runtime(self.policy,epoch,None,FakeArchive([]),attester=lambda *args:b'quote')
+        epoch.accept=Mock(side_effect=Rejected('http_transport_failed'))
+        with patch('transcripts.runtime.time.time',return_value=NOW),patch('transcripts.runtime.time.sleep') as sleep:
+            with self.assertRaisesRegex(Rejected,'http_transport_failed'):
+                runtime.accept_graded('job',[],{}, {},NOW+30)
+        self.assertEqual(epoch.accept.call_count,3);self.assertEqual(sleep.call_count,2)
+        epoch.accept.reset_mock()
+        with patch('transcripts.runtime.time.time',return_value=NOW),\
+                patch('transcripts.runtime.time.monotonic',side_effect=[10,10,10.5,11]),patch('transcripts.runtime.time.sleep') as sleep:
+            with self.assertRaisesRegex(Rejected,'limits_exceeded'):
+                runtime.accept_graded('job',[],{}, {},NOW+1)
+        epoch.accept.assert_called_once();sleep.assert_called_once_with(.5)
+        epoch.accept.reset_mock();epoch.accept.side_effect=Rejected('payout_paused')
+        with self.assertRaisesRegex(Rejected,'payout_paused'):
+            runtime.accept_graded('job',[],{}, {},time.time()+30)
+        epoch.accept.assert_called_once()
+
+    def test_paid_checkpoint_crash_rearchives_exact_receipt_while_available_and_paused(self):
+        first=self.epoch();job=self.job(first)
+        payment=BaseUSDCPayoutTransport(first,SyntheticRPC(),pinned_rpc_url=SyntheticRPC.endpoint)
+        signed,tx=payment.sign(job,'0x'+f'{2:040x}',10_000_000)
+        first.ledger.prepare_payout(job,signed,tx);first.ledger.mark_paid(job,tx,NOW+4)
+        record=first.ledger.archive_record(job);receipt=first.receipt_signer.sign(copy.deepcopy(record))
+        first.ledger.save_receipt(job,receipt) # Crash before the archive call.
+        second=self.epoch();archive=FakeArchive([])
+        runtime=Runtime(self.policy,second,None,archive,attester=lambda *args:b'quote')
+        self.assertEqual(runtime.dispatch('receipt',{'jobId':job}),receipt)
+        from unittest.mock import Mock
+        archive.persist=Mock(side_effect=[Rejected('connection_closed'),None])
+        with patch.object(runtime.coordinator,'reconcile',side_effect=AssertionError('already paid')),\
+                patch.object(second.receipt_signer,'sign',side_effect=AssertionError('reuse durable signature')):
+            with self.assertRaisesRegex(Rejected,'connection_closed'):runtime.settle_attempt(job)
+            self.assertIn(job,runtime.pending_records);self.assertIn(job,runtime.archive_pending)
+            self.assertEqual(runtime.dispatch('receipt',{'jobId':job}),receipt)
+            self.assertTrue(runtime.settle_attempt(job))
+        self.assertFalse(second._active);self.assertNotIn(job,runtime.pending_records)
+        self.assertEqual(archive.persist.call_count,2)
+        for call in archive.persist.call_args_list:self.assertEqual(call.args[0],receipt)
+
+    def test_lagging_rpc_keeps_known_signed_payment_and_never_allocates_next_nonce(self):
+        epoch=self.epoch();a=self.job(epoch);b=self.job(epoch,wallet=3,account='private-account-2')
+        rpc=SyntheticRPC();payment=BaseUSDCPayoutTransport(epoch,rpc,pinned_rpc_url=rpc.endpoint)
+        recipient='0x'+f'{2:040x}'
+        raw,tx=payment.sign(a,recipient,10_000_000);epoch.ledger.prepare_payout(a,raw,tx)
+        rpc.nonce=8
+        valid=receipt(epoch.wallet,transactionHash=tx)
+        valid['logs'][0]['transactionHash']=tx
+        valid['logs'][0]['topics'][2]='0x'+recipient[2:].rjust(64,'0')
+        original_call=rpc.call
+        mode={'value':'missing_receipt'}
+        def lagging(method,params):
+            if method=='eth_getTransactionReceipt':return None if mode['value']=='missing_receipt' else copy.deepcopy(valid)
+            if method=='eth_getBlockByNumber' and params[0]=='0x64':
+                if mode['value'].startswith('missing_block'):return None
+                if mode['value']=='wrong_block':return {'hash':'0x'+'c'*64}
+            return original_call(method,params)
+        rpc.call=lagging
+        restored=self.epoch();restored._active=restored._funded_once=True
+        payment=BaseUSDCPayoutTransport(restored,rpc,pinned_rpc_url=rpc.endpoint)
+        for failure,expected,amount in (
+                ('missing_receipt','payout_confirmation_pending',10_000_000),
+                ('missing_block','payout_confirmation_pending',10_000_000),
+                ('wrong_block','payout_receipt_reorg',10_000_000),
+                ('wrong_amount','payout_receipt_mismatch',5_000_000),
+                ('missing_block_wrong_amount','payout_receipt_mismatch',5_000_000)):
+            mode['value']=failure
+            valid['logs'][0]['data']='0x'+f'{amount:064x}'
+            with self.subTest(failure=failure),self.assertRaisesRegex(Rejected,expected):
+                payment.sign(b,'0x'+f'{3:040x}',10_000_000)
+            self.assertIsNone(restored.ledger.payout_intent(b))
+            self.assertEqual(restored.ledger.payout_identity(a),(raw,tx));self.assertEqual(rpc.sent,[])
+        mode['value']='visible';valid['logs'][0]['data']='0x'+f'{10_000_000:064x}'
+        payment.check_continuity()
+        second_raw,second_tx=payment.sign(b,'0x'+f'{3:040x}',10_000_000)
+        self.assertNotEqual(second_tx,tx);self.assertEqual(restored.ledger.payout_intent(b)['nonce'],8)
 
     def test_real_durable_process_bank_and_provider_http_failures_are_terminal(self):
         for phase in ('bank','provider'):

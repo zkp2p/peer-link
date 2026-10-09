@@ -25,6 +25,8 @@ ROOT=Path(__file__).parent
 SETTLEMENT_RETRY_SECONDS=120
 SETTLEMENT_MAX_ATTEMPTS=60
 SETTLEMENT_RETRY_DELAY=2
+ACCEPT_MAX_ATTEMPTS=3
+ACCEPT_RETRY_DELAY=1
 TRANSIENT_SETTLEMENT_ERRORS=frozenset({'payout_rpc_unavailable','http_transport_failed',
     'storage_unavailable','kms_broker_unavailable','request_timeout','response_incomplete',
     'egress_unavailable','http_request_failed','relay_refused','connection_closed',
@@ -68,7 +70,7 @@ class Runtime:
         self.channel,self.attester=Channel(),attester
         self.durable=getattr(epoch,"durable",False)
         self.receipt_signer=epoch.receipt_signer if self.durable else self.channel
-        self.receipts={};self.pending_records={};self.settlement_lock=threading.Lock();self.operator_nonces=set();self.operator_lock=threading.Lock()
+        self.receipts={};self.pending_records={};self.archive_pending=set();self.settlement_lock=threading.Lock();self.operator_nonces=set();self.operator_lock=threading.Lock()
         self.deferred_jobs=set();self.executing_jobs=set();self.recovery_workers=set();self.recovery_lock=threading.Lock()
         self.jobs=threading.BoundedSemaphore(2)
         self.funding_preflight=None;self.funding_preflight_nonce=None
@@ -86,7 +88,9 @@ class Runtime:
     def restore_records(self,*,include_paid=True):
         for job in self.ledger.recovery_jobs():
             record=self.ledger.archive_record(job)
-            if include_paid or record['job']['state']!='paid':self.pending_records.setdefault(job,record)
+            if include_paid or record['job']['state']!='paid':
+                if job not in self.pending_records:self.archive_pending.add(job)
+                self.pending_records.setdefault(job,record)
             signed=self.ledger.restored_receipt(job)
             if signed is not None:self.receipts[job]=signed
 
@@ -247,6 +251,7 @@ class Runtime:
             if self.durable:self.ledger.save_receipt(job_id,signed)
         self.archive.persist(signed)
         self.receipts[job_id]=signed
+        self.archive_pending.discard(job_id)
 
     def settle_attempt(self,job_id):
         with self.settlement_lock:
@@ -258,7 +263,7 @@ class Runtime:
             record=self.pending_records[job_id]
             campaign=self.ledger.terms(job_id)['campaign']
             record['job']=self.ledger.status(job_id)
-            if self.receipts.get(job_id,{}).get('payload')!=record:
+            if job_id in self.archive_pending or self.receipts.get(job_id,{}).get('payload')!=record:
                 self.archive_settlement(job_id,campaign,record)
             if record['job']['state']!='paid':
                 self.coordinator.reconcile(job_id,now=int(time.time()))
@@ -308,6 +313,21 @@ class Runtime:
                 except Exception:return
                 time.sleep(2)
 
+    def accept_graded(self,job_id,reads,grade,evidence,deadline):
+        # Retain the already-billed grade only for a short pre-CAS state outage.
+        # An ambiguous write must use the ledger's original exact-opId recovery.
+        retry_deadline=time.monotonic()+max(0,deadline-time.time())
+        for attempt in range(ACCEPT_MAX_ATTEMPTS):
+            require(time.monotonic()<retry_deadline,'limits_exceeded')
+            try:
+                return self.epoch.accept(job_id,reads,grade,now=int(time.time()),evidence=evidence,policy=self.policy)
+            except Rejected as error:
+                if (getattr(self.ledger,'_pending_snapshot',None) is not None or
+                        str(error) not in STATE_ERRORS|TRANSIENT_SETTLEMENT_ERRORS or attempt+1==ACCEPT_MAX_ATTEMPTS):raise
+                remaining=retry_deadline-time.monotonic()
+                if remaining<=0:raise
+                time.sleep(min(ACCEPT_RETRY_DELAY,remaining))
+
     def process(self,job_id,payload):
         from .transport import BankClient
         from .providers import ProviderClient
@@ -334,7 +354,7 @@ class Runtime:
             evidence={'epoch':self.epoch.public_descriptor(),'modelResult':grade,
                       'inference':provider.metadata,'policyDigest':self.policy_digest}
             phase='state'
-            if self.durable:self.epoch.accept(job_id,reads,grade,now=int(time.time()),evidence=evidence,policy=self.policy)
+            if self.durable:self.accept_graded(job_id,reads,grade,evidence,start+request['limits']['deadlineSeconds'])
             else:self.epoch.accept(job_id,reads,grade,now=int(time.time()))
             record={'version':1,'epoch':self.epoch.public_descriptor(),'job':self.ledger.status(job_id),
                     'artifact':artifact,'modelResult':grade,'inference':provider.metadata,'policyDigest':self.policy_digest}

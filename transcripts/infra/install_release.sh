@@ -10,6 +10,21 @@ fi
 source_root=$(realpath "$1")
 image=$(realpath "$2")
 manifest=$(realpath "$3")
+# Validate the durable invocation before any provisioning command, file copy,
+# virtualenv, symlink or systemd change. A corrected rerun must remain possible.
+durable_mode=$(python3.11 - "$source_root/transcripts/policy.json" <<'PYTHON'
+import json, sys
+print('durable' if json.load(open(sys.argv[1])).get('stateAuthority') is not None else 'ram')
+PYTHON
+)
+if [[ "$durable_mode" == durable && $# != 4 ]]; then
+  echo 'Durable installation requires a valid reviewed host instance ID.' >&2
+  exit 1
+fi
+if [[ $# == 4 && ! "$4" =~ ^i-[0-9a-f]{17}$ ]]; then
+  echo 'Installation requires a valid reviewed host instance ID.' >&2
+  exit 1
+fi
 base=/opt/peer-link-transcripts
 test "$(nitro-cli --version)" = 'Nitro CLI 1.5.0'
 test -f "$source_root/transcripts/runtime.py"
@@ -67,15 +82,7 @@ ln -s "$base/releases/candidate" "$base/current"
 # forwarder before enclave boot; exact instance identity comes from the reviewed
 # installation target, never a contributor or arbitrary runtime request.
 durable_dependencies=''
-if python3.11 - "$source_root/transcripts/policy.json" <<'PY'
-import json, sys
-sys.exit(0 if json.load(open(sys.argv[1])).get('stateAuthority') is not None else 1)
-PY
-then
-  if [[ $# != 4 ]]; then
-    echo 'Durable installation requires the reviewed host instance ID.' >&2
-    exit 1
-  fi
+if [[ "$durable_mode" == durable ]]; then
   credential_role=$(python3.11 - "$source_root/transcripts/policy.json" <<'PY'
 import json, sys
 print(json.load(open(sys.argv[1]))['stateAuthority']['credentialRoleArn'])

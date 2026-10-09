@@ -154,15 +154,27 @@ It is a comparison input, not a release approval flag.
 Install on the dedicated SSM host:
 
 ```bash
-bash transcripts/infra/install_release.sh "$source_root" "$signed_eif" "$measurement_manifest"
+# Durable state policy: reviewed NEW target is required as the fourth argument.
+host_instance_id='<reviewed-new-host-instance-id>'
+bash transcripts/infra/install_release.sh "$source_root" "$signed_eif" "$measurement_manifest" "$host_instance_id"
 ```
+
+Policies with `stateAuthority` require the fourth reviewed instance ID (`i-` plus
+17 lowercase hexadecimal characters). The installer rejects a missing or malformed
+ID before provisioning files, a virtualenv, the current symlink or services. Only a
+policy without durable state may use the legacy three-argument invocation. Resolve
+and independently verify the exact dedicated target before SSM dispatch.
+
 
 The installer refuses an active release/enclave, verifies the signed file and all
 four PCRs against the manifest, installs pinned dependencies, and starts fixed
 CID 16 without debug. Services use `Restart=no` and are deliberately **not enabled**
-at boot. Reboot or enclave loss requires a new explicitly checked epoch. There is
-no automatic ledger restoration, reactivation or wallet refill. KMS custody survives
-enclave loss, but wallet reuse requires operator review. Operational logs discard application
+at boot until the separately reviewed continuous-service hardware gate. RAM-only
+policies require a new explicitly checked epoch after loss. Durable policies restore
+the encrypted ledger and receipt key with a fresh ingress key and fenced writer
+generation; admissions stay paused until a signed operator resume. There is no
+automatic reactivation or wallet refill. KMS custody survives enclave loss; wallet
+continuity and obligations must still pass the durable chain/state checks. Operational logs discard application
 stdout/stderr; diagnose only fixed status/reason codes and credential-free probes.
 
 The enclave invokes `transcripts.runtime --vsock-port 5100 --egress-port 5101`;

@@ -111,9 +111,10 @@ class BaseUSDCPayoutTransport:
         require(sorted(intents)==list(range(initial,witness)),'payout_nonce_conflict')
 
     def _continuity_receipt(self,tx_id,recipient,amount):
+        require(tx_id in self._known and self._known[tx_id][1:]==(recipient,amount),'payout_nonce_conflict')
         if self._confirmed(tx_id,recipient,amount):return
-        require(self._confirmed(tx_id,recipient,amount,minimum_confirmations=1),'payout_nonce_conflict')
-        # Matching successful/canonical transfer, still below required depth.
+        # A known exact signed transfer can be missing on a lagging RPC backend,
+        # or still below required depth. Present mismatches remain fatal above.
         # Never sign a new intent yet; bounded settlement retries this same job.
         raise Rejected('payout_confirmation_pending')
 
@@ -291,7 +292,8 @@ class BaseUSDCPayoutTransport:
             block_number,block_hash = _quantity(receipt.get("blockNumber")),_hash(receipt.get("blockHash"))
             latest = _quantity(self._call("eth_blockNumber",[]))
             block = self._call("eth_getBlockByNumber",[hex(block_number),False])
-            require(isinstance(block,dict) and _hash(block.get("hash"))==block_hash,"payout_receipt_reorg")
+            if block is not None:
+                require(isinstance(block,dict) and _hash(block.get("hash"))==block_hash,"payout_receipt_reorg")
             logs = receipt.get("logs")
             require(isinstance(logs,list) and len(logs)<=100,"rpc_response_invalid")
             expected_topics=[TRANSFER_TOPIC,"0x"+self.epoch.wallet[2:].rjust(64,"0"),"0x"+recipient[2:].rjust(64,"0")]
@@ -307,4 +309,7 @@ class BaseUSDCPayoutTransport:
                         require(isinstance(data,str) and re.fullmatch(r"0x[0-9a-fA-F]{64}",data),"rpc_response_invalid")
                         matches.append(int(data,16))
             require(matches == [reward_minor],"payout_receipt_mismatch")
+            if block is None:
+                if self.durable and tx_id in self._known:raise Rejected('payout_confirmation_pending')
+                raise Rejected('payout_receipt_reorg')
             return latest >= block_number+minimum_confirmations-1
