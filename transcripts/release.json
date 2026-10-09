@@ -1,14 +1,21 @@
 {
-  "version": 1,
-  "status": "unreleased",
-  "serviceUrl": null,
-  "policyDigest": "d3eda4dcbe1cbf717a4cddd732ae10f05cf0b5e2c5384e326bd5644d106f03cb",
-  "measurements": {},
-  "expiresAt": 0,
-  "limitations": [
-    "No public secret submissions until an independently pinned approved release is published.",
-    "Only Wise has a reviewed authenticated account identity adapter.",
-    "Confidential NEAR inference is unavailable pending verified E2EE integration.",
-    "Payout signing uses operator-recoverable AWS KMS; the job ledger and dedup state remain RAM-only and restart requires operator review."
+  "version": "2.0",
+  "last_updated": "2026-07-11T00:00:00Z",
+  "campaign_funding_status": "unfunded",
+  "note": "No public reward slots are currently funded or accepting submissions. The future campaign must publish its available capacity and reserve its reward funds before accepting a contribution.",
+  "providers": [
+    {
+      "id": "easypaisa",
+      "name": "Easypaisa",
+      "country": "PK",
+      "currency": "PKR",
+      "status": "planned",
+      "accepting_submissions": false,
+      "reward_usdc": 5,
+      "max_contributors": 1,
+      "released_at": null,
+      "skill_ref": "skills/contribute-transcript/SKILL.md",
+      "transcript_def": "transcripts/easypaisa.json"
+    }
   ]
 }

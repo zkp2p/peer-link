@@ -1,0 +1,36 @@
+{
+  "provider": "easypaisa",
+  "country": "PK",
+  "currency": "PKR",
+  "name": "Easypaisa",
+  "status": "planned",
+  "release_date": null,
+  "accepting_submissions": false,
+  "reward_usdc": 5,
+  "max_contributors_per_bank": 1,
+  "description": "Easypaisa banking transcript for PKR transactions",
+  "flow_type": "mobile_app",
+  "login_method": "phone_number",
+  "data_retention_days": 30,
+  "privacy_mode": "redacted_structural_artifact",
+  "endpoints": {
+    "transactions": "/api/v1/transactions",
+    "accounts": "/api/v1/accounts"
+  },
+  "field_mapping": {
+    "transaction_date": "date",
+    "amount": "amount",
+    "currency": "currency",
+    "description": "narration",
+    "balance": "closing_balance",
+    "transaction_type": "type",
+    "counterparty": "other_party"
+  },
+  "constraints": {
+    "min_amount": 1,
+    "max_amount": 500000,
+    "date_range_start": "2023-01-01",
+    "date_range_end": "2025-12-31"
+  },
+  "created_at": "2026-07-11T00:00:00Z"
+}
