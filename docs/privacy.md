@@ -59,10 +59,11 @@ sends (`User-Agent`, `Accept`, `Referer` and similar). Before the authenticated
 reads, the enclave replays the identity and history requests with only those
 browser headers and stops if the answer still contains the selected identity or
 history rows, so an endpoint that serves the data without a session cannot stand
-in for an account. This shows the data needs something the contributor supplied;
-it cannot show that the something is a customer login. Hosts named like a
-sandbox, test or developer environment are refused. No payment initiation or account change is part
-of a contribution; for POST reads the enclave refuses requests that are
+in for an account. This shows that the data needs a header the contributor
+supplied; it cannot show that the header is a customer login. Hosts named like
+a sandbox, test or developer environment are refused. No payment initiation or
+account change is part of a contribution; for POST reads the enclave refuses
+requests that are
 obviously named as state changes, and the contributor remains responsible for
 replaying only requests the bank's site issues while viewing history.
 
@@ -89,9 +90,10 @@ For open campaigns the transcript contains, and the validator admits, only:
   name, never the document text or variable values;
 - response field paths with JSON types and closed-vocabulary format classes
   such as `decimal:neg:2`, `datetime:iso8601:utc` or `text:short:alpha`;
-- short tokens under payment status-like keys (`status`, `state`, `type`,
-  `kind`, `currency`, `scheme`, `direction`, `method`, `rail`, `network`, with
-  prefixes such as `payment` or `transfer`), taken only from the history rows.
+- short tokens under payment status-like keys (`status`, `type`, `kind`,
+  `scheme`, `direction`, `rail`, `network`, `currency`, alone or with a prefix
+  such as `payment` or `transfer`; `state` only with such a prefix, and never a
+  `method` key), taken only from the history rows.
   A token is dropped if it contains two digits in a row, sits under an object
   describing a person or address, or also appears as an ordinary value. Nothing
   from profile or account reads is kept as a value;

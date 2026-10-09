@@ -14,7 +14,7 @@ from .hints import hint
 from .policy import CUSTOM_PROVIDER,route_allows,validate_campaign,validate_reservation
 
 
-def terms(release,policy,campaign_id=None,provider=None,model=None,privacy='provider_visible'):
+def terms(release,policy,campaign_id=None,provider=None,model=None,privacy='provider_visible',base_url=None,overrides=None):
     """Offline consent preview, never a claim that a slot or reward is reserved."""
     from .epoch import CHAIN_ID,USDC_ADDRESS
     from .providers import OPENROUTER_UPSTREAMS,NEAR_VISIBLE_UPSTREAMS
@@ -26,7 +26,13 @@ def terms(release,policy,campaign_id=None,provider=None,model=None,privacy='prov
     model=model or ('ANY_MODEL_YOU_CHOOSE' if route['models']==['*'] else route['models'][0])
     require(model=='ANY_MODEL_YOU_CHOOSE' or route_allows(campaign,route['provider'],model,privacy),'provider_not_allowed')
     approved=release.get('status')=='approved' and release.get('expiresAt',0)>time.time()
+    # A base URL belongs to the custom provider only.
+    require(base_url is None or route['provider']==CUSTOM_PROVIDER,'invalid_provider')
     return {'campaignId':campaign['id'],'bankId':campaign['bankId'],'campaignStatus':campaign['status'],
+            'note':('Offline terms for consent. "accepting" is always false here: run `campaigns --live` for capacity '
+                    'and `preflight` for the enclave; only a reservation admits a job.'),
+            'limits':campaign_limits(campaign,overrides or {}),
+            **({'inferenceBaseUrl':base_url.rstrip('/')} if base_url is not None else {}),
             'kind':campaign_kind(campaign),
             ('domains' if 'openSource' in campaign else 'origins'):[source['origin'] for source in campaign['sources']],
             'inferenceRoutes':campaign['inferenceRoutes'],
@@ -101,7 +107,7 @@ def preview(policy,campaign_id,payload,mapping=None):
     context=None
     if 'openSource' in campaign:
         from .open_source import submission_context
-        context=submission_context(campaign,payload)
+        context=submission_context(campaign,payload);cautious(payload['recipe'])
     bank=BankClient(campaign,payload['credential'],transport=HTTPTransport('direct'),profile_id=payload['profileId'],
                     max_reads=campaign_limits(campaign)['maxBankReads'])
     try:
@@ -172,6 +178,50 @@ def observations(reads,context,artifact,mapping):
     return result
 
 
+# Words the measured write guard does not list yet. Checked here as well because `preview` and
+# `lookup` replay a POST from the owner's own machine. Move into the enclave's list at the next release.
+EXTRA_WRITE_WORDS=frozenset({'webhook','hook','callback','password','passcode','pin','otp','consent','setting',
+                             'preference','limit','notification','subscription','token'})
+
+
+def cautious(recipe):
+    """Refuse a POST whose path names an account setting, unless its last segment names a read."""
+    from urllib.parse import urlsplit
+    from .open_source import READ_WORDS,_words
+    for read in recipe.get('reads',[]) if isinstance(recipe,dict) and isinstance(recipe.get('reads'),list) else []:
+        if not (isinstance(read,dict) and read.get('method')=='POST' and isinstance(read.get('url'),str)):continue
+        parts=[part for part in urlsplit(read['url']).path.split('/') if part]
+        if parts and any(word in READ_WORDS for word in _words(parts[-1])):continue
+        words=[word for part in parts for word in _words(part)]
+        require(not any(word in EXTRA_WRITE_WORDS or word.rstrip('s') in EXTRA_WRITE_WORDS for word in words),
+                'write_request_refused')
+
+
+def lint(policy,campaign_id,payload):
+    """Credential-free checks of a payload: its shape, read URLs and methods, the POST
+    write guard, selectors and notes. It cannot check the session or the bank's answers."""
+    campaign=next((item for item in policy['campaigns'] if item['id']==campaign_id),None)
+    require(campaign is not None,'campaign_unavailable');validate_campaign(campaign)
+    require(isinstance(payload,dict) and isinstance(payload.get('credential'),dict),'invalid_fields')
+    fields({name:value for name,value in payload.items() if name!='inferenceKey'},{'credential','profileId','recipe','notes','transcript'})
+    credential=payload['credential']
+    fields({name:value for name,value in credential.items() if name!='value'},{'origin','kind'})
+    if 'openSource' not in campaign:
+        return {'campaignId':campaign_id,'ok':True,'checked':'payload shape only; this campaign fixes its own reads'}
+    from .open_source import origin_in_domain,validate_notes,validate_open_recipe
+    require(credential['kind'] in {'bearer','headers'} and any(origin_in_domain(credential['origin'],source['origin'])
+                                                             for source in campaign['sources']),'invalid_credential')
+    require(payload['profileId'] is None and payload['transcript']==[],'invalid_submission')
+    recipe=validate_open_recipe(campaign,payload['recipe'],campaign_limits(campaign)['maxBankReads'])
+    cautious(recipe)
+    require(all(read['url'].startswith(credential['origin']+'/') for read in recipe['reads']),'source_not_allowed')
+    validate_notes(payload['notes'])
+    return {'campaignId':campaign_id,'ok':True,'reads':len(recipe['reads']),
+            'methods':[read.get('method','GET') for read in recipe['reads']],'notesCharacters':len(payload['notes']),
+            'checked':'shape, URLs, methods, POST write guard, selectors and notes',
+            'notChecked':'the session, the bank responses, and notes against response values; `preview` checks those'}
+
+
 def lookup(policy,campaign_id,payload,index,path):
     """Run one read of the recipe from this machine and return a single value from its
     JSON, for an id that a later URL needs. Nothing is reserved, uploaded or kept."""
@@ -187,6 +237,7 @@ def lookup(policy,campaign_id,payload,index,path):
     read=recipe['reads'][index];selector={'read':0,'path':path}
     # The same URL, method and write rules the enclave applies to that read.
     validate_open_recipe(campaign,{'version':3,'reads':[read],'identity':selector,'history':selector})
+    cautious({'reads':[read]})
     require(read['url'].startswith(credential['origin']+'/'),'source_not_allowed')
     headers=credential_headers(credential,credential['origin'])
     if not any(name.lower()=='accept' for name in headers):headers['Accept']='application/json'
@@ -202,7 +253,7 @@ def lookup(policy,campaign_id,payload,index,path):
             'local':'A raw value from the account, shown only on this machine. Put it in the later read URL; do not paste it into notes.'}
 
 
-def prompt_secrets(payload):
+def prompt_secrets(payload,*,inference=True):
     """Read directly from the controlling TTY; disable every stdin/echo fallback."""
     secret_free(payload)
     require(os.name=='posix','secret_prompt_unavailable')
@@ -217,12 +268,14 @@ def prompt_secrets(payload):
             with warnings.catch_warnings():
                 warnings.simplefilter('error',getpass.GetPassWarning)
                 bank_key=getpass.getpass('Bank API token (owner only): ',stream=terminal)
-                inference_key=getpass.getpass('Inference API key (owner only): ',stream=terminal)
-            require(isinstance(bank_key,str) and 1<=len(bank_key)<=16384
-                    and all(33<=ord(char)<127 for char in bank_key),'invalid_credential')
-            require(isinstance(inference_key,str) and 8<=len(inference_key)<=4096
+                if inference:inference_key=getpass.getpass('Inference API key (owner only): ',stream=terminal)
+            # A header object or a cookie contains spaces; a bearer token is checked again by the enclave.
+            require(isinstance(bank_key,str) and 1<=len(bank_key)<=65536
+                    and all(32<=ord(char)<127 for char in bank_key),'invalid_credential')
+            require(not inference or isinstance(inference_key,str) and 8<=len(inference_key)<=4096
                     and all(33<=ord(char)<127 for char in inference_key),'inference_key_required')
-            bank_secret(payload,bank_key);payload['inferenceKey']=inference_key
+            bank_secret(payload,bank_key)
+            if inference:payload['inferenceKey']=inference_key
     except Rejected:raise
     except (OSError,ValueError,EOFError,getpass.GetPassWarning,KeyboardInterrupt):
         raise Rejected('secret_prompt_unavailable') from None
@@ -240,11 +293,11 @@ def save_state(path,state):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['status','campaigns','terms','preflight','preview','lookup','contribute','submit-reserved','job','receipt'])
+    parser.add_argument('command',choices=['status','campaigns','terms','preflight','preview','lookup','check','contribute','submit-reserved','job','receipt'])
     parser.add_argument('--service');parser.add_argument('--release',type=Path,default=Path(__file__).with_name('release.json'))
     parser.add_argument('--policy',type=Path,default=Path(__file__).with_name('policy.json'))
     parser.add_argument('--campaign');parser.add_argument('--payout');parser.add_argument('--provider',choices=['openai','openrouter','near',CUSTOM_PROVIDER])
-    parser.add_argument('--base-url',help='With --provider openai_compatible: https URL prefix before /chat/completions')
+    parser.add_argument('--base-url',help='With --provider openai_compatible: https URL prefix before /chat/completions (contribute and terms)')
     parser.add_argument('--max-output-tokens',type=int,help='Raise for reasoning models (default 2048, max 20000)')
     parser.add_argument('--deadline',type=int,help='Seconds allowed for bank reads plus inference (default 120, max 300)')
     parser.add_argument('--secrets-from-env',action='store_true',
@@ -269,7 +322,10 @@ def main():
                               'accepting':False,'releaseApproved':approved,
                               'reason':'preflight_and_service_admission_required' if approved else 'release_not_approved'}));return
         if args.command=='terms':
-            print(json.dumps(terms(release,policy,args.campaign,args.provider,args.model,args.privacy or 'provider_visible'),sort_keys=True));return
+            print(json.dumps(terms(release,policy,args.campaign,args.provider,args.model,args.privacy or 'provider_visible',
+                                   base_url=args.base_url,overrides={name:value for name,value in (
+                                       ('maxOutputTokens',args.max_output_tokens),('deadlineSeconds',args.deadline))
+                                       if value is not None}),sort_keys=True));return
         if args.command=='campaigns':
             # The whole epoch shares this funded amount; --live shows what is left of it.
             result={'epochBudgetUSDC':policy['pilotBudgetMinor']//1000000,
@@ -286,10 +342,18 @@ def main():
             try:
                 # A local preview makes no model call, so it needs only the bank secret.
                 if args.secrets_from_env:secrets_from_env(payload,inference=False)
+                elif args.prompt_secrets:prompt_secrets(payload,inference=False)
                 try:mapping=strict_json(args.mapping.read_bytes(),65536) if args.mapping is not None else None
                 except OSError:raise Rejected('mapping_file_unreadable') from None
                 result=preview(policy,args.campaign,payload,mapping)
             finally:payload.clear()
+            print(json.dumps(result,sort_keys=True));return
+        if args.command=='check':
+            require(args.campaign is not None,'missing_arguments')
+            payload=strict_json(sys.stdin.buffer.read(2_000_001),2_000_000)
+            try:result=lint(policy,args.campaign,payload)
+            finally:
+                if isinstance(payload,dict):payload.clear()
             print(json.dumps(result,sort_keys=True));return
         if args.command=='lookup':
             require(args.campaign is not None and args.path is not None,'missing_arguments')
@@ -299,6 +363,7 @@ def main():
             require(isinstance(payload,dict),'invalid_submission')
             try:
                 if args.secrets_from_env:secrets_from_env(payload,inference=False)
+                elif args.prompt_secrets:prompt_secrets(payload,inference=False)
                 result=lookup(policy,args.campaign,payload,args.read,path)
             finally:payload.clear()
             print(json.dumps(result,sort_keys=True));return
@@ -363,6 +428,16 @@ def main():
             if args.state is not None:require(not args.state.exists(),'state_exists')
             # Reserving first and then waiting on an empty terminal would hold a slot.
             require(sys.stdin.isatty() is not True,'payload_required')
+            payload=None
+            if args.secrets_from_env:
+                # The stdin payload holds no secret here, so read and check it, and confirm the
+                # secrets exist, before a reservation holds a slot, the budget and the payout address.
+                # --prompt-secrets keeps its order: nothing is read or asked until the job is reserved.
+                require(bool(os.environ.get('PEERLINK_BANK_CREDENTIAL')) and bool(os.environ.get('PEERLINK_INFERENCE_KEY')),
+                        'secrets_env_missing')
+                payload=strict_json(sys.stdin.buffer.read(2_000_001),2_000_000)
+                require(isinstance(payload,dict),'invalid_submission')
+                secret_free(payload);lint(policy,args.campaign,payload)
             def reserved(state):
                 path=args.state or Path('.local')/('transcript-job-'+state['jobId']+'.json')
                 save_state(path,state)
@@ -372,8 +447,9 @@ def main():
             # stdin or prompting the owner. A full campaign never needs secrets.
             client.reserve(args.campaign,args.payout,args.provider,args.model,args.privacy,
                            consent=args.consent,on_reserved=reserved,**extra)
-            payload=strict_json(sys.stdin.buffer.read(2_000_001),2_000_000)
-            require(isinstance(payload,dict),'invalid_submission')
+            if payload is None:
+                payload=strict_json(sys.stdin.buffer.read(2_000_001),2_000_000)
+                require(isinstance(payload,dict),'invalid_submission')
             try:
                 if args.prompt_secrets:prompt_secrets(payload)
                 elif args.secrets_from_env:secrets_from_env(payload)

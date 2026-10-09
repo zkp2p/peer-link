@@ -15,6 +15,6 @@ Expected and observed behavior (no private values):
 Synthetic structural reproducer (optional; invented data only):
 Limitations:
 
-Do not retry an uncertain payout by starting another job. Follow the current skill's
-status/reconciliation steps. The pilot is unreleased and non-restorable; a deployed
-host or legacy reference adapter does not establish live contribution support.
+Do not retry an uncertain payout by starting another job: keep polling the saved
+state file as the contribution skill describes. A listed campaign does not
+establish that a bank has been acquired successfully before.

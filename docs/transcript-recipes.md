@@ -46,8 +46,13 @@ possible.
    `limit`, `count` or page-size parameter. Twenty is plenty; responses over 2 MB
    are refused.
 
-Only replay requests the site issues while the owner is viewing history. Do not
-replay anything issued by a send, confirm, edit, settings or logout action.
+Only replay read requests: the ones the site issues while the owner is viewing
+history, or the read endpoints of the bank's documented API. Do not replay
+anything issued by a send, confirm, edit, settings or logout action. A personal
+API token is often not read-only even when the endpoints you list are: the same
+token may register a webhook or change a setting, so list only the profile and
+history endpoints. Check the bank's API terms as well; some restrict a personal
+token to the owner's own use, and the owner should know before consenting.
 
 A cloud-backed agent that reads the Network tab or a pasted request sees the
 session headers and the response. Tell the owner before you look, and prefer
@@ -55,8 +60,11 @@ having the owner export the secrets as environment variables.
 
 ## Reduce the session headers
 
-Start from the request headers the browser sent, then remove one at a time and
-rerun `preview` until the read fails, keeping only what is required. Sets that
+Start from the request headers the browser sent and drop the ones that are
+plainly not needed, checking with `preview`. Do this in a few steps, not one
+header at a time: every `preview` is a real request with the owner's session,
+sessions expire within minutes, and many repeated or failing requests can trip a
+rate limit or a bank's security checks. A few extra headers are harmless. Sets that
 real integrations have needed:
 
 - a single authorization token for public APIs;
@@ -65,18 +73,23 @@ real integrations have needed:
 - `Origin` and `Referer` on sites that check them.
 
 Do not include `Host`, `Content-Length`, `Content-Type`, `Connection`,
-`Transfer-Encoding`, `Accept-Encoding` or a method-override header; the enclave
-sets or refuses those. Header names and values must be printable ASCII, with at
-most 24 headers.
+`Transfer-Encoding`, `Accept-Encoding`, `Upgrade`, `TE`, `Expect`, a proxy header
+or a method-override header; the enclave sets or refuses those
+(`credential_headers_invalid`). Header names are letters, digits and hyphens
+with no run of three or more digits, values are printable ASCII, and there are
+at most 24 headers.
 
 At least one header must carry the session. The enclave treats every header
 other than the ones any browser sends (`User-Agent`, `Accept`, `Accept-Language`,
-`Origin`, `Referer`, `X-Requested-With` and the `Sec-` headers) as part of the
-session. It first replays the identity and history requests with only those
+`Origin`, `Referer`, `X-Requested-With`, `Cache-Control`, `Pragma`, `DNT`,
+`Priority`, `Sec-Fetch-Dest`, `Sec-Fetch-Mode`, `Sec-Fetch-Site`, `Sec-CH-UA`,
+`Sec-CH-UA-Mobile` and `Sec-CH-UA-Platform`) as part of the session. It first replays the identity and history requests with only those
 browser headers and refuses the job (`anonymous_access_allowed`) if the answer
 already contains the identity or the history rows. A credential made only of
-browser headers is rejected with `credential_not_secret`. Use the bank's production host: hosts named like a
-sandbox, test or developer environment are refused.
+browser headers is rejected with `credential_not_secret`.
+
+Use the bank's production host: hosts named like a sandbox, test or developer
+environment are refused.
 
 For `credential.kind: "headers"` the secret is one JSON object of header name to
 value. With `--secrets-from-env` that object is the content of
@@ -93,6 +106,10 @@ The session cookie and any CSRF header go in the same object under their own
 header names, each with the full value the browser sent. Only the header names
 are kept in the transcript.
 
+Use `kind: "bearer"` only when the API takes `Authorization: Bearer <token>`. A
+token sent in its own header is `kind: "headers"` with one entry, for example
+`{"X-Token": "<token>"}`.
+
 ## Write the reads and selectors
 
 ```json
@@ -108,7 +125,9 @@ are kept in the transcript.
 ```
 
 - A read is `{"url": ...}` for GET. URLs use `https`, no port, no fragment and no
-  percent-encoding in the path, and each query name appears once.
+  percent-encoding in the path. Path characters are letters, digits and
+  `_ . ~ : @ , = + ; ( ) ' / -`. There are at most 30 query parameters, each
+  name appears once, and a value is at most 512 characters.
 - `identity` points at one stable account, user or organization id in an
   authenticated response: a number of at least 100, or a string of 3 to 200
   characters without spaces. Take it from a profile, session or accounts read,
@@ -116,7 +135,8 @@ are kept in the transcript.
   field, a name or a balance. It decides whether the same account was already
   paid in the campaign, and its value is never kept.
 - `history` points at the array of transaction records. It needs at least three
-  object records.
+  object records in that one response and at most 2000; an API that returns a
+  date window must be given a window that holds three payments.
 - A path is a list of object keys and array indexes read left to right. `[]`
   selects the whole response, `[0, "id"]` selects `id` of the first element.
 - The identity and history requests must fail or return something other than
@@ -181,19 +201,24 @@ a nickname or an id used as a key becomes `{key}`:
 | Format class | Meaning |
 | --- | --- |
 | `int:pos:N`, `int:neg:N`, `int:zero:1` | Integer with N digits. |
-| `int:epoch_s`, `int:epoch_ms`, `digits:epoch_s`, `digits:epoch_ms` | Epoch time, reported only under a time-like key such as `createdAt`. |
+| `int:epoch_s`, `int:epoch_ms`, `float:epoch_s`, `digits:epoch_s`, `digits:epoch_ms` | Epoch time, reported only under a key ending in `time`, `date`, `created`, `updated`, `timestamp`, `settled`, `completed`, `posted`, `expires`, `when`, `at` or `ts`. |
 | `float:pos:N`, `float:neg:N` | JSON number with N fraction digits. |
 | `decimal:pos:N`, `decimal:neg:N` | Numeric string with N fraction digits. |
 | `digits:N`, `digits:neg:N` | String of N digits, optionally negative. |
 | `datetime:iso8601:utc`, `:offset`, `:naive` | ISO date-time ending in `Z`, with an offset, or with no zone. |
 | `date:iso8601`, `date:slash` | `2026-10-01` or `10/01/2026` style date. |
+| `date:compact`, `date:text`, `date:dotnet` | `20261001` under a time-like key; `1 Oct 2026` or `01.10.2026 14:05`; `/Date(1790000000000)/`. |
 | `currency_code`, `money_text` | ISO 4217 code; display text containing digits and a currency symbol or code. |
-| `uuid`, `email`, `url`, `hex:short`, `hex:long`, `empty` | Recognised shapes. |
+| `uuid`, `email`, `url`, `phone`, `hex:short`, `hex:long`, `empty` | Recognised shapes. |
 | `text:<size>:<charset>` | Other text: `short` up to 8 characters, `medium` up to 32, `long` up to 128, else `xlong`; `alpha`, `alnum` or `mixed`. |
 
-`values` appears only under keys ending in `status`, `state`, `type`, `kind`,
-`currency`, `scheme`, `direction`, `method`, `rail` or `network`, for short
-tokens, and never under an object that describes a person or address.
+`values` appears only in history rows, under `status`, `type`, `kind`, `scheme`,
+`direction`, `rail`, `network`, `statusCode`, `currency` or `currencyCode`,
+alone or after a payment word such as `payment`, `transaction` or `transfer`
+(`paymentStatus`, `transferType`). `state` is kept only with such a prefix, a
+`method` key never is, and other compounds such as `accountType` are not. Only
+short tokens are kept, never under an object that describes a person or
+address.
 `valuesIncomplete` means a token was withheld because the same text also
 occurred as an ordinary value. Path segments and query values that are not plain
 words become `{id}` or a format class; API versions such as `v2`, `2026Q4` or
@@ -219,22 +244,25 @@ not. Each path can serve one role.
 | `amount` | 25 | yes | A number, numeric string or money text on at least 90% of records. |
 | `timestamp` | 20 | yes | An ISO date or date-time, a slash date, or epoch seconds or milliseconds on at least 90% of records. |
 | `counterparty` | 15 | yes | A non-empty string or integer on at least half of the records. |
-| `status` | 10 | no | A short token on at least 90% of records with at most 12 distinct values. |
-| `currency` | 5 | no | An ISO 4217 code on at least 90% of records. |
+| `status` | 10 | no | A short text token on at least 90% of records with at most 12 distinct values. A boolean such as `pending: true` does not count. |
+| `currency` | 5 | no | A three-letter ISO 4217 code on at least 90% of records. A numeric code such as `840` does not count. |
 
-The minimum score is 85, which is exactly the four required roles.
+The minimum score is 85, which is exactly the four required roles. A bank whose
+status is a boolean and whose currency is numeric can still pass on those four;
+describe the two fields in the notes so engineers can use them.
 
 ## Pitfalls seen in real integrations
 
 | Symptom | Cause and fix |
 | --- | --- |
 | `preview` works, the job fails with `bank_http_unauthorized` or `bank_http_redirect` | Sessions on bank web apps can expire within minutes and CSRF values die with them. Capture fresh headers, run `preview` once, and contribute immediately. Some banks also refuse data-centre addresses; that cannot be fixed from a recipe. |
+| `preview` works, the job fails with `bank_http_client_error` | Often a rate limit. Some public APIs allow one call per endpoint per minute, and `lookup`, `preview` and the enclave each spend one. Wait out the limit after the last local call before `contribute`, and do not list the same endpoint twice in a recipe. |
 | `bank_response_non_json` | The URL returned an HTML page, often a login page served with status 200. Use the JSON endpoint the page calls. |
 | `response_encoding` | The server compressed the body although the enclave asks for `Accept-Encoding: identity`. Try the API host rather than the page host. |
 | `history_path_invalid` | The list is wrapped, for example under `data`, `transactions` or `activity.items`. Point `history` at the array itself. |
 | `insufficient_history` | Fewer than three object records. Raise the page size or widen the date filter. |
 | `mapping_missing_counterparty` | Only person-to-person rows carry a counterparty. Use the transfers or payments list rather than the full card-and-fee ledger, or map a field that exists on most rows. |
-| `mapping_missing_timestamp` | The field is a compact date such as `20261001` or localized text, which is not recognised. Map another time field if the record has one, otherwise report it on the campaign issue. |
+| `mapping_missing_timestamp` | The field is in a layout that is not recognised, or is missing on more than a tenth of the rows. ISO strings, slash and dotted dates, month-name dates, compact `20261001` values and epoch seconds or milliseconds are recognised. Map another time field if the record has one, otherwise report it on the campaign issue. |
 | `mapping_missing_paymentId` | The mapped field repeats across rows, such as an account id or a batch id. |
 | Amount looks wrong to engineers | State the convention in the notes: minor or major units, and whether negative means sent. |
 | `write_request_refused` | The path or operation name reads like a state change. Choose the request that lists history. |
@@ -257,17 +285,30 @@ engineer who will build the integration:
   which page loads it, how pagination works, how long the session lasts.
 
 Notes are limited to 4000 characters and are rejected with `unsafe_notes` when
-they contain an email address, six or more digits in a row, a run of 28 or more
-letters, digits, hyphens and underscores, the word `bearer` followed by another
-word, the identity value, or any response value of six or more characters that
-contains a digit or `@`. Status tokens and currency codes are fine to name;
-describe everything else instead of quoting it.
+they contain:
+
+- an email address, six or more digits in a row, or twelve or more digits
+  separated by spaces or hyphens;
+- three groups of two or more digits close together, which includes a written
+  date such as 2026-10-01 (say "the dated version segment" instead);
+- a run of 28 or more letters, digits, hyphens and underscores, a string that
+  starts like a JWT (`eyJ`), or the word `bearer` followed by another word;
+- the identity value, or a value copied from a response: anything with a digit
+  or `@`, any multi-word value, and any single word of five or more letters
+  that is not an ordinary field-name word.
+
+`check` reports the first three groups without a credential; the last needs the
+responses, so `preview` reports it. The error does not say which word matched,
+so when `preview` returns `unsafe_notes`, look for a name, a merchant or a memo
+word you repeated from the data. Status tokens and currency codes are fine to
+name; describe everything else instead of quoting it.
 
 ## Worked example: a public API with a token
 
 Wise publishes a personal API whose read-only token works well as an
-illustration. Wise is already integrated in Peer and has no public reward, so
-use this as a pattern rather than a campaign. The ids below are invented.
+illustration. Wise is already integrated in Peer and has no campaign, so the
+commands below cannot be run against the public release; read this as the
+pattern for any bank with a token API. The ids below are invented.
 
 `.local/payload.json`:
 
