@@ -27,7 +27,9 @@
     "claudeEffort": "high",
     "codexCleanReviewUrl": "https://github.com/zkp2p/peer-link/pull/240#issuecomment-6075471071",
     "pythonTests": 253,
-    "javascriptTests": 394
+    "javascriptTests": 394,
+    "subsequentRecoveryAutomationFollowup": "https://github.com/zkp2p/peer-link/issues/241",
+    "recoveryLimitRegressionTests": 2
   },
   "hardware": {
     "platform": "AWS Nitro Enclaves",
@@ -127,6 +129,8 @@
     "Model usefulness scoring is probabilistic; authenticated bank acquisition, redaction, limits, deduplication and payment authorization are enforced separately.",
     "Hardware proofs verify monotonic state takeover and paid recovery, not a live stale-writer attack; conditional-write fencing is separately regression-tested.",
     "AWS/account administrators remain trusted for infrastructure and key-policy control. Payout custody is recoverable by authorized operators; it is not an enclave-exclusive escrow.",
-    "This single-host pilot requires signed operator resume after restart. A published release or issue is not a reservation or guarantee of remaining capacity."
+    "This single-host pilot requires signed operator resume after restart. A published release or issue is not a reservation or guarantee of remaining capacity.",
+    "A coincident bank/provider failure and state-status outage can leave pre-acceptance work pending. The next valid reservation after its original 600-second expiry releases that slot; a reviewed restart of the same image rejects interrupted work. Operator reconcile alone does not terminalize this case.",
+    "A restart between paid-state commit and final receipt archival may require signed operator reconcile while paused. Automatic status-poll repair of this crash window is deferred; no bank/model replay or new payment is required."
   ]
 }

@@ -423,3 +423,26 @@ Bank credentials, the inference key, submitted payload and raw read references a
 released before settlement. Only the broker's exact version-1 `kms_unavailable`
 response is normalized for retry; malformed responses and signature/key-integrity
 failures remain permanent.
+
+## Supervised recovery limits of the approved Wise image
+
+The approved `629b8798` image has two deferred recovery automation limitations.
+If a bank/provider failure coincides with an unavailable state authority while the
+runtime tries to record rejection, the job can remain `submitted` or `verifying`.
+Signed operator reconciliation alone does not reject that job. After state access
+returns, the next ordinary reservation at or after the original 600-second expiry
+expires/prunes the stranded job and releases its capacity. An operator-reviewed
+restart of the **same measured image** also records `interrupted_execution`, then
+requires signed resume before admission. Neither path repeats bank reads or model
+inference; contributors should query their saved job rather than replay submission.
+
+After restart, an already-paid record awaiting its final receipt or host archival can remain in
+the worklist until signed operator `reconcile`, including while admissions are
+paused. The final signed paid receipt may be unavailable, or the saved receipt may
+still report the older non-paid state, until reconciliation. The persisted payment
+identity survives. Reconciliation may sign the final **receipt**, then archive it,
+without signing or broadcasting another **payment**. An already-saved paid receipt
+is reused unchanged. These are
+supervised procedures, not automatic recovery guarantees. A different image/PCR
+requires new approval and an explicit client-pin continuity plan; do not rewrite
+old recovery handles or refill the wallet to work around these limitations.
