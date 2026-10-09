@@ -39,6 +39,10 @@ type Integration = {
 const PINNED_ADAPTERS = ["us/mercury"];
 const PINNED_BANKS = 3;
 type Campaign = {
+  name: string;
+  country: string;
+  currency: string;
+  logo: string;
   adapter: string;
   url: string;
   amount: number;
@@ -95,6 +99,24 @@ function render(providers: Provider[], catalogUnavailable = false) {
   const used = new Set<string>();
   const pinned = providers.filter((provider) => PINNED_ADAPTERS.includes(provider.id));
   for (const provider of pinned) used.add(provider.id);
+  // Local campaign discovery survives an unavailable or incomplete adapter catalog.
+  const missingPinned = PINNED_ADAPTERS.filter(
+    (adapter) => !pinned.some((provider) => provider.id === adapter),
+  ).flatMap((adapter) => {
+    const campaign = bountyByAdapter.get(adapter);
+    return campaign
+      ? [
+          fromBank({
+            name: campaign.name,
+            country: campaign.country,
+            currency: campaign.currency,
+            issue: campaign.url,
+            logo: campaign.logo,
+            mark: campaign.name.slice(0, 2).toUpperCase(),
+          }),
+        ]
+      : [];
+  });
   const bankCards = banks.map((bank) => {
     const folder = bountyByUrl.get(bank.issue)?.adapter;
     const provider = providers.find(
@@ -113,6 +135,7 @@ function render(providers: Provider[], catalogUnavailable = false) {
     .map((p) => fromProvider(p));
   const integrations: Integration[] = [
     ...pinned.map((provider) => fromProvider(provider)),
+    ...missingPinned,
     ...bankCards.slice(0, PINNED_BANKS),
     ...unlisted,
     ...bankCards.slice(PINNED_BANKS),

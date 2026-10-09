@@ -127,7 +127,7 @@
     "wiseExcludedFromIncentives": true
   },
   "limits": [
-    "Historical Wise test payments are internal validation evidence, not a public reward offer. The public release is not approved for incentivized contributions.",
+    "Historical Wise test payments are internal validation evidence, not a public reward offer. This Wise epoch is not approved for public transcript incentives.",
     "This evidence does not prove confidential NEAR hosted-model execution or per-request x402/NEAR Intents payment; neither mode is enabled.",
     "Model usefulness scoring is probabilistic; authenticated bank acquisition, redaction, limits, deduplication and payment authorization are enforced separately.",
     "Hardware proofs verify monotonic state takeover and paid recovery, not a live stale-writer attack; conditional-write fencing is separately regression-tested.",
