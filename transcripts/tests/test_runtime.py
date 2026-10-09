@@ -1,9 +1,11 @@
 """Synthetic integration/security tests. No live keys, hardware, RPC or cloud use."""
 import copy
 import hashlib
+import socket
 import threading
 import unittest
-from unittest.mock import patch
+import weakref
+from unittest.mock import Mock, patch
 from contextlib import contextmanager
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -18,8 +20,11 @@ from transcripts.providers import SYSTEM_PROMPT
 from transcripts.payout import PayoutCoordinator
 from transcripts.runtime import Runtime, RPC, SETTLEMENT_MAX_ATTEMPTS, SETTLEMENT_RETRY_SECONDS
 from transcripts.server import route, connect_public
-from transcripts.transport import HTTPResponse
-from transcripts.tests.test_kms_signer import KEY_ID
+from transcripts.transport import HTTPResponse, HTTPTransport, tunnel_socket
+from transcripts.wire import receive
+from transcripts.tests.test_kms_signer import KEY_ID, WALLET, SyntheticBroker, transaction
+from transcripts.kms_signer import KmsSigner
+from transcripts.eth_payout import transfer_data
 from transcripts.tests.test_core import Anchor, campaign, request, read, KEY, NOW
 
 OPERATOR = Ed25519PrivateKey.from_private_bytes(b"fixed-public-test-operator-seed!"[:32].ljust(32,b"!"))
@@ -123,6 +128,9 @@ class RecoveryTransport:
             raise Rejected('payout_rpc_unavailable')
     def confirmed(self,*args):
         self.checks+=1
+        if self.mined and callable(self.failure):
+            failure=self.failure;self.failure=None
+            failure()
         if self.mined and self.failure=='receipt_rpc':
             self.failure=None
             raise Rejected('http_transport_failed')
@@ -176,10 +184,12 @@ class RuntimeTests(unittest.TestCase):
         status=self.runtime.dispatch("reserve",request(self.policy["campaigns"][0]))
         self.epoch.ledger.submit(status["jobId"],status["bindingDigest"],NOW+3)
         return status["jobId"]
-    def process(self,job_id):
-        payload={"credential":{"origin":"https://bank.example","kind":"bearer","value":"SECRET-BANK-CREDENTIAL"},
+    def payload(self):
+        return {"credential":{"origin":"https://bank.example","kind":"bearer","value":"SECRET-BANK-CREDENTIAL"},
                  "profileId":"1","recipe":{"version":1,"reads":[]},"inferenceKey":"SECRET-INFERENCE-KEY",
                  "notes":"SECRET-LOCAL-NOTES","transcript":{"rawBankMemo":"SECRET-LOCAL-TRANSCRIPT"}}
+    def process(self,job_id,payload=None):
+        if payload is None:payload=self.payload()
         self.runtime.jobs.acquire()
         with patch("transcripts.transport.BankClient",FakeBank),patch("transcripts.providers.ProviderClient",FakeProvider):
             self.runtime.process(job_id,payload)
@@ -261,6 +271,96 @@ class RuntimeTests(unittest.TestCase):
         self.assert_mined_failure_recovers('lost_broadcast')
     def test_mined_payment_receipt_rpc_transient_recovers_automatically(self):
         self.assert_mined_failure_recovers('receipt_rpc')
+    def emit_http_failure(self,status):
+        # Exercise actual HTTPConnection parsing and HTTPTransport error mapping,
+        # replacing only TLS wrapping/DNS with a local socket pair.
+        client,server=socket.socketpair()
+        server.sendall(f'HTTP/1.1 {status} Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n'.encode())
+        server.shutdown(socket.SHUT_WR)
+        context=Mock();context.wrap_socket.return_value=client
+        try:
+            with patch('transcripts.transport.public_socket',return_value=client), \
+                 patch('ssl.create_default_context',return_value=context):
+                HTTPTransport('direct').request('POST','https://rpc.example/',body=b'{}')
+        finally:
+            client.close();server.close()
+    def test_actual_http_429_after_mining_retries_without_another_payment(self):
+        self.assert_mined_failure_recovers(lambda:self.emit_http_failure(429))
+    def test_actual_http_503_after_mining_retries_without_another_payment(self):
+        self.assert_mined_failure_recovers(lambda:self.emit_http_failure(503))
+    def test_actual_enclave_relay_refusal_retries_without_another_payment(self):
+        def refused():
+            stream=Mock();stream.recv.return_value=b''
+            with patch('transcripts.transport.socket.AF_VSOCK',40,create=True), \
+                 patch('transcripts.transport.socket.socket',return_value=stream):
+                tunnel_socket('rpc.example')
+        self.assert_mined_failure_recovers(refused)
+    def test_actual_archive_connection_closed_retries_final_archive_without_another_payment(self):
+        transport=RecoveryTransport(None)
+        self.runtime.coordinator=PayoutCoordinator(self.epoch.ledger,transport)
+        original=self.archive.persist;calls=[]
+        def persist(record):
+            calls.append(record)
+            if len(calls)==2:
+                stream=Mock();stream.recv.return_value=b''
+                receive(stream)  # Actual archive receive framing raises connection_closed.
+            return original(record)
+        with patch.object(self.archive,'persist',side_effect=persist):
+            job_id=self.job();self.process(job_id)
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'paid')
+        self.assertEqual(len(calls),3);self.assertNotIn(job_id,self.runtime.pending_records)
+        self.assertEqual(transport.signs,1);self.assertEqual(len(transport.broadcasts),1)
+    def test_raw_reads_and_credentials_are_released_before_first_settlement(self):
+        references=[];payload=self.payload()
+        def acquire(bank,job_id,recipe,now):
+            value=read(job_id,acquired_at=now);references.append(weakref.ref(value))
+            return [value]
+        original=self.runtime.settle
+        def settle(job_id):
+            self.assertTrue(FakeBank.instances[0].closed)
+            self.assertEqual(FakeBank.instances[0].credential,{})
+            self.assertTrue(FakeProvider.instances[0].closed)
+            self.assertIsNone(FakeProvider.instances[0].api_key)
+            self.assertIsNone(references[0]())
+            self.assertEqual(payload,{})
+            return original(job_id)
+        with patch.object(FakeBank,'acquire',acquire),patch.object(self.runtime,'settle',new=settle):
+            job_id=self.job();self.process(job_id,payload)
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'paid')
+
+    def kms_recovery_transport(self,first_response):
+        broker=SyntheticBroker();requests=[]
+        def exchange(request):
+            requests.append(copy.deepcopy(request))
+            return first_response if len(requests)==1 else broker(request)
+        signer=KmsSigner(KEY_ID,WALLET,exchange)
+        class Transport(RecoveryTransport):
+            def sign(self,job_id,recipient,amount):
+                self.signs+=1
+                tx=transaction();tx['data']=transfer_data(recipient,amount)
+                result=signer.sign_transaction(tx)
+                self.signed=bytes(result.raw_transaction);self.tx_id='0x'+bytes(result.hash).hex()
+                return self.signed,self.tx_id
+        # Use the synthetic KMS public wallet consistently in the measured fixture.
+        self.epoch.wallet=WALLET.lower();self.policy['payoutAuthority']['wallet']=self.epoch.wallet
+        self.runtime.policy_digest=digest(self.policy)
+        transport=Transport(None)
+        self.runtime.coordinator=PayoutCoordinator(self.epoch.ledger,transport)
+        return transport,requests,broker
+    def test_actual_kms_availability_payload_reaches_runtime_retry_without_duplicate_payment(self):
+        transport,requests,broker=self.kms_recovery_transport({'version':1,'error':'kms_unavailable'})
+        job_id=self.job();self.process(job_id)
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'paid')
+        self.assertEqual(len(requests),2);self.assertEqual(requests[0],requests[1])
+        self.assertEqual(len(broker.requests),1);self.assertEqual(len(transport.broadcasts),1)
+        self.assertEqual(self.epoch.ledger.payout_identity(job_id),(transport.signed,transport.tx_id))
+        self.assertEqual(len(FakeBank.instances),1);self.assertEqual(len(FakeProvider.instances),1)
+    def test_malformed_kms_error_payload_is_permanent_and_never_retried(self):
+        transport,requests,broker=self.kms_recovery_transport({'version':True,'error':'kms_unavailable'})
+        job_id=self.job();self.process(job_id)
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'accepted')
+        self.assertEqual(len(requests),1);self.assertEqual(broker.requests,[])
+        self.assertEqual(transport.broadcasts,[]);self.sleep_mock.assert_not_called()
     def test_post_payment_archive_failure_automatically_retries_without_payment_again(self):
         self.archive.fail_calls={2};job_id=self.job();self.process(job_id)
         self.assertEqual(self.epoch.ledger.status(job_id)["state"],"paid")

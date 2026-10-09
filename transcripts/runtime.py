@@ -27,7 +27,7 @@ SETTLEMENT_MAX_ATTEMPTS=60
 SETTLEMENT_RETRY_DELAY=2
 TRANSIENT_SETTLEMENT_ERRORS=frozenset({'payout_rpc_unavailable','http_transport_failed',
     'storage_unavailable','kms_broker_unavailable','request_timeout','response_incomplete',
-    'egress_unavailable'})
+    'egress_unavailable','http_request_failed','relay_refused','connection_closed'})
 
 class RPC:
     def __init__(self,endpoint,transport):self.endpoint,self.transport=endpoint,transport
@@ -221,6 +221,9 @@ class Runtime:
             record={'version':1,'epoch':self.epoch.public_descriptor(),'job':self.ledger.status(job_id),
                     'artifact':artifact,'modelResult':grade,'inference':provider.metadata,'policyDigest':self.policy_digest}
             self.pending_records[job_id]=record
+            # Settlement needs only the redacted record and ledger payment.
+            # Release credentials/raw history before any potentially long retry.
+            bank.close();provider.close();payload.clear();reads=None
             self.settle(job_id)
         except Rejected as error:
             status=self.ledger.status(job_id)

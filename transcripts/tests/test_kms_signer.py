@@ -141,6 +141,24 @@ class KmsSignerTests(unittest.TestCase):
                 with self.assertRaises(Rejected):signer.sign_transaction({**transaction(),**change})
         self.assertEqual(broker.requests,[])
 
+    def test_only_exact_known_broker_availability_error_is_retryable(self):
+        with self.assertRaisesRegex(Rejected,'^kms_broker_unavailable$'):
+            KmsSigner(KEY_ID,WALLET,lambda request:{'version':1,'error':'kms_unavailable'}).sign_transaction(transaction())
+        responses=[{'version':True,'error':'kms_unavailable'},
+                   {'version':2,'error':'kms_unavailable'},
+                   {'version':1,'error':'kms_unavailable','extra':'data'},
+                   {'version':1,'error':'kms_signature_invalid'},
+                   {'version':1,'error':'kms_key_invalid'},
+                   {'version':1,'error':'kms_key_mismatch'},
+                   {'version':1,'error':'kms_request_invalid'},
+                   {'version':1,'error':'kms_peer_denied'},
+                   {'version':1,'error':'unknown_failure'}]
+        for response in responses:
+            with self.subTest(response=response):
+                with self.assertRaises(Rejected) as rejected:
+                    KmsSigner(KEY_ID,WALLET,lambda request:response).sign_transaction(transaction())
+                self.assertNotEqual(str(rejected.exception),'kms_broker_unavailable')
+
     def test_alias_partial_key_id_and_private_key_configuration_are_not_accepted(self):
         for key_id in ('alias/payout',KEY_ID.split('/')[-1],KEY_ID.replace(':key/',':alias/'),'x'*257):
             with self.assertRaises(Rejected):KmsSigner(key_id,WALLET,SyntheticBroker())

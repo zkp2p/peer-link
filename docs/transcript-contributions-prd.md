@@ -436,7 +436,7 @@ No synthetic result, candidate quote or local bank check substitutes for remaini
 release gates. Existing adapters remain reference assets; unrelated Peer trading,
 extension behavior and production attestation services are outside this revamp.
 
-The post-pilot settlement fix has 171 passing credential-free tests. It adds bounded
+The post-pilot settlement fix has 179 passing credential-free tests. It adds bounded
 automatic reconciliation of the existing payment and final archive after transient
 failures, without repeating bank reads or grading. This changes measured runtime
 code; the completed live test remains evidence for `c2bc4b0`, not automatic approval

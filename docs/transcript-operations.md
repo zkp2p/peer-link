@@ -338,9 +338,14 @@ disabled after the job and its local in-memory credential process was stopped.
 
 The follow-up runtime starts at most 60 settlement attempts within a 120-second
 monotonic window, with existing per-call transport timeouts. It retries explicit
-transient RPC, KMS and archive failures using the accepted job and saved payment
+transient RPC, relay, KMS and archive failures using the accepted job and saved payment
 identity. It never repeats bank acquisition or inference. Pause and permanent
 validation failures stop the loop; exhausted obligations remain for signed operator
 reconciliation. Final archival retries cannot mutate an already published signed
 receipt. Credential-free regressions cover these cases; the live evidence above
 continues to describe the earlier `c2bc4b0` image and its assisted reconciliation.
+
+Bank credentials, the inference key, submitted payload and raw read references are
+released before settlement. Only the broker's exact version-1 `kms_unavailable`
+response is normalized for retry; malformed responses and signature/key-integrity
+failures remain permanent.
