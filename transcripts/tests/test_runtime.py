@@ -265,8 +265,29 @@ class RuntimeTests(unittest.TestCase):
             self.runtime.operator(self.operator_message(action="resume",nonce="f"*64,expiresAt=NOW))
         self.runtime.operator(self.operator_message(action="resume",nonce="a"*64))
         self.assertTrue(self.epoch.active)
+    def test_activation_requires_successful_preflight_for_this_epoch(self):
+        self.epoch.pause()
+        with self.assertRaisesRegex(Rejected,'funding_preflight_required'):
+            self.runtime.operator(self.operator_message('activate'))
+        with patch.object(self.runtime.payment,'funding_balances',return_value=(0,0)), \
+             patch.object(self.epoch,'check_payout_signing',side_effect=Rejected('kms_broker_unavailable'),create=True), \
+             patch.object(self.runtime.rpc,'call',return_value='0x0'):
+            with self.assertRaisesRegex(Rejected,'kms_broker_unavailable'):
+                self.runtime.operator(self.operator_message('preflight',nonce='a'*64))
+        self.assertIsNone(self.runtime.funding_preflight)
+        with self.assertRaisesRegex(Rejected,'funding_preflight_required'):
+            self.runtime.operator(self.operator_message('activate',nonce='c'*64))
+        self.runtime.funding_preflight='0'*64
+        with self.assertRaisesRegex(Rejected,'funding_preflight_required'):
+            self.runtime.operator(self.operator_message('activate',nonce='d'*64))
+        self.assertEqual(self.epoch.activations,[])
     def test_activation_reads_chain_balances_and_reconcile_requires_signature(self):
-        self.epoch.pause();self.runtime.operator(self.operator_message(action="activate"))
+        self.epoch.pause()
+        with patch.object(self.runtime.payment,'funding_balances',return_value=(0,0)), \
+             patch.object(self.epoch,'check_payout_signing',return_value={},create=True), \
+             patch.object(self.runtime.rpc,'call',return_value='0x0'):
+            self.runtime.operator(self.operator_message('preflight',nonce='a'*64))
+        self.runtime.operator(self.operator_message(action="activate"))
         self.assertEqual(self.epoch.activations[0][1],{"usdc_balance_minor":50_000_000,"gas_balance_wei":10**12})
         with patch("transcripts.runtime.threading.Thread") as worker:
             self.runtime.operator(self.operator_message(action="reconcile",nonce="c"*64))

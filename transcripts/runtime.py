@@ -44,6 +44,7 @@ class Runtime:
         self.channel,self.attester=Channel(),attester
         self.receipts={};self.pending_records={};self.settlement_lock=threading.Lock();self.operator_nonces=set();self.operator_lock=threading.Lock()
         self.jobs=threading.BoundedSemaphore(2)
+        self.funding_preflight=None
         self.rpc=RPC(policy['payoutRpc'],transport)
         self.payment=BaseUSDCPayoutTransport(epoch,self.rpc,pinned_rpc_url=policy['payoutRpc'])
         self.coordinator=PayoutCoordinator(self.ledger,self.payment)
@@ -117,6 +118,7 @@ class Runtime:
                 require(usdc==0,'preflight_requires_unfunded')
                 nonce=int(self.rpc.call('eth_getTransactionCount',[self.epoch.wallet,'pending']),16)
                 probe=self.epoch.check_payout_signing(nonce)
+                self.funding_preflight=digest(self.epoch.public_descriptor())
                 return {'health':self.dispatch('health',{}),'preflight':{
                     **probe,'usdcBalanceMinor':usdc,'gasBalanceWei':gas,'pendingNonce':nonce}}
             if value['action']=='pause':self.epoch.pause()
@@ -127,6 +129,7 @@ class Runtime:
                 self.epoch.begin_retirement_after_operator_verification(self.epoch.epoch_id,now=int(time.time()))
                 threading.Thread(target=self.reconcile_retirement,daemon=True).start()
             else:
+                require(self.funding_preflight==digest(self.epoch.public_descriptor()),'funding_preflight_required')
                 usdc,gas=self.payment.funding_balances()
                 self.epoch.activate_after_operator_verification(self.epoch.epoch_id,self.epoch.wallet,usdc_balance_minor=usdc,gas_balance_wei=gas)
         return self.dispatch('health',{})
