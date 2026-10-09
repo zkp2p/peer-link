@@ -1,12 +1,13 @@
 """Open-recipe campaigns: synthetic bank, synthetic model, no network or keys."""
 import copy
 import hashlib
-import io
 import json
+import socket
 import threading
+import time
 import unittest
-from contextlib import redirect_stdout
 from unittest.mock import patch
+from urllib.parse import urlsplit
 
 from transcripts.artifacts import extract_artifact, validate_archive_record, validate_artifact
 from transcripts.client import campaign_limits
@@ -86,7 +87,7 @@ def recipe():
 
 def payload(**changes):
     value = {"credential": {"origin": ORIGIN, "kind": "headers",
-                            "value": {COOKIE: SESSION, "X-CSRF-Token": CSRF}},
+                            "value": {COOKIE: SESSION, "X-CSRF-Token": CSRF, "X-Client-Version": "web"}},
              "profileId": None, "recipe": recipe(), "inferenceKey": INFERENCE, "transcript": [],
              "notes": "Activity list is newest first. The handle under counterparty is what a payer types to send."}
     value.update(changes)
@@ -94,18 +95,22 @@ def payload(**changes):
 
 
 class Bank:
-    """Transport double: authenticated JSON, anonymous 401, and one model reply."""
-    def __init__(self, *, anonymous=(401, False), model=None, bodies=None, provider_failures=()):
+    """Transport double: authenticated JSON, a configurable anonymous answer, one model reply."""
+    def __init__(self, *, anonymous=(401, None), model=None, bodies=None, provider_failures=()):
         self.anonymous, self.model, self.calls = anonymous, model, []
         self.bodies = bodies or {"/api/v2/me": ME, "/api/v2/users/user-48213377/activity": HISTORY}
         self.provider_failures = list(provider_failures)
-    def probe_anonymous(self, url, *, timeout=15, body=None, content_type=None):
-        self.calls.append(("probe", url, body))
+    def probe_anonymous(self, url, *, headers=None, timeout=15, body=None, content_type=None):
+        self.calls.append(("probe", url, dict(headers or {}), body))
         status, served = self.anonymous
-        return HTTPResponse(status, b"", (("content-type", "json"),) if served else ())
+        if served is None or not 200 <= status < 300:
+            return HTTPResponse(status, b"", ())
+        path = url[len(urlsplit(url).scheme) + 3 + len(urlsplit(url).netloc):].split("?")[0]
+        answer = self.bodies[path] if served == "same" else served
+        return HTTPResponse(status, canonical(answer), (("content-type", "json"),))
     def request_bank(self, url, *, headers, timeout=15, max_bytes=0, open_headers=False, body=None, content_type=None):
         self.calls.append(("bank", url, dict(headers), body, content_type))
-        path = url[len(ORIGIN):].split("?")[0]
+        path = url[len(urlsplit(url).scheme) + 3 + len(urlsplit(url).netloc):].split("?")[0]
         if path not in self.bodies:
             raise Rejected("bank_http_client_error")
         return HTTPResponse(200, canonical(self.bodies[path]), (("content-type", "application/json"),))
@@ -115,6 +120,8 @@ class Bank:
             raise Rejected(self.provider_failures.pop(0))
         reply = self.model if self.model is not None else {"rubricVersion": "transcript-mapping-v1",
                                                          "mapping": MAPPING, "completedStatus": ["completed"]}
+        if isinstance(reply, dict) and "choices" in reply:
+            return HTTPResponse(200, canonical(reply), ())
         content = reply if isinstance(reply, str) else json.dumps(reply)
         return HTTPResponse(200, canonical({"choices": [{"finish_reason": "stop", "message": {
             "role": "assistant", "content": content}}], "usage": {"prompt_tokens": 900, "completion_tokens": 80}}), ())
@@ -162,6 +169,15 @@ class PolicyTests(unittest.TestCase):
         named = reservation(policy, provider="openai", model="gpt-anything", inferenceBaseUrl=BASE)
         with self.assertRaises(Rejected):
             validate_reservation(policy, named, NOW)
+        for url in ("https://169.254.169.254/latest", "https://localhost/v1", "https://kms.us-east-1.amazonaws.com/v1",
+                    "https://mainnet.base.org/v1", "https://gateway.example/v1/0123456789abcdef0123456789abcdef",
+                    "https://inference.example/acct/48213377001"):
+            with self.assertRaisesRegex(Rejected, "invalid_provider"):
+                validate_reservation(policy, reservation(policy, inferenceBaseUrl=url), NOW)
+        for model in ("alice@example.com", "tel:+14155550101"):
+            with self.assertRaisesRegex(Rejected, "provider_not_allowed"):
+                validate_reservation(policy, reservation(policy, model=model), NOW)
+        validate_reservation(policy, reservation(policy, model="claude-3-5-sonnet-20241022"), NOW)
         with self.assertRaisesRegex(Rejected, "provider_not_allowed"):
             validate_reservation(policy, reservation(policy, model="*"), NOW)
         with self.assertRaisesRegex(Rejected, "provider_not_allowed"):
@@ -184,34 +200,81 @@ class RecipeTests(unittest.TestCase):
             validate_open_recipe(policy, many, 4)
         with self.assertRaisesRegex(Rejected, "recipe_version"):
             validate_open_recipe(policy, {**recipe(), "version": 1}, 4)
-    def test_post_reads_refuse_named_state_changes(self):
+    def post(self, url, body, content_type="application/json"):
+        value = recipe()
+        value["reads"][1] = {"url": url, "method": "POST", "contentType": content_type, "body": body}
+        return value
+    def test_post_reads_refuse_recognisable_state_changes(self):
         policy = campaign()
-        ok = recipe()
-        ok["reads"][1] = {"url": ORIGIN + "/api/graphql", "method": "POST", "contentType": "application/json",
-                          "body": json.dumps({"operationName": "GetActivityQuery", "query": "query GetActivityQuery { a }",
-                                              "variables": {"first": 20}})}
-        validate_open_recipe(policy, ok, 4)
-        for url, body in ((ORIGIN + "/api/transfer", "{}"), (ORIGIN + "/api/payments/send", "{}"),
-                          (ORIGIN + "/api/graphql", json.dumps({"query": "mutation Pay { pay }"})),
-                          (ORIGIN + "/api/graphql", json.dumps({"operationName": "CreatePayment", "query": "query { a }"})),
-                          (ORIGIN + "/api/graphql", json.dumps({"operationName": "ActivityMutation", "query": "{ a }"}))):
-            bad = recipe()
-            bad["reads"][1] = {"url": url, "method": "POST", "contentType": "application/json", "body": body}
-            with self.assertRaisesRegex(Rejected, "write_request_refused"):
-                validate_open_recipe(policy, bad, 4)
+        graphql = ORIGIN + "/api/graphql"
+        query = "query Q { a }"
+        refused = [
+            (ORIGIN + "/api/transfer", "{}"), (ORIGIN + "/api/payments/send", "{}"),
+            (ORIGIN + "/api/v1/transfers", "{}"), (ORIGIN + "/api/payments", "{}"),
+            (ORIGIN + "/api/payments/sendMoney", "{}"), (ORIGIN + "/api/transfer.do", "{}"),
+            (ORIGIN + "/api/transfer/now", "{}"), (ORIGIN + "/api/payments/send/4821", "{}"),
+            (ORIGIN + "/api/payBill", "{}"),
+            (graphql, json.dumps({"query": "mutation Pay { pay }"})),
+            (graphql, json.dumps({"query": "mutation@x{ pay }"})),
+            (graphql, json.dumps({"query": ",\ufeff mutation { pay }"})),
+            (graphql, json.dumps({"operationName": "CreatePayment", "query": query})),
+            (graphql, json.dumps({"operationName": "ActivityMutation", "query": query})),
+            (graphql, json.dumps({"operationName": "SetLimit", "query": query})),
+            (graphql, json.dumps({"operationName": "sendMoney", "query": query})),
+            (graphql, json.dumps({"operationName": "add_payee", "query": query})),
+            (graphql, json.dumps({"operationName": "TransferFunds", "extensions": {"persistedQuery": {"version": 1}}})),
+            (graphql, json.dumps({"id": "a1b2", "operationName": "ApprovePayment"})),
+            (ORIGIN + "/rpc", json.dumps({"jsonrpc": "2.0", "method": "transfer.create", "params": {}})),
+        ]
+        for url, body in refused:
+            with self.assertRaisesRegex(Rejected, "write_request_refused", msg=url + " " + body):
+                validate_open_recipe(policy, self.post(url, body), 4)
+        with self.assertRaisesRegex(Rejected, "write_request_refused"):
+            validate_open_recipe(policy, self.post(graphql, "query=mutation%20Pay%20%7B%20pay%20%7D",
+                                                   "application/x-www-form-urlencoded"), 4)
+    def test_post_reads_accept_real_history_requests(self):
+        policy = campaign()
+        graphql = ORIGIN + "/api/graphql"
+        allowed = [
+            (ORIGIN + "/svc/rr/payments/secure/v1/quickpay/payment/activity/list", "{}"),
+            (ORIGIN + "/ogateway/payment-activity/api/v4/activity", json.dumps({"filter": {"pageSize": 20}})),
+            (ORIGIN + "/gcgapi/prod/public/v1/p2ppayments/activityTransactionDetail", "{}"),
+            (ORIGIN + "/api/transfer/history", "{}"),
+            (graphql, json.dumps({"operationName": "GetPayAnyoneActivityDetailsQuery", "query": "query Q { a }"})),
+            (graphql, json.dumps({"operationName": "SendMoneyActivityQuery", "query": "query Q { a }"})),
+            (graphql, json.dumps({"operationName": "PermutationsQuery", "query": "{ mutation }"})),
+            (graphql, json.dumps({"operationName": "SettingsQuery", "query": "query Q { a }"})),
+            (graphql, json.dumps({"operationName": "AddressBookQuery", "query": "# list\nquery Q {\n  a\n}"}, indent=2)),
+            (graphql, json.dumps({"operationName": "ActivityQuery", "extensions": {"persistedQuery": {"version": 1}}})),
+        ]
+        for url, body in allowed:
+            validate_open_recipe(policy, self.post(url, body), 4)
+        validate_open_recipe(policy, self.post(ORIGIN + "/activity/list", "page=1&size=20",
+                                               "application/x-www-form-urlencoded"), 4)
         get_only = campaign()
         get_only["sources"][0]["methods"] = ["GET"]
         with self.assertRaisesRegex(Rejected, "source_not_allowed"):
-            validate_open_recipe(get_only, ok, 4)
-        put = recipe()
-        put["reads"][1] = {"url": ORIGIN + "/api/x", "method": "PUT", "contentType": "application/json", "body": "{}"}
-        with self.assertRaisesRegex(Rejected, "recipe_invalid"):
-            validate_open_recipe(policy, put, 4)
+            validate_open_recipe(get_only, self.post(ORIGIN + "/activity/list", "{}"), 4)
+        for change in ({"method": "PUT"}, {"contentType": ["application/json"]}, {"contentType": "text/plain"},
+                       {"body": "\x00"}, {"body": 5}):
+            bad = self.post(ORIGIN + "/activity/list", "{}")
+            bad["reads"][1].update(change)
+            with self.assertRaisesRegex(Rejected, "recipe_invalid"):
+                validate_open_recipe(policy, bad, 4)
+        for url in (5, None, "https://[bad/x"):
+            bad = self.post(ORIGIN + "/activity/list", "{}")
+            bad["reads"][1]["url"] = url
+            with self.assertRaises(Rejected):
+                validate_open_recipe(policy, bad, 4)
+        validate_open_recipe(policy, {**recipe(), "reads": [{"url": ORIGIN + "/api/v2/me"},
+                             {"url": ORIGIN + "/odata/Activity?$top=50&expand"}]}, 4)
     def test_credential_headers_exclude_transport_control(self):
         bearer = credential_headers({"origin": ORIGIN, "kind": "bearer", "value": "abc"}, ORIGIN)
         self.assertEqual(list(bearer.items()), [("Authorization", "Bearer abc")])
         for value in ({"Host": "evil.example"}, {"Content-Length": "0"}, {COOKIE: "a", COOKIE.lower(): "b"},
-                      {"X Bad": "a"}, {COOKIE: "line\nbreak"}, {COOKIE: ""}, {}):
+                      {"X Bad": "a"}, {COOKIE: "line\nbreak"}, {COOKIE: ""}, {},
+                      {COOKIE: "a", "X-HTTP-Method-Override": "DELETE"}, {COOKIE: "a", "content-type": "text/plain"},
+                      {COOKIE: "a", "X-Acct-4821337711": "1"}):
             with self.assertRaisesRegex(Rejected, "credential_headers_invalid"):
                 credential_headers({"origin": ORIGIN, "kind": "headers", "value": value}, ORIGIN)
         with self.assertRaisesRegex(Rejected, "invalid_credential"):
@@ -225,23 +288,40 @@ class RecipeTests(unittest.TestCase):
 
 
 class AcquisitionTests(unittest.TestCase):
-    def test_session_headers_reach_only_the_bank_after_the_anonymous_gate(self):
+    def test_session_headers_reach_only_the_bank_and_the_probe_gets_only_public_ones(self):
         bank = Bank()
-        _, _, reads, _ = acquired(bank=bank)
-        kinds = [call[0] for call in bank.calls]
-        self.assertEqual(kinds, ["probe", "probe", "bank", "bank"])
+        _, _, reads, artifact = acquired(bank=bank)
+        self.assertEqual([call[0] for call in bank.calls], ["probe", "probe", "bank", "bank"])
         for call in bank.calls:
             self.assertTrue(call[1].startswith(ORIGIN + "/"))
             if call[0] == "bank":
-                self.assertEqual(call[2]["Cookie"], SESSION)
-                self.assertEqual(call[2]["Accept"], "application/json")
+                self.assertEqual((call[2][COOKIE], call[2]["X-CSRF-Token"]), (SESSION, CSRF))
+            else:
+                self.assertEqual(call[2], {"X-Client-Version": "web", "Accept": "application/json"})
         self.assertEqual({read.account_id for read in reads}, {"open:" + ORIGIN + ":user-48213377"})
         self.assertNotIn("user-48213377", repr(reads))
-    def test_anonymously_readable_json_is_refused_but_a_login_page_is_not(self):
+        self.assertEqual([request["gated"] for request in artifact["requests"]], [True, True])
+    def test_data_served_without_the_secret_headers_is_refused(self):
+        # The same rows come back to a caller holding only the public headers.
         with self.assertRaisesRegex(Rejected, "anonymous_access_allowed"):
-            acquired(bank=Bank(anonymous=(200, True)))
-        acquired(bank=Bank(anonymous=(200, False)))
-        acquired(bank=Bank(anonymous=(302, False)))
+            acquired(bank=Bank(anonymous=(200, "same")))
+        # A 2xx JSON error envelope, a login page or a redirect is not the data.
+        acquired(bank=Bank(anonymous=(200, {"error": "login_required"})))
+        acquired(bank=Bank(anonymous=(200, None)))
+        acquired(bank=Bank(anonymous=(302, None)))
+    def test_a_credential_with_no_secret_bearing_header_is_not_a_session(self):
+        body = payload()
+        body["credential"]["value"] = {"User-Agent": "Mozilla/5.0", "X-Client-Version": "web"}
+        with self.assertRaisesRegex(Rejected, "credential_not_secret"):
+            acquired(body=body)
+    def test_sandbox_and_malformed_hosts_are_not_the_bank(self):
+        policy = campaign()
+        for host in ("sandbox.bank.example", "api-test.bank.example", "developer.bank.example",
+                     "evil.com%2f.bank.example", "evil.com\\.bank.example"):
+            bad = recipe()
+            bad["reads"] = [{"url": "https://" + host + "/v1/me"}, {"url": "https://" + host + "/v1/activity"}]
+            with self.assertRaises(Rejected):
+                validate_open_recipe(policy, bad, 4)
     def test_identity_and_history_must_resolve(self):
         body = payload()
         body["recipe"]["identity"]["path"] = ["user", "missing"]
@@ -257,18 +337,52 @@ class AcquisitionTests(unittest.TestCase):
             acquired(bank=Bank(bodies={"/api/v2/me": ME, "/api/v2/users/user-48213377/activity": few}))
     def test_post_read_replays_the_exact_body_without_credentials_in_the_probe(self):
         body = payload()
-        document = json.dumps({"operationName": "GetActivityQuery", "query": "query GetActivityQuery { a }"})
+        document = json.dumps({"operationName": "GetActivityQuery", "query": "query GetActivityQuery {\n  a\n}"})
         body["recipe"]["reads"][1] = {"url": ORIGIN + "/api/graphql", "method": "POST",
                                       "contentType": "application/json", "body": document}
         bank = Bank(bodies={"/api/v2/me": ME, "/api/graphql": HISTORY})
         _, _, reads, artifact = acquired(bank=bank, body=body)
         self.assertEqual(reads[1].method, "POST")
         self.assertEqual(bank.calls[-1][3:], (document, "application/json"))
-        self.assertEqual(bank.calls[1], ("probe", ORIGIN + "/api/graphql", document))
+        probe = bank.calls[1]
+        self.assertEqual((probe[0], probe[1], probe[3]), ("probe", ORIGIN + "/api/graphql", document))
+        self.assertNotIn(COOKIE, probe[2])
         request = artifact["requests"][1]
         self.assertEqual(request["method"], "POST")
         self.assertEqual(request["body"]["fields"]["$.operationName"]["values"], ["GetActivityQuery"])
         self.assertNotIn("query GetActivityQuery", canonical(artifact).decode())
+    def test_slow_peer_cannot_hold_a_request_past_its_deadline(self):
+        from transcripts import transport as module
+        from transcripts.transport import HTTPTransport
+        client, server = socket.socketpair()
+        class PassThrough:
+            minimum_version = None
+            def wrap_socket(self, raw, server_hostname=None):
+                return raw
+        def peer():
+            try:
+                server.recv(65536)
+                for byte in b"HTTP/1.1 200 OK\r\nX-Pad: " + b"a" * 200:
+                    server.sendall(bytes([byte]))
+                    time.sleep(0.05)
+            except OSError:
+                pass
+        threading.Thread(target=peer, daemon=True).start()
+        def fake(host, port=443, timeout=15):
+            client.settimeout(timeout)
+            return client
+        started = time.monotonic()
+        try:
+            with patch.object(module, "public_socket", fake), \
+                    patch.object(module.ssl, "create_default_context", lambda: PassThrough()):
+                with self.assertRaisesRegex(Rejected, "request_timeout"):
+                    HTTPTransport("direct").request_provider("https://inference.example/v1/chat/completions",
+                                                             headers={"Accept": "application/json"}, body=b"{}",
+                                                             timeout=0.4)
+        finally:
+            client.close()
+            server.close()
+        self.assertLess(time.monotonic() - started, 2.0)
 
 
 class TranscriptTests(unittest.TestCase):
@@ -278,7 +392,7 @@ class TranscriptTests(unittest.TestCase):
         encoded = canonical(artifact).decode()
         for secret in PRIVATE + ("Illinois", "Bob Example", "carol77", "12.50", "2026-09-30", "SYNTHETIC-CSRF"):
             self.assertNotIn(secret, encoded)
-        self.assertEqual(artifact["credentialHeaders"], ["cookie", "x-csrf-token"])
+        self.assertEqual(artifact["credentialHeaders"], ["cookie", "x-client-version", "x-csrf-token"])
         history = artifact["requests"][1]
         self.assertEqual(history["path"], "/api/v2/users/{id}/activity")
         self.assertEqual(history["query"], [{"name": "limit", "value": "20"}, {"name": "cursor", "value": "{digits:10}"}])
@@ -315,12 +429,86 @@ class TranscriptTests(unittest.TestCase):
                        lambda a: a["requests"][1].update(path="/api/v2/users/user-48213377/activity"),
                        lambda a: a["requests"][1]["query"].append({"name": "cursor", "value": "4821337700"}),
                        lambda a: a.update(notes="call 4155551234567"),
+                       lambda a: a["requests"][1]["fields"].update({"$.activity.items[].acct_4821337700": {"types": ["string"]}}),
+                       lambda a: a["requests"][1]["fields"].update({"$.activity.items[].abcdefabcdefabcdefab": {"types": ["string"]}}),
+                       lambda a: a["requests"][0]["fields"]["$.user.address.state"].update(values=["Illinois"]),
+                       lambda a: a["requests"][1]["fields"]["$.activity.items[].status"].update(values=["acct-9912-7731"]),
+                       lambda a: a["requests"][1].update(path="/api/v2/users/alice.example/activity"),
+                       lambda a: a["requests"][1]["query"].append({"name": "type", "value": "user-48213377"}),
+                       lambda a: a.update(sourceOrigins=["https://evil.com\\.bank.example"]),
+                       lambda a: a.update(sourceOrigins=["https://acme-plumbing.bank.example"]),
+                       lambda a: a["requests"][1].update(gated=False),
                        lambda a: a.update(credentialHeaders=["cookie", "host"]),
                        lambda a: a.update(rawBody={"x": 1})):
             candidate = copy.deepcopy(artifact)
             mutate(candidate)
             with self.assertRaises(Rejected):
                 validate_artifact(policy, candidate)
+    def leak_check(self, me=None, history=None, url=None, secrets=()):
+        body = payload()
+        bodies = {"/api/v2/me": me or ME, "/api/v2/users/user-48213377/activity": history or HISTORY}
+        if url:
+            body["recipe"]["reads"][1]["url"] = url
+            bodies[url[len(ORIGIN):].split("?")[0]] = history or HISTORY
+        policy, _, _, artifact = acquired(bank=Bank(bodies=bodies), body=body)
+        validate_artifact(policy, artifact)
+        encoded = canonical(artifact).decode()
+        for secret in secrets:
+            self.assertNotIn(secret, encoded)
+        return artifact
+    def test_data_used_as_object_keys_is_collapsed(self):
+        me = copy.deepcopy(ME)
+        me["user"]["sharedWith"] = {"alicesmith": True, "bobjones": True, "carolwhite": False}
+        me["user"]["contacts"] = {"gracehall": {"since": "2020", "tag": "x"}, "heidiklum": {"since": "2021"},
+                                  "ivanpetrov": {"since": "2022", "note": "y", "extra": 1}}
+        me["user"]["accounts"] = {"kQzmW7pLxa": {"balance": 1.5}}
+        me["user"]["byRef"] = {"abcdefabcdefabcdefab": {"balance": 2.5}}
+        self.leak_check(me=me, secrets=("alicesmith", "bobjones", "gracehall", "ivanpetrov", "kQzmW7pLxa",
+                                         "abcdefabcdefabcdefab"))
+    def test_status_like_values_outside_payment_rows_are_never_kept(self):
+        me = copy.deepcopy(ME)
+        me["user"].update(maritalStatus="Married", residencyState="Kansas", accountType="Premier",
+                          billing={"state": "Illinois"}, defaultPaymentMethod="Visa-4242")
+        history = copy.deepcopy(HISTORY)
+        for row in history["activity"]["items"]:
+            row.update(merchantState="Nevada", addressState="Oregon", holderType="Widow", type="card-4242")
+        artifact = self.leak_check(me=me, history=history, secrets=("Married", "Kansas", "Premier", "Illinois",
+                                   "Visa-4242", "Nevada", "Oregon", "Widow", "card-4242"))
+        self.assertTrue(all("values" not in entry for entry in artifact["requests"][0]["fields"].values()))
+    def test_url_identifiers_and_tokens_are_templated(self):
+        for url, secrets, path in (
+                (ORIGIN + "/orgs/acme-plumbing-llc/activity?limit=20", ("acme-plumbing-llc",), "/orgs/{id}/activity"),
+                (ORIGIN + "/accounts/kQzmW7pLxa/history", ("kQzmW7pLxa",), "/accounts/{id}/history"),
+                (ORIGIN + "/u/alice.smith/activity", ("alice.smith",), "/u/{id}/activity"),
+                (ORIGIN + "/api/activity?state=Zx81TokenValue&type=CHK-0048213377&acct_4821337711=1",
+                 ("Zx81TokenValue", "CHK-0048213377", "acct_4821337711"), "/api/activity")):
+            artifact = self.leak_check(url=url, secrets=secrets)
+            self.assertEqual(artifact["requests"][1]["path"], path)
+    def test_tenant_host_labels_are_not_recorded(self):
+        policy = campaign()
+        body = payload()
+        body["credential"]["origin"] = "https://acme-plumbing.bank.example"
+        body["recipe"]["reads"] = [{"url": "https://acme-plumbing.bank.example/api/v2/me"},
+                                   {"url": "https://acme-plumbing.bank.example/api/v2/users/user-48213377/activity"}]
+        _, _, _, artifact = acquired(policy=policy, body=body)
+        self.assertEqual(artifact["sourceOrigins"], ["https://{sub}.bank.example"])
+        body["credential"]["origin"] = "https://api2.bank.example"
+        for read in body["recipe"]["reads"]:
+            read["url"] = read["url"].replace("acme-plumbing", "api2")
+        self.assertEqual(acquired(policy=policy, body=body)[3]["sourceOrigins"], ["https://api2.bank.example"])
+    def test_post_body_values_and_notes_with_personal_text_are_not_kept(self):
+        body = payload()
+        document = json.dumps({"operationName": "GetActivityQuery", "query": "query Q { a }",
+                               "variables": {"accountType": "SAV-0048213377", "pageState": "AAEBAgMEBQYH"}})
+        body["recipe"]["reads"][1] = {"url": ORIGIN + "/api/graphql", "method": "POST",
+                                      "contentType": "application/json", "body": document}
+        _, _, _, artifact = acquired(bank=Bank(bodies={"/api/v2/me": ME, "/api/graphql": HISTORY}), body=body)
+        for secret in ("SAV-0048213377", "AAEBAgMEBQYH"):
+            self.assertNotIn(secret, canonical(artifact).decode())
+        for notes in ("Paid Bob Example last week", "call 415-555-0101", "ssn 123-45-6789",
+                      "card 4111 1111 1111 1111", "id is user 4821 3377"):
+            with self.assertRaisesRegex(Rejected, "unsafe_notes"):
+                acquired(body=payload(notes=notes))
     def test_format_classes_never_echo_values(self):
         samples = {"2026-10-01T08:00:00+05:30": "datetime:iso8601:offset", "2026-10-01": "date:iso8601", "": "empty",
                    "123e4567-e89b-42d3-a456-426614174000": "uuid", "0012345": "digits:7", "-45": "digits:neg:2",
@@ -368,16 +556,56 @@ class AssessmentTests(unittest.TestCase):
         forged = dict(honest, mapping=dict(MAPPING, amount="$.activity.items[].memo"), score=100, useful=True)
         with self.assertRaisesRegex(Rejected, "model_result_invalid"):
             check_assessment(policy, reads, context, artifact, forged)
-    def test_model_reply_parsing_is_lenient_about_wrapping_only(self):
-        fenced = "```json\n" + json.dumps({"mapping": MAPPING, "completedStatus": ["completed"], "score": 100}) + "\n```"
-        self.assertEqual(parse_proposal(fenced), {"mapping": MAPPING, "completedStatus": ["completed"]})
+    def test_model_reply_parsing_finds_the_answer_in_wrapped_replies(self):
+        answer = json.dumps({"mapping": MAPPING, "completedStatus": ["completed"], "score": 100})
+        expected = {"mapping": MAPPING, "completedStatus": ["completed"]}
+        for text in ("```json\n" + answer + "\n```",
+                     "<think>maybe {\"mapping\": {\"paymentId\": \"$.wrong\"}} or {broken</think>\n" + answer,
+                     "Here is the result: " + answer + " Let me know.",
+                     json.dumps({"note": "first"}) + "\n" + answer):
+            self.assertEqual(parse_proposal(text), expected)
         self.assertEqual(parse_proposal(json.dumps({"mapping": {"paymentId": None, "extra": "x"}})),
                          {"mapping": {}, "completedStatus": []})
-        for text in ("no json here", "{broken", None):
+        for text in ("no json here", "{broken", None, json.dumps({"mapping": "x"}), json.dumps({"score": 100})):
             with self.assertRaisesRegex(Rejected, "model_output_not_json"):
                 parse_proposal(text)
-        with self.assertRaisesRegex(Rejected, "model_result_invalid"):
-            parse_proposal(json.dumps({"mapping": "x"}))
+    def test_role_checks_accept_common_bank_encodings(self):
+        from transcripts.open_source import _numeric, _timestamp
+        for value in (12.5, -3, "-12.50", "12,50", "1.234,56", "1,000 USD", "Rp 150.000", "\u20ab 1.000.000",
+                      "$12.50", "(45.00)", "0.10"):
+            self.assertTrue(_numeric(value), value)
+        for value in ("2026-10-01", "txn-00017", "hello", "", None, True, "0012345", "1 2 3 4 5"):
+            self.assertFalse(_numeric(value), value)
+        for value in ("2026-10-01T08:00:00Z", "2026-10-01", "10/01/2026", "01.10.2026", "10/01/2026 08:00:00",
+                      "20261001", "20261001083000", 1759300000, 1759300000000, 1759300000.25, "1759300000"):
+            self.assertTrue(_timestamp(value), value)
+        for value in ("12.50", "hello", 42, "4821337700123", None, True, "20269901", "9" * 5000):
+            self.assertFalse(_timestamp(value), value)
+    def test_selector_through_data_keyed_siblings_and_sort_fields_still_maps(self):
+        rows = copy.deepcopy(HISTORY["activity"]["items"])
+        nested = {"sortBy": "createdAt", "orderBy": "amount",
+                  "buckets": {"usd": {"items": rows}, "eur": {"items": []}, "gbp": {"items": []}}}
+        body = payload()
+        body["recipe"]["history"]["path"] = ["buckets", "usd", "items"]
+        policy, context, reads, artifact = acquired(
+            bank=Bank(bodies={"/api/v2/me": ME, "/api/v2/users/user-48213377/activity": nested}), body=body)
+        self.assertEqual(artifact["history"]["path"], "$.buckets.{key}.items")
+        mapping = {role: path.replace("$.activity.items", "$.buckets.{key}.items") for role, path in MAPPING.items()}
+        result = assess(policy, reads, context, artifact, {"mapping": mapping, "completedStatus": []})
+        self.assertEqual((result["score"], result["unverified"]), (100, []))
+        # A response value naming a schema field under a sort key does not hide that field.
+        self.assertIn("$.buckets.{key}.items[].createdAt", artifact["requests"][1]["fields"])
+    def test_resubmitting_the_same_history_under_another_identity_collides(self):
+        from transcripts.open_source import payment_aliases
+        policy, context, reads, artifact = acquired()
+        result = assess(policy, reads, context, artifact, {"mapping": MAPPING, "completedStatus": []})
+        first = payment_aliases(policy, reads, context, artifact, result)
+        other = payload()
+        other["recipe"]["identity"]["path"] = ["user", "email"]
+        policy, context, reads, artifact = acquired(body=other)
+        self.assertNotEqual(reads[0].account_id, "open:" + ORIGIN + ":user-48213377")
+        self.assertEqual(payment_aliases(policy, reads, context, artifact, result), first)
+        self.assertEqual(first, ["open-payment:" + ORIGIN + ":txn-0001" + digit for digit in "789"])
 
 
 class ProviderTests(unittest.TestCase):
@@ -500,10 +728,10 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual((status["state"], status["reason"]), ("rejected", "mapping_missing_amount"))
         self.assertEqual(self.archive.records, [])
     def test_failures_surface_specific_fixed_codes(self):
-        self.bank.anonymous = (200, True)
+        self.bank.anonymous = (200, "same")
         _, status = self.run_job()
         self.assertEqual((status["state"], status["reason"]), ("rejected", "anonymous_access_allowed"))
-        self.bank.anonymous = (401, False)
+        self.bank.anonymous = (401, None)
         _, status = self.run_job(wallet=2, body=payload(notes="call me on 4155550101999"))
         self.assertEqual(status["reason"], "unsafe_notes")
         self.bank.provider_failures = ["provider_http_unauthorized"]
@@ -513,11 +741,69 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(self.run_job(wallet=1)[1]["state"], "paid")
         _, status = self.run_job(wallet=2)
         self.assertEqual((status["state"], status["reason"]), ("rejected", "duplicate_account"))
+    def test_same_history_under_another_identity_selector_is_a_duplicate(self):
+        self.assertEqual(self.run_job(wallet=1)[1]["state"], "paid")
+        other = payload()
+        other["recipe"]["identity"]["path"] = ["user", "email"]
+        _, status = self.run_job(wallet=2, body=other)
+        self.assertEqual((status["state"], status["reason"]), ("rejected", "duplicate_account"))
+    def test_campaign_list_survives_an_unavailable_ledger(self):
+        with patch.object(self.epoch.ledger, "availability", side_effect=Rejected("state_unavailable")):
+            self.assertEqual(set(self.runtime.dispatch("campaigns", {})), {"policyDigest", "campaigns"})
     def test_runtime_requires_the_measured_open_prompt(self):
         policy = dict(self.policy, openPromptDigest="0" * 64)
         with patch("transcripts.runtime.Channel", return_value=SigningChannel()):
             with self.assertRaisesRegex(Rejected, "prompt_mismatch"):
                 Runtime(policy, OpenEpoch(), self.bank, self.archive, attester=lambda *args: b"q")
+
+
+class DurableCapacityTests(unittest.TestCase):
+    def test_snapshot_holds_every_shipped_campaign_and_restarts(self):
+        from pathlib import Path
+        from transcripts.aws_state import Authority, StateAnchor
+        from transcripts.epoch import BootEpoch
+        from transcripts.tests.test_core_epoch import synthetic_epoch
+        from transcripts.tests.test_durable import CONFIG, SyntheticAWS
+        policy = json.loads((Path(__file__).parents[1] / "policy.json").read_text())
+        opens = [item for item in policy["campaigns"] if "openSource" in item]
+        self.assertGreater(len(opens), 5)
+        old = synthetic_epoch()
+        signer = old._signer
+        old.close()
+        aws = SyntheticAWS()
+
+        def boot():
+            authority = Authority(CONFIG, aws)
+            head = authority.load()
+            anchor = StateAnchor(CONFIG, digest(policy), signer.address.lower(), b"0" * 32, b"synthetic-wrapped-master",
+                                 authority, head)
+            snapshot = anchor.open(head) if head else None
+            with patch("transcripts.epoch._require_nsm"), patch("transcripts.epoch.time.time", return_value=NOW + 5):
+                return BootEpoch.create(signer, budget_minor=50_000_000, state_anchor=anchor, initial_snapshot=snapshot)
+
+        epoch = boot()
+        # More distinct campaigns than the old five-campaign snapshot bound, within in-flight capacity.
+        for index, item in enumerate(opens[:6], 1):
+            request = {"version": 1, "campaignId": item["id"], "payoutAddress": "0x" + f"{index:040x}",
+                       "provider": "openai", "model": "gpt-x", "privacyMode": "provider_visible", "consent": True,
+                       "policyDigest": digest(item), "expiresAt": NOW + 600, "limits": campaign_limits(item)}
+            self.assertEqual(epoch.ledger.reserve(item, request, NOW)["state"], "reserved")
+        self.assertEqual(len(epoch.ledger.availability(policy["campaigns"], NOW)["campaigns"]), len(policy["campaigns"]))
+        epoch.ledger.close()
+        restarted = boot()
+        self.assertEqual(restarted.ledger.retirement_status()["state"], "open")
+        restarted.ledger.close()
+    def test_paid_rows_do_not_reserve_a_full_job_allowance(self):
+        from transcripts.aws_state import JOB_STORAGE_ALLOWANCE, MAX_CIPHERTEXT, PAID_STORAGE_ALLOWANCE, StateAnchor
+        anchor = object.__new__(StateAnchor)
+        row = {"id": "a" * 32, "campaign": canonical(campaign()).decode(), "request": None, "artifact": None,
+               "evidence": None, "receipt_job": None, "payout_intent": None, "account_aliases": None}
+        paid = [dict(row, id=f"{index:032x}", state="paid") for index in range(10)]
+        anchor.capacity({"revision": 1, "budget": 50_000_000, "jobs": paid, "retirement": {}, "runtime": {}})
+        self.assertLess(10 * PAID_STORAGE_ALLOWANCE, JOB_STORAGE_ALLOWANCE)
+        live = [dict(row, id=f"{index:032x}", state="reserved") for index in range(MAX_CIPHERTEXT // JOB_STORAGE_ALLOWANCE + 1)]
+        with self.assertRaisesRegex(Rejected, "state_capacity"):
+            anchor.capacity({"revision": 1, "budget": 50_000_000, "jobs": live, "retirement": {}, "runtime": {}})
 
 
 class HostAndCliTests(unittest.TestCase):

@@ -30,6 +30,10 @@ import struct
 MAX_CIPHERTEXT = 327680
 MAX_RECORD = 40960
 JOB_STORAGE_ALLOWANCE = 49152
+# A paid row is final apart from its last signed receipt.
+PAID_STORAGE_ALLOWANCE = 4096
+# Distinct campaign definitions a snapshot may reference; one per stored job at most.
+MAX_SNAPSHOT_CAMPAIGNS = 64
 AUTHORITY_FIELDS = {'kind','region','functionArn','namespace','wrappingKeyId',
                     'credentialRoleArn','maxCiphertextBytes','initialWalletNonce'}
 HEAD_FIELDS = {'revision','writerGeneration','ciphertextDigest','ciphertext','wrappedMaster','lastOpId','writeCommitment'}
@@ -201,7 +205,7 @@ def pack_snapshot(snapshot):
 
 def unpack_snapshot(value):
     value=copy.deepcopy(value);campaigns=value.pop('campaigns')
-    require(isinstance(campaigns,dict) and len(campaigns)<=5,'state_invalid')
+    require(isinstance(campaigns,dict) and len(campaigns)<=MAX_SNAPSHOT_CAMPAIGNS,'state_invalid')
     for row in value['jobs']:
         campaign=campaigns.get(row['campaign']);require(campaign is not None,'state_invalid')
         require(digest(campaign)==row['campaign'],'state_invalid');row['campaign']=canonical(campaign).decode()
@@ -237,10 +241,16 @@ class StateAnchor:
         return snapshot
     def capacity(self,snapshot):
         packed=pack_snapshot(snapshot);require(len(packed['jobs'])<=64,'state_capacity')
+        # Never write a snapshot the reader would refuse.
+        require(len(packed['campaigns'])<=MAX_SNAPSHOT_CAMPAIGNS,'state_capacity')
         usage=len(canonical(packed))+28
         for row in packed['jobs']:
-            if row['state'] in {'reserved','submitted','verifying','accepted','payout_pending','paid'}:
+            # Reserve room for what an unfinished job can still add. A paid job
+            # only gains its final receipt, so the epoch budget, not a fixed
+            # per-job allowance, bounds how many paid jobs fit.
+            if row['state'] in {'reserved','submitted','verifying','accepted','payout_pending'}:
                 usage+=max(0,JOB_STORAGE_ALLOWANCE-len(canonical(row)))
+            elif row['state']=='paid':usage+=PAID_STORAGE_ALLOWANCE
         require(usage<=MAX_CIPHERTEXT,'state_capacity')
         return packed
     def read(self):

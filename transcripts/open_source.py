@@ -1,59 +1,102 @@
 """Contributor-authored read-only recipes for banks without a reviewed adapter.
 
-The contributor's local agent chooses the GET requests. The enclave executes them
-against the campaign's bank origin with the contributor's session headers and
+The contributor's local agent chooses the requests. The enclave replays them on a
+host under the campaign's bank domain with the contributor's session headers and
 retains a value-free transcript: request templates, credential header names,
-response field paths with type/format classes, and tokens under status-like keys.
-A model proposes which history fields carry payment details; code checks that
-proposal against the live records and derives the score itself, so an arbitrary
-contributor-chosen inference endpoint cannot grant a reward.
+response field paths with type/format classes, and status tokens seen in the
+history rows. A model proposes which history fields carry payment details; code
+checks that proposal against the live records and derives the score itself, so an
+arbitrary contributor-chosen inference endpoint cannot grant a reward.
+
+Redaction here is a set of conservative heuristics, not a proof. Anything added
+to the transcript must also be accepted by validate_transcript, which applies the
+same static screens to a stored or received artifact.
 """
 import copy
+import json
 import re
 import time
+import unicodedata
 from urllib.parse import parse_qsl, urlsplit
 
-from .common import Rejected, canonical, fields, integer, opaque_id, require
+from .common import Rejected, canonical, fields, integer, opaque_id, require, strict_json
 
 KIND = "open-json-read-v1"
 RUBRIC = "transcript-mapping-v1"
 ROLE_WEIGHTS = {"paymentId": 25, "amount": 25, "timestamp": 20, "counterparty": 15, "status": 10, "currency": 5}
 ROLES = tuple(ROLE_WEIGHTS)
-OPEN_FAILURES = {"recipe_invalid", "credential_headers_invalid", "anonymous_access_allowed", "write_request_refused",
-                 "identity_path_invalid", "history_path_invalid", "unsafe_notes", "transcript_too_large",
-                 "model_output_not_json", "model_output_truncated"} | {"mapping_missing_" + role for role in ROLES}
+OPEN_FAILURES = {"recipe_invalid", "credential_headers_invalid", "credential_not_secret", "anonymous_access_allowed",
+                 "write_request_refused", "identity_path_invalid", "history_path_invalid", "unsafe_notes",
+                 "transcript_too_large", "model_output_not_json", "model_output_truncated"} | {
+                     "mapping_missing_" + role for role in ROLES}
 LIMITATIONS = {"contributor_declared_identity", "no_human_identity_claim", "value_free_shapes_only",
                "no_payment_authenticity_claim", "heuristic_redaction", "model_mapping_code_verified"}
 MAX_ARTIFACT_BYTES = 30000
 MAX_FIELDS = 400
 MAX_NOTES = 4000
 MAX_ENUM_VALUES = 12
+MAX_PAYMENT_ALIASES = 24
 
-FORBIDDEN_HEADERS = frozenset({"host", "content-length", "transfer-encoding", "connection", "accept-encoding",
-                               "upgrade", "te", "trailer", "expect", "keep-alive", "proxy-authorization",
-                               "proxy-connection"})
+FORBIDDEN_HEADERS = frozenset({"host", "content-length", "content-type", "transfer-encoding", "connection",
+                               "accept-encoding", "upgrade", "te", "trailer", "expect", "keep-alive",
+                               "proxy-authorization", "proxy-connection", "x-http-method-override", "x-http-method",
+                               "x-method-override"})
+# A session must include at least one header that plausibly carries a secret; the
+# anonymous probe replays the request with every other header.
+SECRET_HEADER = re.compile(r"cookie|authorization|token|csrf|xsrf|auth|session|secret|key|signature|sid|jwt|"
+                           r"credential|passw|device|fingerprint|ticket")
 HEADER_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]{0,63}")
-KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_-]{0,63}")
-TOKEN = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,39}")
+HOSTNAME = re.compile(r"(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}")
+TEST_HOST = re.compile(r"(?:^|[.-])(?:sandbox|test|testing|dev|develop|developer|developers|staging|stage|uat|demo|"
+                       r"docs|mock|qa|preprod|sit)(?:[.-]|$)")
+# Host labels kept verbatim in a transcript; any other label under the bank
+# domain may be a tenant or customer name and is shown as {sub}.
+INFRA_LABEL = re.compile(r"(?:www|api|apis|app|apps|secure|online|web|m|mobile|my|login|auth|id|account|accounts|"
+                         r"bank|banking|ib|ibank|ebank|ebanking|digital|connect|gateway|gw|services|service|client|"
+                         r"clients|portal|pay|payments|wallet|open|openapi|public|edge|prod|production|global|"
+                         r"personal|business|retail|internet|netbank|netbanking|home|main|core|rest|graphql|data|"
+                         r"bff|mw)[0-9a-z]{0,6}")
+KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_-]{0,47}")
+TOKEN = re.compile(r"[A-Za-z](?:[A-Za-z_.-]|[0-9](?![0-9])){0,39}")
 FORMAT = re.compile(r"[a-z0-9_]+(?::[a-z0-9_]+){0,2}")
-FIELD_PATH = re.compile(r"\$(?:\[\]|\.(?:\{key\}|[A-Za-z_][A-Za-z0-9_-]{0,63}))*")
-ROLE_SUFFIX = re.compile(r"(?:\.[A-Za-z_][A-Za-z0-9_-]{0,63})+")
-SEGMENT = re.compile(r"[A-Za-z][A-Za-z_.-]{0,39}[0-9]{0,2}[A-Za-z_.-]{0,39}")
-PARAM = re.compile(r"[A-Za-z_][A-Za-z0-9_.\[\]-]{0,63}")
+FIELD_PATH = re.compile(r"\$(?:\[\]|\.(?:\{key\}|[A-Za-z_][A-Za-z0-9_-]{0,47}))*")
+ROLE_SUFFIX = re.compile(r"(?:\.[A-Za-z_][A-Za-z0-9_-]{0,47})+")
+PARAM = re.compile(r"[A-Za-z_$][A-Za-z0-9_.$\[\]-]{0,63}")
+SEGMENT_EXTENSIONS = {"json", "do", "action", "aspx", "php", "html", "jsp", "xml"}
 TYPES = {"null", "boolean", "integer", "number", "string", "object", "array"}
 BODY_TYPES = {"application/json", "application/x-www-form-urlencoded"}
 # A read-only POST is common on bank web apps. The recipe author is responsible for
-# replaying only a history view; these words refuse the obvious state changes.
-WRITE_SEGMENTS = frozenset({"transfer", "send", "pay", "create", "update", "delete", "cancel", "submit", "confirm",
-                            "execute", "approve", "initiate", "schedule", "remove", "add", "edit", "modify",
-                            "withdraw", "deposit", "logout", "enroll", "register"})
-WRITE_OPERATION = re.compile(r"(?i)^(create|update|delete|remove|send|cancel|submit|execute|initiate|make|set|add)|mutation")
+# replaying only a history view; these rules refuse the recognisable state changes.
+WRITE_VERBS = frozenset({"send", "pay", "create", "update", "delete", "cancel", "submit", "confirm", "execute",
+                         "approve", "initiate", "schedule", "remove", "add", "edit", "modify", "withdraw", "deposit",
+                         "logout", "enroll", "register", "set", "make"})
+WRITE_LAST = WRITE_VERBS | {"transfer", "payment", "payout", "order", "withdrawal", "now", "new"}
+READ_WORDS = frozenset({"history", "list", "activity", "activities", "search", "recent", "latest", "summary",
+                        "details", "detail", "statement", "statements", "export", "transactions", "query", "lookup",
+                        "view", "get", "fetch", "read", "find", "inquiry", "enquiry"})
 PAGINATION = {"limit", "size", "page", "pagesize", "perpage", "count", "offset", "skip", "top"}
-QUERY_ENUMS = {"type", "types", "status", "state", "order", "sort", "direction", "kind", "format", "view",
-               "currency", "sortby", "sortorder"}
+QUERY_ENUMS = {"type", "types", "status", "order", "sort", "direction", "kind", "format", "view", "currency",
+               "sortby", "sortorder"}
+SELECTOR_KEYS = {"sortby", "orderby", "sort", "order", "sortfield", "sortkey", "orderfield", "field", "fields",
+                 "groupby", "column", "columns", "include", "expand", "select"}
 PERSONAL_ANCESTORS = ("address", "location", "geo", "contact", "owner", "holder", "person", "customer", "user",
-                      "recipient", "sender", "payer", "payee", "beneficiary", "counterparty", "merchant", "name")
-ENUM_SUFFIXES = ("status", "state", "type", "kind", "currency", "scheme", "direction", "method", "rail", "network")
+                      "recipient", "sender", "payer", "payee", "beneficiary", "counterparty", "merchant", "name",
+                      "billing", "shipping", "profile", "identity")
+ENUM_KEY = re.compile(
+    r"(?:transaction|txn|tx|payment|transfer|order|record|entry|activity|item|operation|posting|settlement|verbose|"
+    r"ux|display|detail|sub|source|target|from|to|original|base|quote|debit|credit|fee|amount|instructed|charged|"
+    r"processing|completion|current|final|overall|payout|payin|local|foreign)*"
+    r"(?:status|state|type|kind|currency|currencycode|scheme|direction|method|rail|network|statuscode)")
+# After one of these the next path segment names a person, account or tenant.
+COLLECTIONS = frozenset({"users", "user", "u", "accounts", "account", "acct", "orgs", "org", "organizations",
+                         "organization", "profiles", "profile", "customers", "customer", "members", "member",
+                         "people", "person", "companies", "company", "merchants", "merchant", "cards", "card",
+                         "wallets", "wallet", "clients", "client", "tenants", "tenant", "businesses", "business",
+                         "contacts", "contact", "recipients", "recipient", "payees", "payee", "beneficiaries",
+                         "beneficiary"})
+FOLLOW = frozenset({"history", "list", "search", "activity", "activities", "recent", "latest", "summary", "details",
+                    "detail", "statement", "statements", "export", "all", "me", "current", "self", "query",
+                    "transactions", "transfers", "payments", "balances", "balance", "info", "overview"})
 ISO_CURRENCIES = frozenset(
     "AED AFN ALL AMD ANG AOA ARS AUD AWG AZN BAM BBD BDT BGN BHD BIF BMD BND BOB BRL BSD BTN BWP BYN BZD CAD "
     "CDF CHF CLP CNY COP CRC CUP CVE CZK DJF DKK DOP DZD EGP ERN ETB EUR FJD FKP GBP GEL GHS GIP GMD GNF GTQ "
@@ -62,10 +105,22 @@ ISO_CURRENCIES = frozenset(
     "PGK PHP PKR PLN PYG QAR RON RSD RUB RWF SAR SBD SCR SDG SEK SGD SHP SLE SOS SRD SSP STN SYP SZL THB TJS "
     "TMT TND TOP TRY TTD TWD TZS UAH UGX USD UYU UZS VES VND VUV WST XAF XCD XOF XPF YER ZAR ZMW ZWL".split())
 ISO_DATETIME = re.compile(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(Z|[+-]\d{2}:?\d{2})?")
+DATE_TEXT = re.compile(r"\d{1,4}[./-]\d{1,2}[./-]\d{1,4}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AaPp][Mm])?)?")
+COMPACT_DATE = re.compile(r"(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])(?:[01]\d|2[0-3])?(?:[0-5]\d){0,2}")
 UUID = re.compile(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}")
+TIME_KEY = re.compile(r"(time|date|created|updated|timestamp|settled|completed|posted|expires|when|at|ts)$")
+# Matched after every Unicode currency symbol has been folded to "$".
+MONEY = re.compile(r"[-+(]?\s?(?:[A-Za-z]{1,4}\.?\$?|\$)?\s?[-+]?"
+                   r"(?:0|[1-9]\d{0,2}(?:[.,'\u00a0 ]\d{3})+|[1-9]\d*)(?:[.,]\d{1,4})?"
+                   r"\s?(?:[A-Za-z]{1,4}|[$%])?\)?")
+MONTH_DATE = re.compile(r"(?i)(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.? \d{1,2},? \d{4}"
+                        r"|\d{1,2} (?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?,? \d{4})"
+                        r"(?:,? \d{1,2}:\d{2}(?::\d{2})?(?: ?[ap]m)?)?")
+DOTNET_DATE = re.compile(r"/Date\(-?\d{9,14}(?:[+-]\d{4})?\)/")
 NOTE_FORBIDDEN = tuple(re.compile(pattern) for pattern in (
     r"\d{6,}", r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", r"[A-Za-z0-9_-]{28,}",
-    r"(?i)bearer\s+[A-Za-z0-9]", r"eyJ[A-Za-z0-9_-]{8,}"))
+    r"(?i)bearer\s+[A-Za-z0-9]", r"eyJ[A-Za-z0-9_-]{8,}", r"\d{2,}[\s.\-/]\d{2,}[\s.\-/]\d{2,}",
+    r"(?:\d[ -]?){12,}"))
 
 
 def validate_open_campaign(campaign):
@@ -79,7 +134,8 @@ def validate_open_campaign(campaign):
             and campaign["safeSchemaFields"] == [], "invalid_policy")
     for source in campaign["sources"]:
         require(source["paths"] == ["/"] and source["methods"] in (["GET"], ["GET", "POST"])
-                and source["parameterNames"] == [] and source["headerNames"] == [], "invalid_source")
+                and source["parameterNames"] == [] and source["headerNames"] == []
+                and HOSTNAME.fullmatch(source["origin"][len("https://"):]), "invalid_source")
     requirements = campaign["evidenceRequirements"]
     require(requirements["historyPath"] == [] and isinstance(requirements["requiredFields"], list)
             and bool(requirements["requiredFields"])
@@ -91,14 +147,40 @@ def validate_open_campaign(campaign):
 
 def origin_in_domain(origin, domain_origin):
     """True when an https origin is the campaign domain or one of its subdomains."""
-    host, domain = urlsplit(origin).hostname or "", urlsplit(domain_origin).hostname or ""
-    return origin == "https://" + host and bool(domain) and (host == domain or host.endswith("." + domain))
+    if not isinstance(origin, str) or not origin.startswith("https://"):
+        return False
+    host, domain = origin[len("https://"):], domain_origin[len("https://"):]
+    return HOSTNAME.fullmatch(host) is not None and (host == domain or host.endswith("." + domain))
 
 
-def campaign_origin(campaign, origin):
-    require(isinstance(origin, str) and any(origin_in_domain(origin, source["origin"])
-                                             for source in campaign["sources"]), "source_not_allowed")
-    return origin
+def campaign_domain(campaign, origin):
+    """The campaign's pinned bank domain that an origin belongs to."""
+    for source in campaign["sources"]:
+        if origin_in_domain(origin, source["origin"]):
+            return source["origin"]
+    raise Rejected("source_not_allowed")
+
+
+def public_origin(campaign, origin):
+    """Origin as shown in a transcript: unfamiliar host labels become {sub}."""
+    domain = campaign_domain(campaign, origin)[len("https://"):]
+    host = origin[len("https://"):]
+    labels = host[:-len(domain)].rstrip(".").split(".") if host != domain else []
+    return "https://" + ".".join([label if INFRA_LABEL.fullmatch(label) else "{sub}" for label in labels] + [domain])
+
+
+def _public_origin_ok(campaign, value):
+    if not isinstance(value, str) or not value.startswith("https://") or len(value) > 300:
+        return False
+    host = value[len("https://"):]
+    for source in campaign["sources"]:
+        domain = source["origin"][len("https://"):]
+        if host == domain:
+            return True
+        if host.endswith("." + domain):
+            return all(label == "{sub}" or INFRA_LABEL.fullmatch(label)
+                       for label in host[:-len(domain) - 1].split("."))
+    return False
 
 
 def _segments(path, code):
@@ -112,24 +194,55 @@ def read_method(read):
     return read.get("method", "GET")
 
 
+def _words(text):
+    """Lower-cased words of a path segment or operation name: sendMoney -> send, money."""
+    return [word.lower() for word in re.findall(r"[A-Z]+(?![a-z])|[A-Z]?[a-z]+|[0-9]+", text)]
+
+
+def _graphql_read(document):
+    # Strip a byte-order mark, insignificant commas/whitespace and leading comments.
+    text = re.sub(r"^(?:[\s,﻿]|#[^\n]*\n?)+", "", document)
+    return text.startswith("{") or re.match(r"query\b", text) is not None or (
+        re.match(r"fragment\b", text) is not None and re.search(r"(?:^|[\s}])mutation\b", text) is None
+        and re.search(r"(?:^|[\s}])subscription\b", text) is None)
+
+
 def _write_guard(read):
     """Refuse requests that name a state change. Not a proof of read-only behaviour."""
-    from .common import strict_json
-    require(not any(part.lower() in WRITE_SEGMENTS for part in urlsplit(read["url"]).path.split("/")),
+    parts = [_words(part.rpartition(".")[0] or part) for part in urlsplit(read["url"]).path.split("/") if part]
+    last = parts[-1] if parts else []
+    # The final segment names the action: /transfer/history and /pay/activity/list
+    # read; /payments/send/{id}, /transfer/now and a bare /transfers collection do not.
+    require(not (last and (last[0] in WRITE_LAST or len(last) == 1 and last[0].rstrip("s") in WRITE_LAST)),
             "write_request_refused")
-    if read["contentType"] != "application/json":
-        return
-    try:
-        body = strict_json(read["body"], maximum=16384)
-    except Rejected:
-        raise Rejected("recipe_invalid") from None
-    for item in body if isinstance(body, list) else [body]:
+    if not (last and last[0] in READ_WORDS):
+        require(not any(words and words[0] in WRITE_VERBS for words in parts), "write_request_refused")
+    if read["contentType"] == "application/json":
+        try:
+            body = strict_json(read["body"], maximum=65536)
+        except Rejected:
+            raise Rejected("recipe_invalid") from None
+        items = body if isinstance(body, list) else [body]
+    else:
+        items = [dict(parse_qsl(read["body"], keep_blank_values=True))]
+    for item in items:
         if not isinstance(item, dict):
             continue
-        document, operation = item.get("query"), item.get("operationName")
-        require(not (isinstance(document, str) and re.search(r"(?:^|[\s}])mutation[\s({]", document)),
-                "write_request_refused")
-        require(not (isinstance(operation, str) and WRITE_OPERATION.search(operation)), "write_request_refused")
+        document, operation, method = item.get("query"), item.get("operationName"), item.get("method")
+        persisted = any(name in item for name in ("extensions", "id", "queryId", "doc_id", "documentId"))
+        if isinstance(document, str) and document.strip():
+            require(_graphql_read(document), "write_request_refused")
+        elif persisted and (isinstance(operation, str) or "extensions" in item):
+            # The document cannot be inspected; only a name that says Query is replayed.
+            require(isinstance(operation, str) and operation.endswith("Query"), "write_request_refused")
+        if isinstance(operation, str):
+            words = _words(operation)
+            require(re.search(r"Mutation|(?<![A-Za-z])mutation", operation) is None
+                    and not (words and words[0] in WRITE_LAST and not operation.endswith("Query")),
+                    "write_request_refused")
+        if isinstance(method, str):
+            # RPC-style bodies name the action in "method".
+            require(not any(word in WRITE_LAST for word in _words(method)), "write_request_refused")
 
 
 def validate_open_recipe(campaign, recipe, max_reads=20):
@@ -141,24 +254,30 @@ def validate_open_recipe(campaign, recipe, max_reads=20):
     require(isinstance(recipe["reads"], list) and 1 <= len(recipe["reads"]) <= limit, "recipe_limits")
     origins = set()
     for read in recipe["reads"]:
-        require(isinstance(read, dict), "recipe_invalid")
+        require(isinstance(read, dict) and isinstance(read.get("url"), str), "recipe_invalid")
         if "method" in read:
             # A POST the bank's own site issues to display history, replayed verbatim.
             fields(read, {"url", "method", "body", "contentType"})
-            require(read["method"] == "POST" and read["contentType"] in BODY_TYPES and isinstance(read["body"], str)
-                    and len(read["body"]) <= 16384 and all(32 <= ord(char) < 127 for char in read["body"]),
+            require(read["method"] == "POST" and isinstance(read["contentType"], str)
+                    and read["contentType"] in BODY_TYPES and isinstance(read["body"], str)
+                    and len(read["body"].encode("utf-8", "replace")) <= 16384
+                    and all(char in "\t\n\r" or ord(char) >= 32 and ord(char) != 127 for char in read["body"]),
                     "recipe_invalid")
-            _write_guard(read)
         else:
             fields(read, {"url"})
         permitted_endpoint(campaign, read["url"], read_method(read))
-        origins.add("https://" + urlsplit(read["url"]).hostname)
+        if "method" in read:
+            _write_guard(read)
+        host = urlsplit(read["url"]).hostname
+        # A developer sandbox or test host under the bank's domain is not the bank.
+        require(TEST_HOST.search(host) is None, "source_not_allowed")
+        origins.add("https://" + host)
     require(len(origins) == 1, "recipe_invalid")
     for name, code in (("identity", "identity_path_invalid"), ("history", "history_path_invalid")):
         fields(recipe[name], {"read", "path"})
         integer(recipe[name]["read"], 0, len(recipe["reads"]) - 1, code)
         _segments(recipe[name]["path"], code)
-    require(len(canonical(recipe)) <= 16384, "recipe_limits")
+    require(len(canonical(recipe)) <= 131072, "recipe_limits")
     return recipe
 
 
@@ -177,14 +296,19 @@ def credential_headers(credential, origin):
     headers, seen, total = {}, set(), 0
     for name, value in credential["value"].items():
         require(isinstance(name, str) and HEADER_NAME.fullmatch(name) and name.lower() not in FORBIDDEN_HEADERS
-                and name.lower() not in seen, "credential_headers_invalid")
+                and name.lower() not in seen and re.search(r"\d{3,}", name) is None, "credential_headers_invalid")
         require(isinstance(value, str) and 1 <= len(value) <= 8192 and all(32 <= ord(char) < 127 for char in value),
                 "credential_headers_invalid")
         seen.add(name.lower())
         total += len(name) + len(value)
         headers[name] = value
     require(total <= 16384, "credential_headers_invalid")
+    require(any(SECRET_HEADER.search(name.lower()) for name in headers), "credential_not_secret")
     return headers
+
+
+def _alnum(text):
+    return re.sub(r"[^a-z0-9]", "", text.lower())
 
 
 def validate_notes(notes):
@@ -213,6 +337,15 @@ def select(body, path):
     return body
 
 
+def _identity_ok(value):
+    return type(value) is int and value >= 100 or isinstance(value, str) and 3 <= len(value) <= 200 and not any(
+        ord(char) < 33 for char in value)
+
+
+def _has_rows(value, minimum=1):
+    return isinstance(value, list) and sum(isinstance(row, dict) and bool(row) for row in value) >= minimum
+
+
 class OpenBankClient:
     def __init__(self, campaign, credential, transport=None, *, profile_id=None, max_reads=20, timeout=45):
         from .policy import validate_campaign
@@ -220,12 +353,12 @@ class OpenBankClient:
         validate_campaign(campaign)
         self.descriptor = validate_open_campaign(campaign)
         require(profile_id is None, "invalid_profile")
-        require(isinstance(credential, dict) and isinstance(credential.get("origin"), str) and any(
-            origin_in_domain(credential["origin"], source["origin"]) for source in campaign["sources"]),
-            "invalid_credential")
+        require(isinstance(credential, dict) and any(origin_in_domain(credential.get("origin"), source["origin"])
+                                                     for source in campaign["sources"]), "invalid_credential")
         self.headers = credential_headers(credential, credential["origin"])
         self.origin = credential["origin"]
         self.campaign = copy.deepcopy(campaign)
+        self.domain = campaign_domain(campaign, self.origin)
         self.transport = transport or HTTPTransport()
         self.max_reads = integer(max_reads, 1, 20, "recipe_limits")
         require(type(timeout) in (int, float) and 0 < timeout <= 300, "request_timeout")
@@ -239,8 +372,7 @@ class OpenBankClient:
         require(bool(self.headers), "invalid_credential")
         validate_open_recipe(self.campaign, recipe, self.max_reads)
         specs = recipe["reads"]
-        urls = [read["url"] for read in specs]
-        require(all(url.startswith(self.origin + "/") for url in urls), "source_not_allowed")
+        require(all(spec["url"].startswith(self.origin + "/") for spec in specs), "source_not_allowed")
         deadline = time.monotonic() + self.timeout
 
         def remaining():
@@ -248,14 +380,27 @@ class OpenBankClient:
             require(value > 0, "request_timeout")
             return value
 
-        # The identity and history reads must not be served to an anonymous caller.
-        for index in sorted({recipe["identity"]["read"], recipe["history"]["read"]}):
-            probe = self.transport.probe_anonymous(urls[index], timeout=remaining(), body=specs[index].get("body"),
+        # Replay the identity and history reads without the secret-bearing headers.
+        # Whatever answers must not contain the selected identity or history rows.
+        public = {name: value for name, value in self.headers.items() if not SECRET_HEADER.search(name.lower())}
+        if not any(name.lower() == "accept" for name in public):
+            public["Accept"] = "application/json"
+        gated = {recipe["identity"]["read"], recipe["history"]["read"]}
+        for index in sorted(gated):
+            probe = self.transport.probe_anonymous(specs[index]["url"], headers=public, timeout=remaining(),
+                                                   body=specs[index].get("body"),
                                                    content_type=specs[index].get("contentType"))
-            require(type(probe) is HTTPResponse and probe.tls_verified is True and probe.body == b"",
-                    "unauthenticated_source")
-            require(not (200 <= probe.status < 300 and probe.headers == (("content-type", "json"),)),
-                    "anonymous_access_allowed")
+            require(type(probe) is HTTPResponse and probe.tls_verified is True, "unauthenticated_source")
+            if 200 <= probe.status < 300 and probe.body:
+                try:
+                    anonymous = strict_json(probe.body, maximum=2_000_000)
+                except Rejected:
+                    continue
+                require(not (index == recipe["identity"]["read"]
+                             and _identity_ok(select(anonymous, recipe["identity"]["path"])))
+                        and not (index == recipe["history"]["read"]
+                                 and _has_rows(select(anonymous, recipe["history"]["path"]))),
+                        "anonymous_access_allowed")
         headers = dict(self.headers)
         if not any(name.lower() == "accept" for name in headers):
             headers["Accept"] = "application/json"
@@ -265,6 +410,7 @@ class OpenBankClient:
                 response = self.transport.request_bank(spec["url"], headers=headers, timeout=remaining(),
                                                        max_bytes=2_000_000, open_headers=True, body=spec.get("body"),
                                                        content_type=spec.get("contentType"))
+                require(type(response) is HTTPResponse and response.status == 200, "bank_http_unexpected_status")
                 body = json_response(response)
             except Rejected as error:
                 if str(error) in {"response_not_json", "response_invalid_json"}:
@@ -272,15 +418,14 @@ class OpenBankClient:
                 raise
             bodies.append(body)
         identity = select(bodies[recipe["identity"]["read"]], recipe["identity"]["path"])
-        require(type(identity) is int and identity >= 100 or isinstance(identity, str) and 3 <= len(identity) <= 200
-                and not any(ord(char) < 33 for char in identity), "identity_path_invalid")
+        require(_identity_ok(identity), "identity_path_invalid")
         rows = select(bodies[recipe["history"]["read"]], recipe["history"]["path"])
         require(isinstance(rows, list) and len(rows) <= 2000, "history_path_invalid")
-        require(sum(isinstance(row, dict) and bool(row) for row in rows)
-                >= self.campaign["evidenceRequirements"]["minRecords"], "insufficient_history")
-        account = "open:" + self.origin + ":" + str(identity)
-        return [LiveRead(job_id, spec["url"], read_method(spec), 200, body, account, now, True, True, (), True)
-                for spec, body in zip(specs, bodies)]
+        require(_has_rows(rows, self.campaign["evidenceRequirements"]["minRecords"]), "insufficient_history")
+        # Keyed on the bank domain so another host of the same bank cannot split one account.
+        account = "open:" + self.domain + ":" + str(identity)
+        return [LiveRead(job_id, spec["url"], read_method(spec), 200, body, account, now, True, True, (), index in gated)
+                for index, (spec, body) in enumerate(zip(specs, bodies))]
 
     def close(self):
         self.headers.clear()
@@ -290,9 +435,40 @@ def _normal(name):
     return re.sub(r"[^a-z0-9]", "", name.lower())
 
 
-def _enum_key(name, ancestors):
-    normal = _normal(name)
-    if not normal.endswith(ENUM_SUFFIXES):
+def _random_like(text):
+    """Dense lower-to-upper switches mark an opaque identifier, not camelCase."""
+    switches = sum(1 for before, after in zip(text, text[1:]) if before.islower() and after.isupper())
+    return len(text) >= 8 and switches * 4 > len(text)
+
+
+def _digits_ok(text):
+    # A single digit between letters (p2p, oauth2) or up to two at the end.
+    return re.search(r"\d{3,}", text) is None and re.search(r"\d{2,}(?!$)", text) is None
+
+
+def _key_ok(key):
+    """Static screen for a retained field name; shared with the validator."""
+    return (isinstance(key, str) and KEY.fullmatch(key) is not None and _digits_ok(key) and not _random_like(key)
+            and not (len(key) >= 16 and re.fullmatch(r"[0-9a-fA-F]+", key)))
+
+
+def _segment_ok(part):
+    """Static screen for a retained URL path segment; shared with the validator."""
+    base, dot, extension = part.rpartition(".")
+    if dot:
+        if extension.lower() not in SEGMENT_EXTENSIONS:
+            return False
+        part = base
+    return (re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,47}", part) is not None and _digits_ok(part)
+            and not _random_like(part))
+
+
+def _param_ok(name):
+    return isinstance(name, str) and PARAM.fullmatch(name) is not None and _digits_ok(name)
+
+
+def _enum_key(name, ancestors=()):
+    if not isinstance(name, str) or ENUM_KEY.fullmatch(_normal(name)) is None:
         return False
     return not any(word in _normal(part) for part in ancestors for word in PERSONAL_ANCESTORS)
 
@@ -326,9 +502,6 @@ def _epoch(number):
     return None
 
 
-TIME_KEY = re.compile(r"(time|date|created|updated|timestamp|settled|completed|posted|expires|when|at|ts)$")
-
-
 def value_format(value, name=""):
     """Closed-vocabulary description of one scalar. Never returns the value.
 
@@ -341,12 +514,16 @@ def value_format(value, name=""):
     if type(value) is int:
         return "int:" + (timed and _epoch(value) or _sign(value) + ":" + str(min(len(str(abs(value))), 20)))
     if type(value) is float:
+        if timed and _epoch(int(value)):
+            return "float:" + _epoch(int(value))
         text = repr(abs(value))
         fraction = len(text.split(".")[1]) if "." in text and "e" not in text else 0
         return "float:" + _sign(value) + ":" + str(min(fraction, 9))
     text = value.strip()
     if not text:
         return "empty"
+    if len(text) > 4096:
+        return "text:xlong:mixed"
     match = ISO_DATETIME.fullmatch(text)
     if match:
         return "datetime:iso8601:" + ("utc" if match.group(1) == "Z" else "offset" if match.group(1) else "naive")
@@ -354,10 +531,16 @@ def value_format(value, name=""):
         return "date:iso8601"
     if re.fullmatch(r"\d{1,2}/\d{1,2}/\d{2,4}", text):
         return "date:slash"
+    if timed and COMPACT_DATE.fullmatch(text):
+        return "date:compact"
+    if DATE_TEXT.fullmatch(text) or MONTH_DATE.fullmatch(text):
+        return "date:text"
+    if DOTNET_DATE.fullmatch(text):
+        return "date:dotnet"
     if UUID.fullmatch(text):
         return "uuid"
     if text.isascii() and text.isdigit():
-        return "digits:" + (timed and _epoch(int(text)) or str(min(len(text), 20)))
+        return "digits:" + (timed and len(text) <= 13 and _epoch(int(text)) or str(min(len(text), 20)))
     if re.fullmatch(r"-\d{1,18}", text):
         return "digits:neg:" + str(len(text) - 1)
     match = re.fullmatch(r"(-?)\d{1,18}\.(\d{1,9})", text)
@@ -369,8 +552,7 @@ def value_format(value, name=""):
         return "email"
     if re.fullmatch(r"https?://\S{1,2000}", text):
         return "url"
-    if len(text) <= 48 and re.search(r"\d", text) and (
-            re.search(r"[$€£¥₹]", text) or any(code in text for code in ISO_CURRENCIES)):
+    if _money(text):
         return "money_text"
     if len(text) >= 16 and re.fullmatch(r"[0-9a-fA-F]+", text):
         return "hex:" + ("short" if len(text) <= 40 else "long")
@@ -379,11 +561,20 @@ def value_format(value, name=""):
     return "text:" + size + ":" + charset
 
 
-def _tainted(bodies):
-    """Lower-cased scalar values seen under keys that are not status-like.
+def _money(text):
+    """An amount written as text: digits with grouping, a sign and a currency mark."""
+    if not 0 < len(text) <= 48 or re.search(r"\d", text) is None:
+        return False
+    folded = "".join("$" if unicodedata.category(char) == "Sc" else char for char in text)
+    return MONEY.fullmatch(folded) is not None
 
-    A candidate retained token that also occurs as such a value is treated as
-    personal or dynamic and is withheld.
+
+def _tainted(bodies):
+    """Lower-cased scalar values seen in the responses.
+
+    A candidate retained name or token that also occurs as a response value is
+    treated as personal or dynamic and withheld. Values under sort/field selector
+    keys name schema fields and are skipped, as are status tokens in status keys.
     """
     found, count = set(), [0]
 
@@ -397,7 +588,7 @@ def _tainted(bodies):
             for item in value:
                 walk(item, name, ancestors)
         elif isinstance(value, str):
-            if not _enum_key(name, ancestors) and 0 < len(value) <= 200:
+            if not _enum_key(name, ancestors) and _normal(name) not in SELECTOR_KEYS and 0 < len(value) <= 200:
                 found.add(value.strip().lower())
         elif type(value) is int:
             found.add(str(value))
@@ -408,31 +599,38 @@ def _tainted(bodies):
 
 
 def _safe_key(key, tainted):
-    if not isinstance(key, str) or not KEY.fullmatch(key) or re.search(r"\d{4,}", key):
-        return "{key}"
-    if key.lower() in tainted or len(key) >= 16 and re.fullmatch(r"[0-9a-fA-F-]+", key):
-        return "{key}"
-    return key
+    return key if _key_ok(key) and key.lower() not in tainted else "{key}"
 
 
 def _dynamic_map(value, tainted):
-    if len(value) < 5:
+    """An object whose keys are data: ids, handles, currency codes, dates."""
+    if len(value) < 3:
         return False
     unsafe = sum(_safe_key(key, tainted) == "{key}" for key in value)
     if unsafe * 5 >= len(value) * 2:
         return True
-    shapes = {frozenset(item) if isinstance(item, dict) and item else None for item in value.values()}
-    return len(value) >= 6 and len(shapes) == 1 and None not in shapes
+    kinds = {_type(item) for item in value.values()}
+    if len(kinds) == 1 and kinds <= {"boolean", "integer", "number", "string", "null"}:
+        return True  # {"alice": true, "bob": true, ...} or {"usd": 10, "eur": 5, ...}
+    # Entities keyed by a handle or id: every value is an object and they share a field.
+    children = [set(item) for item in value.values() if isinstance(item, dict) and item]
+    return len(children) == len(value) and bool(set.intersection(*children))
 
 
-def _shapes(body, tainted):
+def _child(key, tainted, dynamic):
+    return "{key}" if dynamic else _safe_key(key, tainted)
+
+
+def _shapes(body, tainted, enum_prefix=None):
+    """Field paths with types and formats. Status tokens are kept only under
+    enum_prefix (the history rows), never from profile or account reads."""
     entries, objects, present, count = {}, {}, {}, [0]
 
     def walk(value, path, name, ancestors, depth):
         count[0] += 1
         require(depth <= 16 and count[0] <= 60000, "transcript_too_large")
         entry = entries.setdefault(path, {"types": set(), "formats": set(), "values": set(), "enum": False,
-                                          "overflow": False})
+                                          "overflow": False, "withheld": False})
         entry["types"].add(_type(value))
         if isinstance(value, dict):
             require(len(value) <= 1000, "transcript_too_large")
@@ -440,8 +638,7 @@ def _shapes(body, tainted):
             dynamic = _dynamic_map(value, tainted)
             seen = set()
             for key, item in value.items():
-                child = "{key}" if dynamic else _safe_key(key, tainted)
-                target = path + "." + child
+                target = path + "." + _child(key, tainted, dynamic)
                 if target not in seen:
                     seen.add(target)
                     present[target] = present.get(target, 0) + 1
@@ -454,12 +651,14 @@ def _shapes(body, tainted):
             style = value_format(value, name)
             if style is not None:
                 entry["formats"].add(style)
-            if isinstance(value, str) and not path.endswith("{key}") and _enum_key(name, ancestors):
+            leaf = path.rsplit(".", 1)[-1].replace("[]", "")
+            if (isinstance(value, str) and enum_prefix is not None and path.startswith(enum_prefix)
+                    and leaf == name and _enum_key(name, ancestors)):
                 entry["enum"] = True
                 token = value.strip()
                 if not TOKEN.fullmatch(token):
                     entry["overflow"] = True  # Free text under a status-like key: not an enum.
-                elif token.lower() in tainted:
+                elif token.lower() in tainted and token not in ISO_CURRENCIES:
                     entry["withheld"] = True  # The same text occurs as an ordinary value elsewhere.
                 else:
                     entry["values"].add(token)
@@ -474,7 +673,7 @@ def _shapes(body, tainted):
             item["formats"] = sorted(entry["formats"])[:8]
         if entry["enum"] and entry["values"] and not entry["overflow"]:
             item["values"] = sorted(entry["values"])
-            if entry.get("withheld"):
+            if entry["withheld"]:
                 item["valuesIncomplete"] = True
         parent = path.rsplit(".", 1)[0] if not path.endswith("[]") else None
         if parent is not None and path != "$" and present.get(path, 0) < objects.get(parent, 0):
@@ -483,21 +682,34 @@ def _shapes(body, tainted):
     return result
 
 
-def shape_path(path, tainted):
-    """Recipe selector rendered in transcript form: indexes become [] and unsafe keys {key}."""
-    return "$" + "".join("[]" if type(part) is int else "." + _safe_key(part, tainted) for part in path)
+def shape_path(body, path, tainted):
+    """Recipe selector rendered exactly as _shapes names it: indexes become [],
+    and keys follow the same data-key collapse as the response they walk."""
+    rendered = "$"
+    for part in path:
+        if type(part) is int:
+            rendered += "[]"
+            body = body[part] if isinstance(body, list) and part < len(body) else None
+        else:
+            dynamic = isinstance(body, dict) and _dynamic_map(body, tainted)
+            rendered += "." + _child(part, tainted, dynamic)
+            body = body.get(part) if isinstance(body, dict) else None
+    return rendered
 
 
 def _template(url, tainted):
     parsed = urlsplit(url)
-    parts = []
+    parts, previous = [], ""
     for part in parsed.path.split("/")[1:]:
-        keep = part == "" or SEGMENT.fullmatch(part) and part.lower() not in tainted
+        lowered = part.lower()
+        keep = part == "" or (_segment_ok(part) and lowered not in tainted
+                              and not (previous in COLLECTIONS and lowered not in FOLLOW and lowered not in COLLECTIONS))
         parts.append(part if keep else "{id}")
+        previous = lowered
     query = []
     for name, value in parse_qsl(parsed.query, keep_blank_values=True):
         normal = _normal(name)
-        label = name if PARAM.fullmatch(name) and name.lower() not in tainted else "{param}"
+        label = name if _param_ok(name) and name.lower() not in tainted else "{param}"
         tokens = value.split(",")
         if label != "{param}" and normal in PAGINATION and re.fullmatch(r"\d{1,4}", value):
             shown = value
@@ -511,21 +723,21 @@ def _template(url, tainted):
 
 
 def _body_shape(spec, tainted):
-    """Request body as names and format classes; GraphQL operation names are kept."""
-    from .common import strict_json
+    """Request body as names and format classes; only a GraphQL operation name is kept."""
     if spec["contentType"] == "application/json":
-        body = strict_json(spec["body"], maximum=16384)
+        body = strict_json(spec["body"], maximum=65536)
         shapes = _shapes(body, tainted)
         for item in body if isinstance(body, list) else [body]:
             name = item.get("operationName") if isinstance(item, dict) else None
             target = ("$[]" if isinstance(body, list) else "$") + ".operationName"
-            if isinstance(name, str) and TOKEN.fullmatch(name) and name.lower() not in tainted and target in shapes:
+            if (isinstance(name, str) and TOKEN.fullmatch(name) and not _random_like(name)
+                    and name.lower() not in tainted and target in shapes):
                 shapes[target]["values"] = sorted(set(shapes[target].get("values", [])) | {name})[:MAX_ENUM_VALUES]
         return {"contentType": spec["contentType"], "fields": shapes}
     shapes = {}
     for name, value in parse_qsl(spec["body"], keep_blank_values=True):
-        label = name if PARAM.fullmatch(name) and name.lower() not in tainted else "{param}"
-        entry = shapes.setdefault("$." + label if KEY.fullmatch(label) else "$.{key}", {"types": ["string"], "formats": set()})
+        label = name if _key_ok(name) and name.lower() not in tainted else "{key}"
+        entry = shapes.setdefault("$." + label, {"types": ["string"], "formats": set()})
         entry["formats"].add(value_format(value, name) or "empty")
     for entry in shapes.values():
         entry["formats"] = sorted(entry["formats"])[:8]
@@ -541,45 +753,53 @@ def extract_transcript(campaign, reads, context):
     fields(context, {"recipe", "notes", "headerNames"})
     recipe = context["recipe"]
     require(len(recipe["reads"]) == len(reads) and all(read.url == spec["url"] and read.method == read_method(spec)
-            and read.authenticated is True and read.tls_verified is True and read.authentication_gate is True
-            and read.status == 200 for read, spec in zip(reads, recipe["reads"])), "unauthenticated_source")
-    tainted = _tainted([read.body for read in reads])
-    identity_value = select(reads[recipe["identity"]["read"]].body, recipe["identity"]["path"])
-    require(identity_value is not None, "identity_path_invalid")
+            and read.authenticated is True and read.tls_verified is True and read.status == 200
+            for read, spec in zip(reads, recipe["reads"])), "unauthenticated_source")
+    identity_read, history_read = recipe["identity"]["read"], recipe["history"]["read"]
+    require(reads[identity_read].authentication_gate is True and reads[history_read].authentication_gate is True,
+            "unauthenticated_source")
+    bodies = [read.body for read in reads]
+    tainted = _tainted(bodies)
+    identity_value = select(bodies[identity_read], recipe["identity"]["path"])
+    require(_identity_ok(identity_value), "identity_path_invalid")
+    rows = select(bodies[history_read], recipe["history"]["path"])
+    require(isinstance(rows, list), "history_path_invalid")
+    require(_has_rows(rows, campaign["evidenceRequirements"]["minRecords"]), "insufficient_history")
     notes = validate_notes(context["notes"])
-    lowered = notes.lower()
-    private = {str(identity_value).lower()} | {value for value in tainted
-                                               if len(value) >= 6 and re.search(r"[\d@]", value)}
-    require(not any(value in lowered for value in private), "unsafe_notes")
+    lowered, squeezed = notes.lower(), _alnum(notes)
+    require(str(identity_value).lower() not in lowered, "unsafe_notes")
+    for value in tainted:
+        # Identifier-like values, multi-word values such as names, and the same
+        # text re-spaced or re-punctuated may not be copied into retained notes.
+        if (len(value) >= 6 and re.search(r"[\d@]", value) or len(value) >= 5 and " " in value) and value in lowered:
+            raise Rejected("unsafe_notes")
+        if len(value) >= 8 and re.search(r"\d", value) and len(_alnum(value)) >= 8 and _alnum(value) in squeezed:
+            raise Rejected("unsafe_notes")
+    selectors = {name: shape_path(bodies[recipe[name]["read"]], recipe[name]["path"], tainted)
+                 for name in ("identity", "history")}
     requests, total = [], 0
     for step, (read, spec) in enumerate(zip(reads, recipe["reads"]), 1):
         permitted_endpoint(campaign, read.url, read.method)
         path, query = _template(read.url, tainted)
-        shapes = _shapes(read.body, tainted)
+        shapes = _shapes(read.body, tainted, selectors["history"] + "[]" if step - 1 == history_read else None)
         total += len(shapes)
-        request = {"step": step, "method": read.method, "origin": "https://" + urlsplit(read.url).hostname,
-                   "path": path, "query": query,
-                   "status": read.status, "fields": shapes}
+        request = {"step": step, "method": read.method,
+                   "origin": public_origin(campaign, "https://" + urlsplit(read.url).hostname),
+                   "path": path, "query": query, "status": read.status, "gated": read.authentication_gate is True,
+                   "fields": shapes}
         if read.method == "POST":
             request["body"] = _body_shape(spec, tainted)
             total += len(request["body"]["fields"])
         require(total <= MAX_FIELDS, "transcript_too_large")
         requests.append(request)
-    selectors = {}
     for name, code in (("identity", "identity_path_invalid"), ("history", "history_path_invalid")):
-        index = recipe[name]["read"]
-        rendered = shape_path(recipe[name]["path"], tainted)
-        require(rendered in requests[index]["fields"], code)
-        selectors[name] = {"step": index + 1, "path": rendered}
-    rows = select(reads[recipe["history"]["read"]].body, recipe["history"]["path"])
-    require(isinstance(rows, list) and "array" in requests[recipe["history"]["read"]]["fields"]
-            [selectors["history"]["path"]]["types"], "history_path_invalid")
-    require(sum(isinstance(row, dict) and bool(row) for row in rows) >= campaign["evidenceRequirements"]["minRecords"],
-            "insufficient_history")
+        require(selectors[name] in requests[recipe[name]["read"]]["fields"], code)
+    require("array" in requests[history_read]["fields"][selectors["history"]]["types"], "history_path_invalid")
     artifact = {"version": 2, "campaignId": campaign["id"], "bankId": campaign["bankId"],
                 "sourceOrigins": sorted({request["origin"] for request in requests}),
                 "credentialHeaders": list(context["headerNames"]), "requests": requests,
-                "identity": selectors["identity"], "history": selectors["history"], "notes": notes,
+                "identity": {"step": identity_read + 1, "path": selectors["identity"]},
+                "history": {"step": history_read + 1, "path": selectors["history"]}, "notes": notes,
                 "coverage": {"readCount": len(reads), "historyMinimumSatisfied": True},
                 "limitations": sorted(LIMITATIONS)}
     require(len(canonical(artifact)) <= MAX_ARTIFACT_BYTES, "transcript_too_large")
@@ -587,23 +807,31 @@ def extract_transcript(campaign, reads, context):
     return artifact
 
 
-def _validate_shapes(shapes, body=False):
+def _validate_shapes(shapes, *, enum_prefix=None, body=False):
     require(isinstance(shapes, dict) and 1 <= len(shapes) and "$" in shapes, "unsafe_artifact")
     for field_path, entry in shapes.items():
         require(isinstance(field_path, str) and len(field_path) <= 400 and FIELD_PATH.fullmatch(field_path)
+                and all(part == "{key}" or _key_ok(part) for part in field_path.replace("[]", "").split(".")[1:])
                 and isinstance(entry, dict) and "types" in entry
                 and set(entry) <= {"types", "formats", "values", "valuesIncomplete", "optional"}, "unsafe_artifact")
-        require(isinstance(entry["types"], list) and bool(entry["types"]) and set(entry["types"]) <= TYPES
+        require(isinstance(entry["types"], list) and bool(entry["types"])
+                and all(isinstance(kind, str) for kind in entry["types"]) and set(entry["types"]) <= TYPES
                 and entry["types"] == sorted(set(entry["types"])), "unsafe_artifact")
         if "formats" in entry:
             require(isinstance(entry["formats"], list) and 1 <= len(entry["formats"]) <= 8 and all(
                 isinstance(style, str) and len(style) <= 40 and FORMAT.fullmatch(style)
                 for style in entry["formats"]), "unsafe_artifact")
         if "values" in entry:
-            name = field_path.rsplit(".", 1)[-1].replace("[]", "")
+            parts = field_path.replace("[]", "").split(".")[1:]
             require(isinstance(entry["values"], list) and 1 <= len(entry["values"]) <= MAX_ENUM_VALUES
                     and all(isinstance(token, str) and TOKEN.fullmatch(token) for token in entry["values"])
-                    and (_enum_key(name, ()) or body and name == "operationName"), "unsafe_artifact")
+                    and entry["values"] == sorted(set(entry["values"])) and bool(parts), "unsafe_artifact")
+            if body:
+                require(parts[-1] == "operationName", "unsafe_artifact")
+            else:
+                # Tokens exist only on status-like fields of the history rows.
+                require(enum_prefix is not None and field_path.startswith(enum_prefix)
+                        and _enum_key(parts[-1], tuple(parts[:-1])), "unsafe_artifact")
         for flag in ("optional", "valuesIncomplete"):
             require(entry.get(flag, True) is True, "unsafe_artifact")
         require("valuesIncomplete" not in entry or "values" in entry, "unsafe_artifact")
@@ -611,44 +839,47 @@ def _validate_shapes(shapes, body=False):
 
 
 def validate_transcript(campaign, artifact):
-    """Every retained string is a closed-vocabulary class, a safe name or a linted note."""
+    """Every retained string is a closed-vocabulary class, a screened name or a linted note."""
     descriptor = validate_open_campaign(campaign)
     fields(artifact, {"version", "campaignId", "bankId", "sourceOrigins", "credentialHeaders", "requests",
                       "identity", "history", "notes", "coverage", "limitations"})
     require(type(artifact["version"]) is int and artifact["version"] == 2
             and artifact["campaignId"] == campaign["id"] and artifact["bankId"] == campaign["bankId"],
             "unsafe_artifact")
-    require(isinstance(artifact["sourceOrigins"], list) and len(artifact["sourceOrigins"]) == 1, "unsafe_artifact")
-    try:
-        campaign_origin(campaign, artifact["sourceOrigins"][0])
-    except Rejected:
-        raise Rejected("unsafe_artifact") from None
+    require(isinstance(artifact["sourceOrigins"], list) and len(artifact["sourceOrigins"]) == 1
+            and _public_origin_ok(campaign, artifact["sourceOrigins"][0]), "unsafe_artifact")
     names = artifact["credentialHeaders"]
-    require(isinstance(names, list) and 1 <= len(names) <= 24 and names == sorted(set(names))
+    require(isinstance(names, list) and 1 <= len(names) <= 24
             and all(isinstance(name, str) and HEADER_NAME.fullmatch(name) and name == name.lower()
-                    and name not in FORBIDDEN_HEADERS for name in names), "unsafe_artifact")
+                    and name not in FORBIDDEN_HEADERS and re.search(r"\d{3,}", name) is None for name in names)
+            and names == sorted(set(names)) and any(SECRET_HEADER.search(name) for name in names), "unsafe_artifact")
     requests = artifact["requests"]
     require(isinstance(requests, list) and 1 <= len(requests) <= descriptor["maxReads"], "unsafe_artifact")
+    for name in ("identity", "history"):
+        fields(artifact[name], {"step", "path"})
+        integer(artifact[name]["step"], 1, len(requests), "unsafe_artifact")
+        require(isinstance(artifact[name]["path"], str), "unsafe_artifact")
     total = 0
     for index, request in enumerate(requests):
         require(isinstance(request, dict) and request.get("method") in {"GET", "POST"}, "unsafe_artifact")
-        fields(request, {"step", "method", "origin", "path", "query", "status", "fields"}
+        fields(request, {"step", "method", "origin", "path", "query", "status", "gated", "fields"}
                | ({"body"} if request["method"] == "POST" else set()))
         require(type(request["step"]) is int and request["step"] == index + 1
                 and request["origin"] == artifact["sourceOrigins"][0] and type(request["status"]) is int
-                and request["status"] == 200, "unsafe_artifact")
+                and request["status"] == 200 and type(request["gated"]) is bool, "unsafe_artifact")
         if request["method"] == "POST":
             fields(request["body"], {"contentType", "fields"})
-            require(request["body"]["contentType"] in BODY_TYPES, "unsafe_artifact")
+            require(isinstance(request["body"]["contentType"], str) and request["body"]["contentType"] in BODY_TYPES,
+                    "unsafe_artifact")
             total += _validate_shapes(request["body"]["fields"], body=True)
         path = request["path"]
         require(isinstance(path, str) and len(path) <= 600 and path.startswith("/") and all(
-            part in ("", "{id}") or SEGMENT.fullmatch(part) for part in path.split("/")[1:]), "unsafe_artifact")
+            part in ("", "{id}") or _segment_ok(part) for part in path.split("/")[1:]), "unsafe_artifact")
         require(isinstance(request["query"], list) and len(request["query"]) <= 30, "unsafe_artifact")
         for parameter in request["query"]:
             fields(parameter, {"name", "value"})
             name, value = parameter["name"], parameter["value"]
-            require(isinstance(name, str) and (name == "{param}" or PARAM.fullmatch(name)), "unsafe_artifact")
+            require(name == "{param}" or _param_ok(name), "unsafe_artifact")
             require(isinstance(value, str) and len(value) <= 300, "unsafe_artifact")
             if value.startswith("{"):
                 require(value.endswith("}") and FORMAT.fullmatch(value[1:-1]), "unsafe_artifact")
@@ -657,12 +888,12 @@ def validate_transcript(campaign, artifact):
             else:
                 require(_normal(name) in QUERY_ENUMS and all(TOKEN.fullmatch(token) for token in value.split(",")),
                         "unsafe_artifact")
-        total += _validate_shapes(request["fields"])
+        history = index == artifact["history"]["step"] - 1
+        total += _validate_shapes(request["fields"], enum_prefix=artifact["history"]["path"] + "[]" if history else None)
     require(total <= MAX_FIELDS, "unsafe_artifact")
     for name in ("identity", "history"):
-        fields(artifact[name], {"step", "path"})
-        integer(artifact[name]["step"], 1, len(requests), "unsafe_artifact")
-        require(artifact[name]["path"] in requests[artifact[name]["step"] - 1]["fields"], "unsafe_artifact")
+        step = requests[artifact[name]["step"] - 1]
+        require(artifact[name]["path"] in step["fields"] and step["gated"] is True, "unsafe_artifact")
     require("array" in requests[artifact["history"]["step"] - 1]["fields"][artifact["history"]["path"]]["types"],
             "unsafe_artifact")
     try:
@@ -679,16 +910,26 @@ def validate_transcript(campaign, artifact):
 
 
 def parse_proposal(content):
-    """Lenient extraction of the single JSON object a chat model returned."""
-    from .common import strict_json
+    """Find the model's role proposal in a chat reply.
+
+    Reasoning models wrap or precede the answer with other text, so every JSON
+    object in the reply is tried and the last one holding a mapping wins.
+    """
     require(isinstance(content, str) and len(content) <= 65536, "model_output_not_json")
-    start, end = content.find("{"), content.rfind("}")
-    require(0 <= start < end, "model_output_not_json")
-    try:
-        value = strict_json(content[start:end + 1], maximum=65536)
-    except Rejected:
-        raise Rejected("model_output_not_json") from None
-    require(isinstance(value, dict) and isinstance(value.get("mapping"), dict), "model_result_invalid")
+    text = re.sub(r"<think>.*?</think>", "", content, flags=re.S)
+    decoder, value, attempts = json.JSONDecoder(), None, 0
+    for match in re.finditer(r"\{", text):
+        attempts += 1
+        if attempts > 400:
+            break
+        try:
+            _, end = decoder.raw_decode(text, match.start())
+            candidate = strict_json(text[match.start():end], maximum=65536)
+        except (ValueError, RecursionError, Rejected):
+            continue
+        if isinstance(candidate, dict) and isinstance(candidate.get("mapping"), dict):
+            value = candidate
+    require(value is not None, "model_output_not_json")
     mapping = {}
     for role in ROLES:
         path = value["mapping"].get(role)
@@ -703,17 +944,18 @@ def parse_proposal(content):
 def _numeric(value):
     if type(value) in (int, float):
         return True
-    return isinstance(value, str) and (re.fullmatch(r"-?\d{1,18}(?:\.\d{1,9})?", value.strip()) is not None
-                                       or value_format(value) == "money_text")
+    return isinstance(value, str) and _money(value.strip())
 
 
 def _timestamp(value):
-    if type(value) is int:
-        return _epoch(value) is not None
-    if not isinstance(value, str):
+    # Role verification knows the field is meant to be a time, so bare epoch
+    # numbers and compact YYYYMMDD[hhmmss] values count here.
+    if type(value) in (int, float):
+        return _epoch(int(value)) is not None or value_format(str(int(value)), "date") == "date:compact"
+    if not isinstance(value, str) or len(value) > 64:
         return False
-    return (value_format(value) or "").split(":")[0] in {"datetime", "date"} or (
-        value.isascii() and value.isdigit() and _epoch(int(value)) is not None)
+    style = value_format(value, "date") or ""
+    return style.split(":")[0] in {"datetime", "date"} or style in {"digits:epoch_s", "digits:epoch_ms"}
 
 
 def _scalar(value):
@@ -744,14 +986,18 @@ def _verify(role, rows, suffix):
     return True
 
 
+def _history_rows(reads, context):
+    recipe = context["recipe"]
+    rows = select(reads[recipe["history"]["read"]].body, recipe["history"]["path"])
+    require(isinstance(rows, list), "history_path_invalid")
+    return [row for row in rows if isinstance(row, dict) and row]
+
+
 def assess(campaign, reads, context, artifact, proposal):
     """Score a proposed role mapping against the private live history rows."""
     validate_open_campaign(campaign)
     fields(proposal, {"mapping", "completedStatus"})
-    recipe = context["recipe"]
-    rows = select(reads[recipe["history"]["read"]].body, recipe["history"]["path"])
-    require(isinstance(rows, list), "history_path_invalid")
-    rows = [row for row in rows if isinstance(row, dict) and row]
+    rows = _history_rows(reads, context)
     require(len(rows) >= campaign["evidenceRequirements"]["minRecords"], "insufficient_history")
     history = artifact["history"]
     shapes = artifact["requests"][history["step"] - 1]["fields"]
@@ -785,15 +1031,18 @@ def validate_model_result(campaign, artifact, result):
     shapes = artifact["requests"][history["step"] - 1]["fields"]
     prefix = history["path"] + "[]"
     require(isinstance(result["mapping"], dict) and set(result["mapping"]) <= set(ROLES)
+            and all(isinstance(path, str) for path in result["mapping"].values())
             and len(set(result["mapping"].values())) == len(result["mapping"]), "model_result_invalid")
     for path in result["mapping"].values():
-        require(isinstance(path, str) and path.startswith(prefix) and ROLE_SUFFIX.fullmatch(path[len(prefix):])
-                and path in shapes, "model_result_invalid")
+        require(path.startswith(prefix) and ROLE_SUFFIX.fullmatch(path[len(prefix):]) and path in shapes,
+                "model_result_invalid")
     require(result["score"] == sum(ROLE_WEIGHTS[role] for role in result["mapping"]), "model_result_invalid")
-    require(isinstance(result["unverified"], list) and set(result["unverified"]) <= set(ROLES) - set(result["mapping"])
+    require(isinstance(result["unverified"], list) and all(isinstance(role, str) for role in result["unverified"])
+            and set(result["unverified"]) <= set(ROLES) - set(result["mapping"])
             and len(set(result["unverified"])) == len(result["unverified"]), "model_result_invalid")
     allowed = set(shapes[result["mapping"]["status"]].get("values", [])) if "status" in result["mapping"] else set()
     require(isinstance(result["completedStatus"], list) and len(result["completedStatus"]) <= 6
+            and all(isinstance(token, str) for token in result["completedStatus"])
             and result["completedStatus"] == sorted(set(result["completedStatus"]))
             and set(result["completedStatus"]) <= allowed, "model_result_invalid")
     requirements = campaign["evidenceRequirements"]
@@ -812,3 +1061,19 @@ def check_assessment(campaign, reads, context, artifact, result):
         missing = [role for role in campaign["evidenceRequirements"]["requiredFields"] if role not in result["mapping"]]
         raise Rejected("mapping_missing_" + missing[0] if missing else "model_rejected")
     return result
+
+
+def payment_aliases(campaign, reads, context, artifact, result):
+    """Private overlap witnesses: the verified payment ids of the newest rows.
+
+    The account identity is contributor-declared, so a second submission of the
+    same history under another identity selector still collides on these.
+    """
+    if "paymentId" not in result["mapping"]:
+        return []
+    domain = campaign_domain(campaign, "https://" + urlsplit(reads[0].url).hostname)
+    prefix = artifact["history"]["path"] + "[]"
+    keys = result["mapping"]["paymentId"][len(prefix) + 1:].split(".")
+    values = [select(row, keys) for row in _history_rows(reads, context)]
+    return ["open-payment:" + domain + ":" + str(value) for value in values
+            if value is not None and value != ""][:MAX_PAYMENT_ALIASES]

@@ -149,8 +149,11 @@ class Runtime:
             return {'version':1,'status':'discovery_only','policyDigest':self.policy_digest,
                     'releaseSource':'https://github.com/zkp2p/peer-link/blob/main/transcripts/release.json'}
         if command=='campaigns':
-            return {'policyDigest':self.policy_digest,'campaigns':self.policy['campaigns'],
-                    'availability':self.ledger.availability(self.policy['campaigns'],int(time.time()))}
+            result={'policyDigest':self.policy_digest,'campaigns':self.policy['campaigns']}
+            # A capacity hint only; the static campaign list stays served if state is unavailable.
+            try:result['availability']=self.ledger.availability(self.policy['campaigns'],int(time.time()))
+            except Rejected:pass
+            return result
         if command=='attest':
             fields(body,{'nonce'});require(isinstance(body['nonce'],str) and len(body['nonce'])==64 and all(c in '0123456789abcdef' for c in body['nonce']),'invalid_nonce')
             context={'protocol':'peerlink-epoch-v2' if self.durable else 'peerlink-epoch-v1',

@@ -27,7 +27,8 @@ def terms(release,policy,campaign_id=None,provider=None,model=None,privacy='prov
     require(model=='ANY_MODEL_YOU_CHOOSE' or route_allows(campaign,route['provider'],model,privacy),'provider_not_allowed')
     approved=release.get('status')=='approved' and release.get('expiresAt',0)>time.time()
     return {'campaignId':campaign['id'],'bankId':campaign['bankId'],'campaignStatus':campaign['status'],
-            'kind':campaign_kind(campaign),'origins':[source['origin'] for source in campaign['sources']],
+            'kind':campaign_kind(campaign),
+            ('domains' if 'openSource' in campaign else 'origins'):[source['origin'] for source in campaign['sources']],
             'inferenceRoutes':campaign['inferenceRoutes'],
             'accepting':False,'releaseApproved':approved,
             'reason':'preflight_and_service_admission_required' if approved else 'release_not_approved',
@@ -63,16 +64,30 @@ def campaign_summary(campaign):
                 'minScore':campaign['evidenceRequirements']['minScore']} if 'openSource' in campaign else {})}
 
 
-def secrets_from_env(payload):
-    """Owner-exported secrets; the agent never needs to read or store their values."""
+def secret_free(payload):
+    """The stdin payload for --secrets-from-env/--prompt-secrets must not already hold secrets."""
+    require(isinstance(payload,dict) and isinstance(payload.get('credential'),dict)
+            and 'inferenceKey' not in payload and 'value' not in payload['credential'],'secrets_already_in_payload')
     fields(payload,{'credential','profileId','recipe','notes','transcript'})
     fields(payload['credential'],{'origin','kind'})
-    bank,inference=os.environ.get('PEERLINK_BANK_CREDENTIAL'),os.environ.get('PEERLINK_INFERENCE_KEY')
-    require(bool(bank) and bool(inference),'secrets_env_missing')
+
+
+def bank_secret(payload,value):
+    # Header credentials are a JSON object of header name to value.
     if payload['credential']['kind']=='headers':
-        # Header credentials are a JSON object of header name to value.
-        bank=strict_json(bank,65536);require(isinstance(bank,dict),'credential_headers_invalid')
-    payload['credential']['value']=bank;payload['inferenceKey']=inference
+        try:value=strict_json(value,65536)
+        except Rejected:raise Rejected('credential_headers_invalid') from None
+        require(isinstance(value,dict),'credential_headers_invalid')
+    payload['credential']['value']=value
+
+
+def secrets_from_env(payload,*,inference=True):
+    """Owner-exported secrets; the agent never needs to read or store their values."""
+    secret_free(payload)
+    bank,key=os.environ.get('PEERLINK_BANK_CREDENTIAL'),os.environ.get('PEERLINK_INFERENCE_KEY')
+    require(bool(bank) and (bool(key) or not inference),'secrets_env_missing')
+    bank_secret(payload,bank)
+    if inference:payload['inferenceKey']=key
 
 
 def preview(policy,campaign_id,payload,mapping=None):
@@ -111,8 +126,7 @@ def preview(policy,campaign_id,payload,mapping=None):
 
 def prompt_secrets(payload):
     """Read directly from the controlling TTY; disable every stdin/echo fallback."""
-    fields(payload,{'credential','profileId','recipe','notes','transcript'})
-    fields(payload['credential'],{'origin','kind'})
+    secret_free(payload)
     require(os.name=='posix','secret_prompt_unavailable')
     previous_stdin=sys.stdin
     bank_key=inference_key=None
@@ -130,7 +144,7 @@ def prompt_secrets(payload):
                     and all(33<=ord(char)<127 for char in bank_key),'invalid_credential')
             require(isinstance(inference_key,str) and 8<=len(inference_key)<=4096
                     and all(33<=ord(char)<127 for char in inference_key),'inference_key_required')
-            payload['credential']['value']=bank_key;payload['inferenceKey']=inference_key
+            bank_secret(payload,bank_key);payload['inferenceKey']=inference_key
     except Rejected:raise
     except (OSError,ValueError,EOFError,getpass.GetPassWarning,KeyboardInterrupt):
         raise Rejected('secret_prompt_unavailable') from None
@@ -188,8 +202,10 @@ def main():
             payload=strict_json(sys.stdin.buffer.read(2_000_001),2_000_000)
             require(isinstance(payload,dict),'invalid_submission')
             try:
-                if args.secrets_from_env:secrets_from_env(payload)
-                mapping=strict_json(args.mapping.read_bytes(),65536) if args.mapping is not None else None
+                # A local preview makes no model call, so it needs only the bank secret.
+                if args.secrets_from_env:secrets_from_env(payload,inference=False)
+                try:mapping=strict_json(args.mapping.read_bytes(),65536) if args.mapping is not None else None
+                except OSError:raise Rejected('mapping_file_unreadable') from None
                 result=preview(policy,args.campaign,payload,mapping)
             finally:payload.clear()
             print(json.dumps(result,sort_keys=True));return
@@ -222,6 +238,7 @@ def main():
             print(json.dumps({'event':'continuing_reserved','jobId':job_id,'campaignId':client.job['campaignId'],
                               'payoutAddress':request['payoutAddress'],'rewardMinor':campaign['rewardMinor'],
                               'provider':request['provider'],'model':request['model'],'privacyMode':request['privacyMode'],
+                              **({'inferenceBaseUrl':request['inferenceBaseUrl']} if 'inferenceBaseUrl' in request else {}),
                               'limits':request['limits'],'stateFile':str(args.state.resolve())}),flush=True)
             payload=strict_json(sys.stdin.buffer.read(2_000_001),2_000_000)
             require(isinstance(payload,dict),'invalid_submission')
@@ -251,6 +268,8 @@ def main():
             if args.base_url is not None:preview_request['inferenceBaseUrl']=extra['base_url']
             validate_reservation(campaign,preview_request,now)
             if args.state is not None:require(not args.state.exists(),'state_exists')
+            # Reserving first and then waiting on an empty terminal would hold a slot.
+            require(sys.stdin.isatty() is not True,'payload_required')
             def reserved(state):
                 path=args.state or Path('.local')/('transcript-job-'+state['jobId']+'.json')
                 save_state(path,state)

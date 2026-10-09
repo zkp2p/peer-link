@@ -64,10 +64,18 @@ real integrations have needed:
 - the cookie plus device or channel headers the web app adds to every call;
 - `Origin` and `Referer` on sites that check them.
 
-Do not include `Host`, `Content-Length`, `Connection`, `Transfer-Encoding` or
-`Accept-Encoding`; the enclave sets or refuses those. Do not include
-`Content-Type` for a POST; it comes from the read's `contentType`. Header names
-and values must be printable ASCII, with at most 24 headers.
+Do not include `Host`, `Content-Length`, `Content-Type`, `Connection`,
+`Transfer-Encoding`, `Accept-Encoding` or a method-override header; the enclave
+sets or refuses those. Header names and values must be printable ASCII, with at
+most 24 headers.
+
+At least one header must carry the session: a cookie, an authorization or token
+header, or a CSRF header. The enclave first replays the identity and history
+requests with only the remaining headers, and refuses the job
+(`anonymous_access_allowed`) if that answer already contains the identity or the
+history rows. A credential made only of headers like `User-Agent` is rejected
+with `credential_not_secret`. Use the bank's production host: hosts named like a
+sandbox, test or developer environment are refused.
 
 For `credential.kind: "headers"` the secret is one JSON object of header name to
 value. With `--secrets-from-env` that object is the content of
@@ -126,15 +134,26 @@ A POST read replays the body the site sent, as one line:
 ```
 
 `contentType` is `application/json` or `application/x-www-form-urlencoded`, and
-`body` is at most 16384 printable ASCII characters with no line breaks. The
-enclave refuses a POST whose path contains a segment such as `transfer`, `send`,
-`pay`, `create`, `update`, `delete`, `cancel`, `submit` or `confirm`, whose
-GraphQL document is a `mutation`, or whose `operationName` contains `mutation`
-or begins with a write verb such as `create`, `update`, `delete`, `send`, `set`
-or `add`. A read-only operation whose name happens to begin that way is refused
-too; report it on the bank's campaign issue. The transcript keeps the body's
-field names and format classes and the GraphQL operation name, not the document
-text.
+`body` is the exact text to send, at most 16384 bytes. The enclave refuses a
+POST that names a state change:
+
+- a path whose last segment starts with a verb such as `send`, `pay`, `create`,
+  `update`, `cancel`, `submit` or `confirm`, is `now` or `new`, or is a bare
+  resource such as `/transfer`, `/transfers` or `/payments`. A verb earlier in
+  the path is accepted only when the last segment is a read word such as
+  `history`, `list`, `activity`, `search` or `details`;
+- a GraphQL document that does not start with `query` or `{` (JSON or
+  form-encoded);
+- a persisted GraphQL request (no document) whose `operationName` does not end
+  in `Query`;
+- an `operationName` containing `Mutation`, or starting with a write verb
+  without ending in `Query`;
+- an RPC-style body whose `method` names a write.
+
+These rules cannot prove a request is read-only; replay only what the site
+issues while viewing history. If a read-only request is refused, say so on the
+bank's campaign issue. The transcript keeps the body's field names and format
+classes and the GraphQL operation name, not the document text or variables.
 
 ## Read the preview
 

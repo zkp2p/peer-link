@@ -1439,7 +1439,8 @@
     "nearModelResponseAuthenticity": "unverified_gateway_assertions_only",
     "confidentialNearEnabled": false,
     "openInferenceInput": "contributor_notes_and_value_free_transcript",
-    "openRedaction": "deterministic_heuristic_names_formats_status_tokens"
+    "openRedaction": "deterministic_heuristic_names_formats_status_tokens",
+    "openProviderRouting": "contributor_chosen_endpoint_and_model_unpinned"
   },
   "payoutAuthority": {
     "kind": "aws_kms",

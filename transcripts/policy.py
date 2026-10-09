@@ -13,23 +13,29 @@ REQUEST_FIELDS = {"version", "campaignId", "payoutAddress", "provider", "model",
 LIMIT_FIELDS = {"maxCalls", "maxInputTokens", "maxOutputTokens", "maxBankReads", "deadlineSeconds"}
 # A contributor-chosen endpoint speaking the OpenAI chat-completions format.
 CUSTOM_PROVIDER = "openai_compatible"
-MODEL_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/@+-]{0,149}")
+MODEL_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/+-]{0,149}")
+INFERENCE_HOST = re.compile(r"(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}")
 
 
 def inference_base_url(value):
-    """https://host[/path] with no credentials, port, query or fragment."""
+    """https://dns-name[/short/path]: no credentials, port, query, fragment, address
+    literal, or the service's own cloud and settlement endpoints."""
     require(isinstance(value, str) and len(value) <= 200, "invalid_provider")
     parsed = urlsplit(value)
-    require(parsed.scheme == "https" and parsed.hostname and parsed.netloc == parsed.hostname
+    host = parsed.hostname or ""
+    require(parsed.scheme == "https" and parsed.netloc == host and INFERENCE_HOST.fullmatch(host)
+            and not host.endswith((".amazonaws.com", ".internal", ".local")) and host != "mainnet.base.org"
             and not parsed.query and not parsed.fragment
-            and re.fullmatch(r"(?:/[A-Za-z0-9_.~-]+)*", parsed.path) and ".." not in parsed.path
-            and value == "https://" + parsed.hostname + parsed.path, "invalid_provider")
+            and re.fullmatch(r"(?:/[A-Za-z0-9_.~-]{1,40}){0,5}", parsed.path) and ".." not in parsed.path
+            and re.search(r"\d{6,}", parsed.path) is None
+            and value == "https://" + host + parsed.path, "invalid_provider")
     return value
 
 
 def route_allows(campaign, provider, model, privacy):
     """A route listing "*" accepts any well-formed model name for that provider."""
-    return isinstance(model, str) and model != "*" and any(
+    # A model id may carry a date stamp; a longer digit run is an identifier.
+    return isinstance(model, str) and model != "*" and re.search(r"\d{9,}", model) is None and any(
         provider == route["provider"] and privacy in route["privacyModes"]
         and (model in route["models"] or "*" in route["models"] and MODEL_NAME.fullmatch(model) is not None)
         for route in campaign["inferenceRoutes"])

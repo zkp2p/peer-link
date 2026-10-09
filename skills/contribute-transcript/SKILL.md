@@ -31,8 +31,8 @@ issue comment, a fork or the service itself.
 
 The transcript holds request path templates, query parameter names, the names of
 the credential headers, response field paths with JSON types and format classes
-such as `decimal:neg:2` or `datetime:iso8601:utc`, tokens found under status-like
-keys such as `completed`, and your notes. `preview` in step 3 prints exactly this
+such as `decimal:neg:2` or `datetime:iso8601:utc`, status tokens such as
+`completed` found in the history rows, and your notes. `preview` in step 3 prints exactly this
 object before anything is sent.
 
 The enclave builds the model prompt itself: PeerLink's instructions first, then
@@ -108,7 +108,9 @@ by Git):
   the campaign domain or a subdomain of it, so `https://chase.com` in `campaigns`
   also admits `https://secure.chase.com`.
 - `credential.kind` is `bearer` (one token, sent as an Authorization bearer
-  header) or `headers` (an object of header name to value, sent as given).
+  header) or `headers` (an object of header name to value, sent as given). At
+  least one header must carry the session, such as a cookie, a token or a CSRF
+  header.
 - `reads` holds at most the campaign's `maxBankReads` requests. A read is
   `{"url": ...}` for GET, or `{"url", "method": "POST", "contentType", "body"}`
   when the campaign's `methods` include POST. `contentType` is `application/json`
@@ -291,9 +293,10 @@ Every error and job reason is a fixed code, and the CLI prints a `hint` for most
 | `secrets_env_missing`, `secrets_already_in_payload` | Export `PEERLINK_BANK_CREDENTIAL` (and `PEERLINK_INFERENCE_KEY` to contribute) in the shell that runs the command, and keep `value` and `inferenceKey` out of the stdin payload when a secrets flag is used. |
 | `invalid_credential` | `credential.origin` must equal the host of every read and sit under the campaign domain. |
 | `credential_headers_invalid` | Use plain ASCII header names and values and drop Host, Content-Length, Connection and Accept-Encoding. |
-| `source_not_allowed`, `recipe_invalid` | A URL leaves the campaign domain or the single host, has a port, fragment, percent-encoded path or repeated query name, or uses POST where the campaign lists only GET. |
-| `write_request_refused` | The POST path ends in a state-changing word such as `send` or `transfer`, or the GraphQL operation is a mutation or starts with a verb such as `Create` or `Set`. Use the request that lists history. |
-| `anonymous_access_allowed` | The identity or history URL returns JSON without a session. Choose an authenticated endpoint. |
+| `source_not_allowed`, `recipe_invalid` | A URL leaves the campaign domain or the single host, is a sandbox, test or developer host, has a port, fragment, percent-encoded path or repeated query name, or uses POST where the campaign lists only GET. |
+| `write_request_refused` | The POST names a state change; the exact rules are in the [recipe guide](../../docs/transcript-recipes.md). Use the request that lists history. |
+| `credential_not_secret` | No header in the credential carries a session. Include the cookie, token or CSRF header the request needs. |
+| `anonymous_access_allowed` | The identity or history request returns the same data without the session headers. Choose an authenticated endpoint. |
 | `bank_http_unauthorized`, `bank_http_redirect` | The session expired or a required header is missing. Capture fresh headers and go straight to `contribute`. |
 | `bank_response_non_json`, `response_encoding` | The read returned HTML or a compressed body. Use the JSON API host the page calls. |
 | `identity_path_invalid`, `history_path_invalid`, `insufficient_history` | Fix the selector; identity is a number of at least 100 or a string of 3 or more characters, and history is an array with at least three object records. |

@@ -10,6 +10,7 @@ import ipaddress
 import re
 import socket
 import ssl
+import threading
 import time
 from urllib.parse import urlsplit, parse_qsl
 
@@ -112,18 +113,19 @@ class HTTPTransport:
         require(body is None or open_headers and isinstance(body,str) and isinstance(content_type,str),"unsafe_method")
         if body is not None:headers={**headers,"Content-Type":content_type}
         return self._request("GET" if body is None else "POST",url,headers=headers,timeout=timeout,max_bytes=max_bytes,
-                             body=None if body is None else body.encode("ascii"),bank_status_codes=True,open_headers=open_headers)
+                             body=None if body is None else body.encode("utf-8"),bank_status_codes=True,open_headers=open_headers)
 
     def request_provider(self,url,*,headers,body,timeout=15,max_bytes=65536):
         return self._request("POST",url,headers=headers,body=body,timeout=timeout,max_bytes=max_bytes,
                              provider_status_codes=True)
 
-    def probe_anonymous(self,url,*,timeout=15,body=None,content_type=None):
-        """Credential-free request reporting only the status and whether JSON was served."""
-        headers={"Accept":"application/json"}
+    def probe_anonymous(self,url,*,headers=None,timeout=15,body=None,content_type=None):
+        """The same request without secret-bearing headers. Returns the status and,
+        only when 2xx JSON is served, that anonymous body for the caller to inspect."""
+        headers=dict(headers or {"Accept":"application/json"})
         if body is not None:headers["Content-Type"]=content_type
         return self._request("GET" if body is None else "POST",url,headers=headers,timeout=timeout,
-                             body=None if body is None else body.encode("ascii"),anonymous_probe=True)
+                             body=None if body is None else body.encode("utf-8"),anonymous_probe=True,open_headers=True)
 
     def probe_authentication(self,url,*,timeout=15,invalid_credential=False):
         """Status-only anonymous GET: never read, retain or return an error body."""
@@ -141,6 +143,7 @@ class HTTPTransport:
         require(type(timeout) in (int, float) and 0 < timeout <= 300, "request_timeout")
         require(isinstance(url, str) and len(url) <= 2048 and "\\" not in url and
                 not any(ord(char) < 33 for char in url), "destination_forbidden")
+        expired = threading.Event()
         try:
             parsed = urlsplit(url)
             source = "https://" + (parsed.hostname or "")
@@ -175,15 +178,30 @@ class HTTPTransport:
             end = time.monotonic() + timeout
             factory = public_socket if self.mode == "direct" else tunnel_socket
             raw = factory(parsed.hostname, 443, timeout=timeout)
+            # Socket timeouts bound each operation, not the whole exchange. Shut the
+            # connection down at the absolute deadline so a peer trickling bytes
+            # through the handshake or headers cannot hold a job slot.
+            live = [raw]
+            def expire():
+                expired.set()
+                for stream in live:
+                    try:stream.shutdown(socket.SHUT_RDWR)
+                    except OSError:pass
+            watchdog = threading.Timer(max(0.001, end - time.monotonic()), expire)
+            watchdog.daemon = True
+            watchdog.start()
             try:
                 context = ssl.create_default_context()
                 context.minimum_version = ssl.TLSVersion.TLSv1_2
                 secure = context.wrap_socket(raw, server_hostname=parsed.hostname)
+                live.append(secure)
             except BaseException:
+                watchdog.cancel()
                 raw.close()
                 raise
             connection = http.client.HTTPSConnection(parsed.hostname, timeout=timeout, context=context)
             connection.sock = secure  # TLS has already terminated inside this process/enclave.
+            probing = False
             try:
                 secure.settimeout(max(0.001, end - time.monotonic()))
                 connection.request(method, parsed.path + ("?" + parsed.query if parsed.query else ""),
@@ -199,7 +217,11 @@ class HTTPTransport:
                 if anonymous_probe:
                     kinds = [v.split(";")[0].strip().lower() for k, v in response_headers if k == "content-type"]
                     served = len(kinds) == 1 and (kinds[0] == "application/json" or kinds[0].endswith("+json"))
-                    return HTTPResponse(response.status,b"",(("content-type","json"),) if served else ())
+                    plain = all(v.lower() == "identity" for k, v in response_headers if k == "content-encoding")
+                    if not (200 <= response.status < 300 and served and plain):
+                        # Not JSON to an anonymous caller: nothing is read or returned.
+                        return HTTPResponse(response.status,b"",())
+                    probing = True
                 require(200 <= response.status < 300, bank_status_error(response.status) if bank_status_codes else
                         provider_status_error(response.status) if provider_status_codes else "http_request_failed")  # Redirects never followed.
                 content_types = [v for k, v in response_headers if k == "content-type"]
@@ -223,13 +245,16 @@ class HTTPTransport:
                     require(count <= max_bytes, "response_size")
                     chunks.append(chunk)
                 require(response.length in (None, 0), "response_incomplete")
+                if probing:
+                    return HTTPResponse(response.status, b"".join(chunks), (("content-type", "json"),))
                 return HTTPResponse(response.status, b"".join(chunks), response_headers)
             finally:
+                watchdog.cancel()
                 connection.close()
         except Rejected:
             raise
         except (OSError, ValueError, http.client.HTTPException):
-            raise Rejected("http_transport_failed") from None
+            raise Rejected("request_timeout" if expired.is_set() else "http_transport_failed") from None
 
 
 def json_response(response, maximum=MAX_RESPONSE):

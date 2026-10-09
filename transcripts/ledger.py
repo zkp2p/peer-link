@@ -345,6 +345,12 @@ class Ledger:
                         "model_rejected")
             fingerprint = account_fingerprint(dedup_key, campaign["id"], account_id)
             aliases=account_fingerprints(dedup_key,campaign,reads,account_id)
+            if "openSource" in campaign:
+                # The identity is contributor-declared; the same history resubmitted
+                # under another identity still collides on its payment ids.
+                from .open_source import payment_aliases
+                aliases=sorted(set(aliases) | {account_fingerprint(dedup_key, campaign["id"], item)
+                                               for item in payment_aliases(campaign, reads, context, artifact, model_result)})
             self._check_aliases(campaign['id'],aliases)
             require(self.db.execute("SELECT 1 FROM jobs WHERE campaign_id=? AND account_hmac=? AND state IN "
                                     "('accepted','payout_pending','paid')", (campaign["id"],fingerprint)).fetchone() is None,

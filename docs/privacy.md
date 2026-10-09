@@ -54,9 +54,12 @@ Bank and provider TLS end inside the enclave. The host relay sees destination
 hostnames and ciphertext. The enclave sends the bank credential only to the
 `https://host` the contributor declared, which must be the campaign's bank
 domain or a subdomain, and the inference key only to the reserved endpoint.
-Before the authenticated reads, the enclave sends the identity and history
-requests without credentials and stops if they return JSON, so a public endpoint
-cannot stand in for an account. No payment initiation or account change is part
+The credential must include at least one header that carries a session (a
+cookie, an authorization or token header, a CSRF header). Before the
+authenticated reads, the enclave replays the identity and history requests with
+only the other headers and stops if that answer contains the selected identity
+or history rows, so a public endpoint cannot stand in for an account. Hosts
+named like a sandbox, test or developer environment are refused. No payment initiation or account change is part
 of a contribution; for POST reads the enclave refuses requests that are
 obviously named as state changes, and the contributor remains responsible for
 replaying only requests the bank's site issues while viewing history.
@@ -74,25 +77,30 @@ zeroization; enclave destruction is the final key-erasure boundary.
 
 For open campaigns the transcript contains, and the validator admits, only:
 
-- request method, host, path template and query parameter names, with path
-  segments and query values that are not plain words replaced by `{id}` or a
-  format class;
+- request method, host, path template and query parameter names. Path segments
+  that are not plain words, or that follow a collection such as `users` or
+  `accounts`, become `{id}`; query values become a format class; a host label
+  under the bank domain that is not a common infrastructure word (`api`,
+  `secure`, `online` and similar) becomes `{sub}`;
 - the names of the credential headers, never their values;
 - for a POST, the body's field names and format classes and a GraphQL operation
   name, never the document text or variable values;
 - response field paths with JSON types and closed-vocabulary format classes
   such as `decimal:neg:2`, `datetime:iso8601:utc` or `text:short:alpha`;
-- short tokens under keys ending in `status`, `state`, `type`, `kind`,
-  `currency`, `scheme`, `direction`, `method`, `rail` or `network`, unless the
-  key sits under an object describing a person or address, or the same text
-  also appears as an ordinary value;
-- the contributor's notes, which are rejected if they contain emails, long digit
-  runs, token-like strings, or identifier-like values copied from the responses;
+- short tokens under payment status-like keys (`status`, `state`, `type`,
+  `kind`, `currency`, `scheme`, `direction`, `method`, `rail`, `network`, with
+  prefixes such as `payment` or `transfer`), taken only from the history rows.
+  A token is dropped if it contains two digits in a row, sits under an object
+  describing a person or address, or also appears as an ordinary value. Nothing
+  from profile or account reads is kept as a value;
+- the contributor's notes, which are rejected if they contain emails, long or
+  grouped digit runs, token-like strings, or identifier-like and multi-word
+  values copied from the responses;
 - the selectors for identity and history, a coverage flag, and fixed limitation
   labels.
 
-Object keys that look like identifiers, and maps keyed by identifiers, collapse
-to `{key}`. The count of transactions is not kept. **These rules for names and
+Object keys that look like identifiers, and objects whose keys are data (maps
+of handles, ids, currencies or dates), collapse to `{key}`. The count of transactions is not kept. **These rules for names and
 tokens are heuristic.** A field name or a status-like token that is itself
 personal could be retained, which is why `preview` exists and why the owner
 should read its output before contributing.

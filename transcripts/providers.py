@@ -144,19 +144,23 @@ class ProviderClient:
         body = json_response(response, maximum=262144)
         choices = body.get("choices") if isinstance(body, dict) else None
         require(isinstance(choices, list) and bool(choices) and isinstance(choices[0], dict), "model_result_invalid")
-        require(choices[0].get("finish_reason") != "length", "model_output_truncated")
+        reason = choices[0].get("finish_reason")
+        require(reason is None or isinstance(reason, str), "model_result_invalid")
+        require(reason != "length", "model_output_truncated")
         message = choices[0].get("message")
-        require(isinstance(message, dict) and choices[0].get("finish_reason") not in
-                {"content_filter", "tool_calls", "function_call"}, "model_result_invalid")
+        require(isinstance(message, dict) and reason not in {"content_filter", "tool_calls", "function_call"},
+                "model_result_invalid")
         content = message.get("content")
         if isinstance(content, list):
-            content = "".join(part.get("text", "") for part in content
-                              if isinstance(part, dict) and isinstance(part.get("text"), str))
+            # Content parts: keep answer text, skip reasoning and other part types.
+            content = "".join(part["text"] for part in content if isinstance(part, dict)
+                              and part.get("type") in (None, "text", "output_text") and isinstance(part.get("text"), str))
         proposal = parse_proposal(content)
         usage = body.get("usage") if isinstance(body.get("usage"), dict) else {}
-        # Providers that omit usage are charged against the limits conservatively.
-        input_tokens = usage.get("prompt_tokens") if type(usage.get("prompt_tokens")) is int else len(encoded)
-        output_tokens = usage.get("completion_tokens") if type(usage.get("completion_tokens")) is int else len(content)
+        # A provider that omits usage is charged an estimate of about three bytes a token.
+        input_tokens = usage.get("prompt_tokens") if type(usage.get("prompt_tokens")) is int else len(encoded) // 3 + 1
+        output_tokens = (usage.get("completion_tokens") if type(usage.get("completion_tokens")) is int
+                         else len(content.encode()) // 3 + 1)
         integer(input_tokens, 0, 100000, "inference_usage_invalid")
         integer(output_tokens, 0, 20000, "inference_usage_invalid")
         self.input_tokens += input_tokens
