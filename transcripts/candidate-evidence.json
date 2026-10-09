@@ -53,7 +53,7 @@
     "Candidate evidence is not an approved release manifest or authorization to submit credentials.",
     "CI tested the pull-request merge commit; every measured input and deployed PCR0/1/2 matches.",
     "No bank credentials, raw bank values or inference keys are included.",
-    "The old enclave-only key remains in running enclave memory. Its 50 USDC is unrecovered; the old automatic stop deadline is2026-10-09T17:11:57Z. The new KMS key cannot recover this old wallet.",
+    "The old enclave-only key remains in running enclave memory. Its 50 USDC is unrecovered; the old automatic stop deadline is 2026-10-10T17:11:57Z after a bounded preservation extension. The new KMS key cannot recover this old wallet.",
     "These historical measurements do not verify the new KMS candidate."
   ],
   "sourcePullRequest": "https://github.com/zkp2p/peer-link/pull/231",
@@ -68,5 +68,6 @@
     "admissionsEverOpened": false,
     "refundFailure": "Completed fixed-length HTTP responses close the socket before the old transport loop resets its timeout; immutable old image cannot be patched in place.",
     "payoutKeyBackupAvailable": false
-  }
+  },
+  "supersededBy": "kms-pilot-evidence.json"
 }

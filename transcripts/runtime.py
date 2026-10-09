@@ -1,5 +1,6 @@
 """Measured PeerLink runtime: no host secrets, no arbitrary code or bank writes."""
 import argparse
+import copy
 import hashlib
 import json
 import secrets
@@ -21,6 +22,12 @@ from .storage import ArchiveClient
 from .wire import receive,send
 
 ROOT=Path(__file__).parent
+SETTLEMENT_RETRY_SECONDS=120
+SETTLEMENT_MAX_ATTEMPTS=60
+SETTLEMENT_RETRY_DELAY=2
+TRANSIENT_SETTLEMENT_ERRORS=frozenset({'payout_rpc_unavailable','http_transport_failed',
+    'storage_unavailable','kms_broker_unavailable','request_timeout','response_incomplete',
+    'egress_unavailable'})
 
 class RPC:
     def __init__(self,endpoint,transport):self.endpoint,self.transport=endpoint,transport
@@ -134,25 +141,52 @@ class Runtime:
                 self.epoch.activate_after_operator_verification(self.epoch.epoch_id,self.epoch.wallet,usdc_balance_minor=usdc,gas_balance_wei=gas)
         return self.dispatch('health',{})
 
-    def settle(self,job_id):
+    def archive_settlement(self,job_id,campaign,record):
+        validate_archive_record(campaign,record,policy=self.policy)
+        # Channel.sign retains its input by reference. A failed later archive
+        # must not mutate the payload of an already-published valid signature.
+        signed=self.channel.sign(copy.deepcopy(record))
+        self.archive.persist(signed)
+        self.receipts[job_id]=signed
+
+    def settle_attempt(self,job_id):
         with self.settlement_lock:
             self.epoch.require_active()
+            if job_id not in self.pending_records:return True
             record=self.pending_records[job_id]
             campaign=self.ledger.terms(job_id)['campaign']
-            validate_archive_record(campaign,record,policy=self.policy)
-            signed=self.channel.sign(record)
-            self.archive.persist(signed)
-            self.receipts[job_id]=signed
-            for _ in range(30):
-                result=self.coordinator.reconcile(job_id,now=int(time.time()))
-                if result['state']=='paid':break
-                time.sleep(2)
             record['job']=self.ledger.status(job_id)
-            validate_archive_record(campaign,record,policy=self.policy)
-            signed=self.channel.sign(record)
-            self.archive.persist(signed)
-            self.receipts[job_id]=signed
-            if record['job']['state']=='paid':self.pending_records.pop(job_id,None)
+            if self.receipts.get(job_id,{}).get('payload')!=record:
+                self.archive_settlement(job_id,campaign,record)
+            if record['job']['state']!='paid':
+                self.coordinator.reconcile(job_id,now=int(time.time()))
+                record['job']=self.ledger.status(job_id)
+                if self.receipts[job_id]['payload']!=record:
+                    self.archive_settlement(job_id,campaign,record)
+            if record['job']['state']=='paid':
+                self.pending_records.pop(job_id,None)
+                return True
+            return False
+
+    def settle(self,job_id):
+        # Only the accepted RAM record/ledger identity is retried. Bank reads,
+        # grading and contribution admission are never part of this loop.
+        # Stop starting attempts after either bound; each in-flight transport
+        # call also retains its existing timeout. Operator reconcile can resume
+        # an obligation retained after exhaustion, without a second submission.
+        deadline=time.monotonic()+SETTLEMENT_RETRY_SECONDS
+        for attempt in range(SETTLEMENT_MAX_ATTEMPTS):
+            if time.monotonic()>=deadline:return
+            try:
+                if self.settle_attempt(job_id):return
+            except Rejected as error:
+                if str(error) not in TRANSIENT_SETTLEMENT_ERRORS:raise
+            except OSError:
+                # ArchiveClient's bounded VSOCK socket can raise OSError directly.
+                pass
+            remaining=deadline-time.monotonic()
+            if remaining<=0 or attempt+1==SETTLEMENT_MAX_ATTEMPTS:return
+            time.sleep(min(SETTLEMENT_RETRY_DELAY,remaining))
 
     def reconcile_pending(self):
         for job_id in tuple(self.pending_records):

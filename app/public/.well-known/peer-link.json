@@ -35,13 +35,14 @@
     "explicitConsentRequired": true,
     "nearConfidentialAvailable": false,
     "ordinaryNear": {
-      "status": "implemented_not_live_funded_verified",
+      "status": "provider_visible_paid_schema_verified",
       "model": "z-ai/glm-5.3-flash",
       "consentedUpstreams": ["near", "chutes"],
       "aliasesAllowed": false,
       "maximumCalls": 1,
       "creditFundingStatus": "merchant_credit_verified",
-      "billableInferenceVerified": true
+      "billableInferenceVerified": true,
+      "strictJsonProbeVerified": true
     }
   },
   "pilot": {
@@ -61,10 +62,20 @@
     "restartRequiresOperatorReview": true,
     "maximumBudgetUSDC": 50,
     "candidateBudgetUSDC": 5,
-    "fundingVerified": false,
+    "fundingVerified": true,
     "currentCampaignCapacity": 1,
     "signingPreflightRequiresZeroUSDC": true,
-    "enclaveImageVerified": false,
-    "hostKmsSignatureVerified": true
+    "enclaveImageVerified": true,
+    "hostKmsSignatureVerified": true,
+    "candidateEvidence": "https://github.com/zkp2p/peer-link/blob/main/transcripts/kms-pilot-evidence.json",
+    "externalOperatorRecoveryVerified": true,
+    "runtimeRetirementRefundVerified": false,
+    "remainingFundedCapacity": 0,
+    "liveEnclaveBankJobCompleted": true,
+    "livePayoutCompleted": true,
+    "payoutRequiredOperatorReconciliation": true,
+    "clientRestoreWithoutResubmissionVerified": true,
+    "emptyEpochRetirementVerified": true,
+    "remainingUsdcMinor": 0
   }
 }
