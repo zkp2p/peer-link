@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "status": "owner_authorized_live_job_paid_and_restored",
+  "publicReleaseApproved": false,
+  "observedAt": "2026-10-09T02:47:09.856887+00:00",
+  "sourceCommit": "c2bc4b02e533bc82cfaf349a771d2b616f9981ee",
+  "sourcePullRequest": "https://github.com/zkp2p/peer-link/pull/233",
+  "policyDigest": "d3eda4dcbe1cbf717a4cddd732ae10f05cf0b5e2c5384e326bd5644d106f03cb",
+  "candidateMeasurements": {
+    "0": "e9c0b9eb2063443637db09e03ccf30926066c2f0d2af8e29b8f5f6829cbadd940ccf6330fb4828f9ae7d98551783ba6d",
+    "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
+    "2": "9d664688523c8d73bfce7aa6b32016a210268c6317f2d32dfab97e949e913047f4c4c9b2277ab1981b2f55aec41cc30b",
+    "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
+  },
+  "signedEifSha384": "ee885152b9a9628443fa21aabf76f3c23c12ac4ac2a310f0b71b8f0bbfdab899e901060d9c7d1a4bb0a844367cd49d48",
+  "buildVerification": {
+    "independentCIBuildsMatch": true,
+    "deployedPcr012MatchesCI": true,
+    "allMeasuredInputsMatchReviewedCheckout": true,
+    "ciRunUrl": "https://github.com/zkp2p/peer-link/actions/runs/37874831981"
+  },
+  "hardwareVerification": {
+    "awsCertificateChainVerified": true,
+    "coseSignatureVerified": true,
+    "freshNonceKeyPolicyEpochBindingsVerified": true,
+    "instanceAndRoleBindingsVerified": true,
+    "debugEnabled": false
+  },
+  "epoch": {
+    "budgetMinor": 5000000,
+    "chainId": 8453,
+    "epochId": "a21da95016bd2d8057664fe20949d864",
+    "ledgerPersistence": "enclave_ram_only",
+    "maxGasFundingWei": 3000000000000000,
+    "operatorRecovery": true,
+    "payoutKeyCustody": "aws_kms",
+    "payoutKeyId": "arn:aws:kms:us-east-1:411399509833:key/5e49914d-80d9-4140-a4c2-4bf00e3ac7ea",
+    "payoutWallet": "0xd297f105b145cd1d4ddb1d31392300e934bc3559",
+    "restartRequiresOperatorReview": true,
+    "usdcContract": "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+    "version": 2
+  },
+  "preFundingSigningPreflight": {
+    "zeroUsdcVerified": true,
+    "baseRpcVerified": true,
+    "actualKmsSignatureVerified": true,
+    "broadcast": false
+  },
+  "operatorRecovery": {
+    "verified": true,
+    "chainId": 8453,
+    "amountMinor": 1000000,
+    "fundingTransaction": "0x157b99eeecf16d1b54db5a0a4c5cc027eaf19edcc3e64ff7312eff558cfd76eb",
+    "refundTransaction": "0xf1447663200c551dbe42d2d989982563209076b56f9d1f56f8175895eb39e5da",
+    "recipient": "0x84e113087c97cd80ea9d78983d4b8ff61eca1929",
+    "recipientDeltaMinor": 1000000,
+    "remainingAmountMinorAfterRecovery": 0,
+    "enclaveRelayStoppedDuringRecovery": true,
+    "signingAuthority": "operator AWS IAM with KMS Sign",
+    "runtimeRetirementTest": false
+  },
+  "liveEnclaveBankJobCompleted": true,
+  "paidInferenceCompleted": true,
+  "livePayoutCompleted": true,
+  "limitations": [
+    "This evidence is not a public approved release or authorization to submit credentials.",
+    "Operator recovery proves the new KMS wallet only; the historical enclave-only 50 USDC remains unrecovered.",
+    "KMS signing authority is available to authorized operators and the host; it is not PCR-exclusive.",
+    "The job ledger and deduplication state remain RAM-only; restart requires operator reconciliation.",
+    "NEAR provider-visible inference is separate from confidential E2EE model attestation.",
+    "The real job needed one operator reconciliation call to complete settlement; immediate uninterrupted automatic settlement was not demonstrated."
+  ],
+  "liveContribution": {
+    "campaignId": "wise-api-pilot-v1",
+    "bankReadsAuthenticatedInsideEnclave": true,
+    "rawValuesPersisted": false,
+    "model": "z-ai/glm-5.3-flash",
+    "privacyMode": "provider_visible",
+    "contributorKeyOnly": true,
+    "inferenceRequestDigest": "9a3a7bf9e40276607eea466aed2e495d460ab2bb35d9914b62c732ad501a3be5",
+    "inferenceResponseDigest": "3f904a69c727187fe5706c3fbe2466ba62273b34782c5554e90a9480338f35de",
+    "inputTokens": 2335,
+    "outputTokens": 38,
+    "grade": {
+      "rubricVersion": "schema-usefulness-v1",
+      "score": 88,
+      "useful": true
+    },
+    "rewardMinor": 5000000,
+    "payoutTransaction": "0x88899fbe3b6036390f19207ec911493db6f1245ab1c50811c44ca2ee4752c677",
+    "chainReceiptVerified": true,
+    "signedReceiptDigest": "d561aa3d0fce97ecc92c454d2cc985ad39f4fded9e5f0653980fb42a15002edc",
+    "originalSubmissionAttempts": 1,
+    "freshClientRestoreVerified": true,
+    "restoreReservations": 0,
+    "restoreSubmissions": 0,
+    "operatorSettlementReconciliationCalls": 1,
+    "uninterruptedAutomaticSettlementProven": false
+  },
+  "providerBilling": {
+    "dashboardUsageObserved": true,
+    "requestsTotalIncludingSeparateProbes": 5,
+    "lastRequestInputTokensRounded": "2.3 K",
+    "lastRequestOutputTokensRounded": "0.0 K",
+    "lastRequestCostUSDDisplay": "0.0004",
+    "allRequestsCostUSDDisplay": "0.0010",
+    "nearCreditUSD": 1,
+    "cryptoFundingAmountUSDC": "1.015099",
+    "creditPurchaseTransaction": "0x06d1435505cfcc41e1239259bd615518d6bca3a44b6faf7b90e4c874af208caf",
+    "confidentialRouteApproved": false,
+    "dedicatedKeyTotalUsageUSD": "0.00103105"
+  },
+  "finalState": {
+    "admissionsOpen": false,
+    "remainingUsdcMinor": 0,
+    "remainingGasWei": 5157247936331,
+    "obligations": 0,
+    "retirementState": "refunded",
+    "refundAmountMinor": 0,
+    "refundTransaction": null,
+    "kmsKeyEnabled": true,
+    "newEnclaveAutomaticStopAt": "2026-10-10T02:10:39Z"
+  },
+  "cleanup": {
+    "dedicatedNearTestKeyDisabled": true,
+    "localMemoryCredentialProcessStopped": true,
+    "wiseTokenRevoked": false,
+    "payoutKmsKeyRetained": true
+  }
+}

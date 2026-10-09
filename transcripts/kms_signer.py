@@ -86,6 +86,10 @@ class KmsSigner:
             response = self._exchange({"version": 1, "keyId": self.key_id, "digest": signing_digest.hex()})
         except Exception:
             raise Rejected("kms_broker_unavailable") from None
+        if (isinstance(response,dict) and set(response)=={"version","error"}
+                and type(response["version"]) is int and response["version"]==1
+                and response["error"]=="kms_unavailable"):
+            raise Rejected("kms_broker_unavailable")
         fields(response, {"version", "keyId", "publicKey", "signature"})
         require(type(response["version"]) is int and response["version"] == 1
                 and response["keyId"] == self.key_id, "kms_response_invalid")

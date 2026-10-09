@@ -52,17 +52,23 @@ Before proceeding, show the owner:
   Peer enclave privacy is separate from provider privacy.
 - **The contributor pays inference even if rejected or failed.** No Peer or
   environment-key fallback exists. Default limits: one call, 50,000 conservative
-  encoded-request input units, 512 output tokens, 10 bank reads and 120 seconds.
+  encoded-request input units, 2048 output tokens, 10 bank reads and 120 seconds.
+  NEAR requests low reasoning effort within the reserved output limit. An explicitly
+  lower contributor limit remains binding; no automatic paid retry exists.
   Provider quotas can lag; there is no guaranteed exact dollar ceiling.
 - Ordinary NEAR uses canonical `z-ai/glm-5.3-flash`, consent naming NEAR and Chutes,
   no aliases, and one call. Serving headers are gateway assertions, not independent
-  model proof. Funded live inference remains unverified. Confidential NEAR is
-  unavailable and must never silently downgrade.
+  model proof. Paid provider-visible tool-call and strict-JSON probes succeeded;
+  the latter used 2048 output tokens and low reasoning effort. A supervised Wise
+  enclave job also completed using this ordinary route. Confidential NEAR remains unavailable and
+  must never silently downgrade.
 
 NEAR inference is prepaid API-key access. The observed credit checkout redirects
 to PingPay and displays NEAR Intents routing; that funding layer is distinct from
 inference. No per-request x402 route is verified. A dedicated key/spend limit without
-account credits cannot run paid inference. Never repeat the key in chat or logs.
+account credits cannot run paid inference. Merchant credit delivery and paid
+provider-visible schema checks were verified at the October 9 checkpoint. Never
+repeat the key in chat or logs.
 
 ## Inspect the authorized bank locally
 
@@ -180,8 +186,8 @@ deduplication authority and in-process artifacts remain RAM-only. Restart requir
 operator review: the client handle and archive cannot restore the authoritative
 ledger or make old-job continuation or funded-wallet reuse safe. No automatic
 refill or across-epoch dedup guarantee. Runtime reward/refund limits do not constrain
-independent operator signing through KMS. The revised pilot stays paused pending
-its measured release and checks; the earlier enclave-only $50 remains unrecovered
+independent operator signing through KMS. Public collection remains closed with
+no funded capacity after the one-slot test; the earlier enclave-only $50 remains unrecovered
 at this checkpoint and must be reconciled without discarding that live enclave.
 Release operators must exercise the signed paused signing preflight before any
 new funding at zero USDC: real Base RPC balances/nonce plus KMS one-minor-unit
@@ -189,8 +195,14 @@ refund signing. Code does not broadcast and the public response omits signed byt
 the host broker sees the signature/digest and can reconstruct that fixed refund.
 Do not claim operator-visible signatures are confined to the method. Contributors rely on the published
 scoped evidence; do not treat this check as a live payout or ledger-recovery proof.
-The $1 recovery test and subsequent $5 candidate allocation need actual confirmed
-chain evidence; do not infer completion from the configured budget.
+The separate $1 external KMS recovery test confirmed its fixed deployer return and
+zero remaining USDC with the relay stopped. This proves operator custody recovery,
+not enclave retirement. The subsequent supervised Wise job completed with one
+encrypted submission, fresh authenticated enclave reads and redacted NEAR grading.
+Its $5 payout confirmed after one signed operator reconciliation from
+`payout_pending`; this is assisted reconciliation. A fresh client restored the same
+signed receipt with zero new reservations/submissions. See [evidence](../../transcripts/kms-pilot-evidence.json).
+This does not restore the ledger after an enclave restart or enable public collection.
 The operator-host fsync archive is an availability dependency, not proof the host
 retains data indefinitely.
 

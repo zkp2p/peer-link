@@ -27,8 +27,9 @@ The model does not choose bank reads, change policy or sign payments in this pil
 - One campaign issue per bank, retaining existing issue URLs where possible.
   Publish scope, source access status, fixed reward, available slots and the skill.
 - Architecture supports **1–5 distinct contributors per bank**, stopping when
-  evidence is sufficient. The current paused Wise experiment has **one slot** and
-  a measured $5 budget; it does not expose five funded contribution slots.
+  evidence is sufficient. The supervised Wise experiment has a **one-slot limit**
+  and measured $5 budget. Its test consumed that slot/budget; remaining funded
+  capacity is zero and public collection stays closed.
 - Fixed **$5 or $10 USDC per accepted contribution**. Initial US campaigns use
   $10; other rates are explicit campaign policy, not inferred from personal data.
 - At most one paid contribution per contributor/account per bank campaign.
@@ -40,7 +41,8 @@ The model does not choose bank reads, change policy or sign payments in this pil
   environment-key fallback or alternate billing route exists in the job runtime.
 - The architecture permits a **$50 USDC maximum** and separate bounded gas. The
   revised candidate's measured budget is **$5 USDC**, following a separate confirmed
-  $1 recovery test. This is not a claim that those new funding checks have completed.
+  $1 recovery test, now verified. The supervised Wise job paid the allocated $5;
+  that completed test does not enable further funding or public collection.
   Fund only an independently verified epoch and its exact budget after approval.
   No automatic refill; reserve slots and budget before paid inference.
 - Preserve the landing design and concise tone. Detailed mechanics belong in the
@@ -111,8 +113,12 @@ The ordinary NEAR route is implemented for canonical `z-ai/glm-5.3-flash`,
 with explicit consent to NEAR and its approved Chutes upstream. It requests no
 aliasing, rejects alias/model mismatches and unapproved serving-provider headers,
 and makes at most one grading call. Those gateway assertions over TLS are not
-independent model attestation. Live funded inference remains unverified.
+independent model attestation. Paid provider-visible tool-call and strict-JSON
+schema checks passed; confidential inference remains unavailable.
 
+The client defaults to 2048 output tokens; the NEAR request sets low reasoning
+effort within that reserved limit. Explicitly lower contributor limits remain
+binding, and uncertain failures do not trigger an automatic paid retry.
 Token/call/deadline limits are not a guaranteed exact monetary cap, especially with delayed provider quotas.
 
 **Confidential NEAR roadmap:** unavailable until a reviewed attestation/E2EE adapter
@@ -131,8 +137,9 @@ API-key inference protocol; it is not per-request inference settlement. No x402
 route has been verified, and ordinary HTTP 402/out-of-credits is not an x402
 payment challenge. Do not advertise supported confidential inference or a verified
 NEAR dollar ceiling. The dedicated key was rotated in RAM. The live tool-call
-charged 57,400 nano-USD; a separate strict-JSON probe exhausted its output budget
-and needs a bounded retry. Gateway TCB remains OutOfDate, so this is evidence
+and strict-JSON retry both passed schema validation. The retry used 2048 output
+tokens and low reasoning effort, completed with `finish_reason=stop`, and billed
+271,250 nano-USD. Gateway TCB remains OutOfDate, so this is evidence
 for the provider-visible route, not confidential inference.
 Re-check live keyed behavior, routing, attestation policy and billing before
 enabling the route for public collection.
@@ -297,8 +304,10 @@ selection are enforced within one running epoch.
 The revised pilot uses a non-exportable AWS KMS payout key. Authorized operator
 IAM and the host broker can request signatures and recover funds outside the
 enclave. Its ARN and wallet are policy/attestation bound; exclusive enclave signing
-authority is not claimed. The revised pilot remains paused until its changed
-source/image, signing route and custody bindings pass independent measured checks.
+authority is not claimed. The `c2bc4b0` candidate passed independent rebuild and
+live Nitro source/image, policy/key/wallet checks. Public release remains unapproved;
+the supervised bank job passed, but public admission stays closed pending approval
+and remaining persistence/reconciliation gates.
 
 Before allocating funds, the signed operator preflight must query real Base RPC
 balances/nonce and exercise KMS signing for a one-minor-unit USDC refund while
@@ -308,9 +317,17 @@ signature/digest and can reconstruct that fixed refund, so operator-visible
 signatures are not secret or confined to this method. A synthetic check or the old
 image's quote cannot substitute for this route check. Verify bounded real funding
 and transaction receipts separately before activation.
-The current plan first tests $1 operator recovery and confirms its return, then
-allocates the measured $5 candidate budget for one $5 contribution. Neither plan
-alone is evidence of a live transfer or successful refund.
+The separate [$1 operator KMS recovery](https://basescan.org/tx/0xf1447663200c551dbe42d2d989982563209076b56f9d1f56f8175895eb39e5da)
+confirmed its fixed deployer return and zero remaining USDC while the relay was
+stopped. This proves independent operator recovery, not enclave retirement. The
+measured $5 allocation then funded a supervised Wise job. One encrypted submission
+produced authenticated enclave bank evidence, deterministic redaction and one NEAR
+`z-ai/glm-5.3-flash` provider-visible grade (score 88/useful, 2335 input and 38 output
+tokens). The [$5 payout](https://basescan.org/tx/0x88899fbe3b6036390f19207ec911493db6f1245ab1c50811c44ca2ee4752c677)
+confirmed after one signed operator reconciliation from `payout_pending`. A fresh
+client restored the same signed receipt without a new reservation or submission.
+This proves assisted same-job reconciliation, not uninterrupted instant payout or
+ledger recovery after restart. No funded capacity remains.
 
 Integrity/dedup keys, ledger, nonce state and in-process receipts remain RAM-only.
 Restart loses authoritative history while KMS custody survives. Operator review
@@ -360,12 +377,12 @@ acceptance remains closed until the measured-release and remaining evidence gate
 
 | Area | Observed evidence | What remains unavailable or unproven |
 | --- | --- | --- |
-| Synthetic transcript suite | At the KMS checkpoint, 162 credential-free tests passed across policy, transports, redaction, ledger/payout, encrypted runtime, client recovery/receipt, KMS signing and operator recovery. Client/artifact checks reject wrong custody, key/wallet, descriptor version and measured budget. | Prior image evidence does not approve the changed KMS release; fixtures/mocks do not prove live hardware, banking, inference or money movement. |
-| Wise read-only local acquisition | Three owner-authorized API reads succeeded for profiles, standard balances and a statement with valid nonempty history; extraction produced 79 structural field paths without retaining private values. | This was local/direct acquisition, not a Wise job executed inside the TEE. No personal identifiers or history counts are published. |
-| Nitro candidate hardware | The prior enclave-only candidate passed fresh AWS certificate, COSE signature, nonce/key/policy/epoch and PCR checks. Two independent CI builds matched deployed PCR0/1/2 and measured inputs. See [candidate evidence](../transcripts/candidate-evidence.json). | This does not verify the changed KMS candidate. Its fresh image/policy/key/wallet bindings and live signing route must be checked; the release remains unapproved and admission paused. |
-| Inference | Ordinary pinned-provider checks have synthetic coverage. Prior NEAR probes found the model quote UpToDate and gateway OutOfDate, with TLS binding matched. The dedicated key was rotated in RAM; one dollar of prepaid credit was delivered. A real tool-call passed schema validation and billed57,400 nano-USD to that key. | The separate strict-JSON probe hit its output limit. No verified NEAR E2EE route or full enclave bank-to-reward job is demonstrated yet. |
-| Rewards and custody | New-host KMS signing and independent signature verification passed; runtime/CLI recovery rules have synthetic coverage. The earlier enclave-only wallet still holds unrecovered $50. | A host signing probe is not a verified full enclave image, recovered old funds, live reward/refund or complete KMS recovery test. The paused Wise candidate permits one $5 slot. KMS recovery is not ledger persistence or safe cross-epoch wallet reuse. |
-| Contributor-agent trials | Claude Opus 5.5 high and Codex high reviewed the local contributor flow. Their findings drove safe secret prompts, clear release gates, recovery commands, receipt checks and Wise relationship fixes. Claude's final follow-up found the practical fixes intact and passed 33 targeted client/artifact tests. | These credential-free trials are not funded enrollment. Live same-job recovery, provider billing and payout still require the funded pilot. |
+| Synthetic transcript suite | At the KMS checkpoint, 165 credential-free tests passed across policy, transports, redaction, ledger/payout, encrypted runtime, client recovery/receipt, KMS signing and operator recovery. Client/artifact checks reject wrong custody, key/wallet, descriptor version and measured budget. | Prior image evidence does not approve the changed KMS release; fixtures/mocks do not prove live hardware, banking, inference or money movement. |
+| Wise acquisition | Earlier owner-authorized local reads established profile/balance/history structure. The supervised KMS pilot then acquired authenticated Wise responses inside the enclave and produced a signed redacted artifact from one encrypted submission. | One owner-authorized Wise test does not validate every bank or enable public collection. No personal identifiers or history counts are published. |
+| Nitro candidate hardware | KMS candidate `c2bc4b02e533bc82cfaf349a771d2b616f9981ee` passed [CI 37874831981](https://github.com/zkp2p/peer-link/actions/runs/37874831981): two independent builds matched PCR0/1/2, normalized unsigned EIF hashes and all measured inputs. Fresh live Nitro certificate/COSE, nonce/key/policy/epoch, PCR and KMS descriptor/wallet bindings verified. See [KMS pilot evidence](../transcripts/kms-pilot-evidence.json). | Candidate integrity is not public release approval. The release remains unreleased and public admission paused. |
+| Inference | One dollar of merchant credit was verified. Paid NEAR tool-call and strict-JSON probes passed schema validation on canonical `z-ai/glm-5.3-flash`, with approved serving-provider and TLS checks. The strict-JSON retry completed at 2048 output tokens / low reasoning effort and billed 271,250 nano-USD; the supervised enclave Wise job also completed paid NEAR grading. | Gateway TCB remains OutOfDate despite an UpToDate model quote. No verified confidential/E2EE route is demonstrated; this remains provider-visible evidence. |
+| Rewards and custody | New-host KMS signing and independent signature verification passed. A separately funded $1 external operator recovery confirmed its exact USDC return to the fixed deployer and zero remaining balance with the relay stopped. The Wise job separately confirmed its $5 reward after one signed operator reconciliation. The earlier enclave-only wallet still holds unrecovered $50. | Operator recovery does not prove enclave retirement. The one-slot test leaves zero funded capacity. KMS recovery is not ledger persistence or safe cross-epoch wallet reuse. |
+| Contributor-agent trials | Claude Opus 5.5 high and Codex high reviewed the local contributor flow. Their findings drove safe secret prompts, clear release gates, recovery commands, receipt checks and Wise relationship fixes. Claude's final follow-up found the practical fixes intact and passed 33 targeted client/artifact tests. A fresh live client restored the paid Wise job and identical signed receipt with zero new reservations/submissions. | This is same-epoch client recovery, not enclave-ledger recovery after restart. |
 | Public availability | Landing/docs/catalog describe the new contribution program with readiness gates. | No claim that all banks are ready, funded or supported in Peer. |
 
 Evidence must remain scoped to its actual source/image version and observation date.
@@ -418,3 +435,9 @@ Maintain one private task spend ledger for hosting, inference, rewards and gas.
 No synthetic result, candidate quote or local bank check substitutes for remaining
 release gates. Existing adapters remain reference assets; unrelated Peer trading,
 extension behavior and production attestation services are outside this revamp.
+
+The post-pilot settlement fix has 179 passing credential-free tests. It adds bounded
+automatic reconciliation of the existing payment and final archive after transient
+failures, without repeating bank reads or grading. This changes measured runtime
+code; the completed live test remains evidence for `c2bc4b0`, not automatic approval
+of the follow-up image or public collection.

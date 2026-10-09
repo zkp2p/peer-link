@@ -44,7 +44,8 @@ The ordinary NEAR route is implemented for canonical `z-ai/glm-5.3-flash`,
 with explicit consent to NEAR and its approved Chutes upstream. It requests no
 aliasing, rejects alias/model mismatches and unapproved serving-provider headers,
 and makes at most one grading call. Those gateway assertions over TLS are not
-independent model attestation. Live funded inference remains unverified.
+independent model attestation. Paid provider-visible tool-call and strict-JSON
+schema checks passed; confidential inference remains unavailable.
 
 ## Privacy and implementation boundaries
 
@@ -78,13 +79,23 @@ Base RPC balances/nonce and KMS one-minor-unit refund signing at zero USDC. Code
 does not broadcast; the public response omits raw signed bytes. The host broker
 sees the signature/digest and can reconstruct that fixed refund. A valid quote or mock signer alone is insufficient.
 The measured `pilotBudgetMinor` is the exact epoch budget, bounded from $5 to the
-$50 architecture maximum. The revised candidate uses $5 after a separate confirmed
-$1 recovery test and capacity one for the current Wise experiment; do not silently
+$50 architecture maximum. The revised candidate used $5 after a separate confirmed
+$1 recovery test and capacity one for the Wise experiment. Its paid test consumed
+that slot/budget; no funded public capacity remains. Do not silently refill or
 fund the architecture maximum.
 The signed operator retirement action irreversibly closes admission, cancels unused
 reservations, finishes existing obligations and archives them before the fixed
 remaining-USDC refund to the deployer. No arbitrary destination or ETH sweep.
 This is built behavior with synthetic evidence, not a demonstrated live refund.
+The `c2bc4b0` KMS candidate passed 165 credential-free tests, independent CI rebuilds
+and live Nitro certificate/signature/PCR/key/wallet/policy checks. Paid ordinary
+NEAR strict-JSON verification succeeded with 2048 output tokens and low reasoning
+effort. The separate $1 external operator KMS recovery confirmed the fixed deployer return
+and zero remaining USDC with the relay stopped. The supervised Wise job completed
+actual enclave acquisition, redacted NEAR grading and its confirmed $5 payout after
+one signed operator reconciliation from `payout_pending`. Client restoration used
+the same signed receipt with zero new reservations/submissions. This is assisted
+reconciliation, not uninterrupted instant payout, public approval or ledger recovery.
 
 Write original code, preserve unrelated changes, and keep checks credential-free.
 Regression tests must exercise source/host/TLS mismatch, unauthenticated identity,

@@ -41,7 +41,8 @@ The ordinary NEAR route is implemented for canonical `z-ai/glm-5.3-flash`,
 with explicit consent to NEAR and its approved Chutes upstream. It requests no
 aliasing, rejects alias/model mismatches and unapproved serving-provider headers,
 and makes at most one grading call. Those gateway assertions over TLS are not
-independent model attestation. Live funded inference remains unverified.
+independent model attestation. Paid provider-visible tool-call and strict-JSON
+schema checks passed; confidential inference remains unavailable.
 
 ## Rewards and costs
 
@@ -57,9 +58,14 @@ amount or recipient. Reward availability is campaign-specific, not implied by
 an issue listing. See [terms](docs/incentives.md) and [privacy](docs/privacy.md).
 
 The architecture caps rewards at $50 USDC with no automatic refill. The revised
-candidate's measured budget is $5 for one $5 contribution; allocation follows a
-separate $1 recovery test and its confirmed return, not another $50 deposit.
-The current paused Wise experiment permits one contributor, not five.
+candidate's measured budget is $5 for one $5 contribution. The separate $1
+operator KMS recovery test confirmed its return. A supervised Wise job then
+completed authenticated enclave reads, redaction and paid NEAR grading, followed
+by a [confirmed $5 payout](https://basescan.org/tx/0x88899fbe3b6036390f19207ec911493db6f1245ab1c50811c44ca2ee4752c677).
+The job first returned `payout_pending` and needed one signed operator reconciliation.
+A fresh client restored the same signed receipt without another reservation or
+submission. The one-slot experiment has no remaining funded capacity; public
+collection stays closed.
 The revised payout design uses a non-exportable AWS KMS signing key. Authorized
 operator IAM and the host signing broker can sign outside the enclave and recover
 funds; this is not exclusive enclave custody. The ledger and deduplication authority
@@ -78,7 +84,13 @@ real Base RPC and KMS refund signing while paused with zero USDC. The public
 operator response excludes raw signed bytes, and code does not broadcast. The
 host broker can see the signature/digest and reconstruct the fixed one-unit refund;
 this is not signature secrecy from the operator. The new host signing route and
-independent signature verification passed; a full enclave image is still unverified.
+independent signature verification passed. The KMS candidate at `c2bc4b0` was
+independently reproduced in [CI 37874831981](https://github.com/zkp2p/peer-link/actions/runs/37874831981)
+and verified on live Nitro hardware, including key/wallet/policy bindings. Public
+release approval remains a separate gate. The
+[$1 operator recovery receipt](https://basescan.org/tx/0xf1447663200c551dbe42d2d989982563209076b56f9d1f56f8175895eb39e5da)
+verified the fixed deployer return and zero remaining USDC with the relay stopped;
+it does not prove the enclave retirement flow.
 
 ## Develop and inspect
 

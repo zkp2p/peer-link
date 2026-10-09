@@ -164,6 +164,23 @@ fixed limits; delayed provider-side quota enforcement is not an exact dollar cap
 Verify confidential-provider attestation separately from ordinary provider-visible
 inference. Do not advertise unavailable modes.
 
+## Verified candidate checkpoint
+
+On October 9, KMS candidate `c2bc4b02e533bc82cfaf349a771d2b616f9981ee`
+passed 165 credential-free tests and [CI 37874831981](https://github.com/zkp2p/peer-link/actions/runs/37874831981).
+Two independent builds matched measured inputs, PCR0/1/2 and normalized unsigned
+EIF hashes. Fresh live Nitro certificate/COSE, nonce/key/policy/epoch, PCR and KMS
+descriptor/wallet bindings verified. Paid ordinary NEAR strict-JSON verification
+succeeded with 2048 output tokens and low reasoning effort; merchant credit was
+verified. These are scoped candidate/provider checks, not public release approval. A separate [$1 external operator recovery](https://basescan.org/tx/0xf1447663200c551dbe42d2d989982563209076b56f9d1f56f8175895eb39e5da)
+confirmed the exact fixed-deployer USDC return and zero remaining balance while
+the relay was stopped. That confirms operator KMS custody recovery, not enclave
+retirement. A supervised Wise job then completed authenticated enclave acquisition,
+redacted NEAR grading and a [confirmed $5 reward](https://basescan.org/tx/0x88899fbe3b6036390f19207ec911493db6f1245ab1c50811c44ca2ee4752c677)
+after one signed operator reconciliation from `payout_pending`. A fresh client
+restored the same signed receipt without new reservations/submissions. The one-slot
+test leaves no funded capacity; public collection remains closed. See [evidence](../transcripts/kms-pilot-evidence.json).
+
 ## Wallet and state gates
 
 The revised pilot uses a non-exportable AWS KMS payout key. Authorized operator
@@ -273,7 +290,9 @@ Reconcile the funded epoch **before** its lifetime deadline. Do not fund close t
 expiry or rely on the five-minute polling gap. The operator must plan the shutdown
 or explicitly extend the authorized supervised test through a reviewed stack update
 before risking authoritative job state or the old enclave-only key. No schedule
-alone guarantees complete cleanup or spend.
+alone guarantees complete cleanup or spend. The earlier enclave-only host has a
+bounded shutdown deadline of **2026-10-10 17:11:57 UTC**; reconcile its unrecovered
+$50 before that deadline or explicitly authorize a reviewed supervised extension.
 
 Rollback first stops admission/relay while keeping any funded enclave alive long
 enough for reviewed reconciliation. `systemctl stop peer-link-transcript-relay`
@@ -308,3 +327,25 @@ Rewards, gas and contributor-funded inference are separate ledger entries.
 AWS reference: [HTTP proxy integrations](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-http.html),
 [Nitro supported instance families](https://docs.aws.amazon.com/enclaves/latest/user/nitro-enclave.html),
 [enclave allocator](https://docs.aws.amazon.com/enclaves/latest/user/multiple-enclaves.html).
+
+The completed owner-authorized KMS pilot retired with zero USDC and zero obligations.
+The runtime reported `refunded` with amount zero and no refund transaction; this
+checks empty-epoch closure, not a nonzero runtime refund. Operator KMS recovery
+was separately verified with the $1 transfer. The dedicated NEAR test key was
+disabled after the job and its local in-memory credential process was stopped.
+
+## Settlement retries after the live pilot
+
+The follow-up runtime starts at most 60 settlement attempts within a 120-second
+monotonic window, with existing per-call transport timeouts. It retries explicit
+transient RPC, relay, KMS and archive failures using the accepted job and saved payment
+identity. It never repeats bank acquisition or inference. Pause and permanent
+validation failures stop the loop; exhausted obligations remain for signed operator
+reconciliation. Final archival retries cannot mutate an already published signed
+receipt. Credential-free regressions cover these cases; the live evidence above
+continues to describe the earlier `c2bc4b0` image and its assisted reconciliation.
+
+Bank credentials, the inference key, submitted payload and raw read references are
+released before settlement. Only the broker's exact version-1 `kms_unavailable`
+response is normalized for retry; malformed responses and signature/key-integrity
+failures remain permanent.

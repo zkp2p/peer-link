@@ -1,9 +1,11 @@
 """Synthetic integration/security tests. No live keys, hardware, RPC or cloud use."""
 import copy
 import hashlib
+import socket
 import threading
 import unittest
-from unittest.mock import patch
+import weakref
+from unittest.mock import Mock, patch
 from contextlib import contextmanager
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -15,10 +17,14 @@ from transcripts.common import Rejected, canonical, digest
 from transcripts.epoch import CHAIN_ID, USDC_ADDRESS, MAX_GAS_FUNDING_WEI
 from transcripts.ledger import Ledger
 from transcripts.providers import SYSTEM_PROMPT
-from transcripts.runtime import Runtime, RPC
+from transcripts.payout import PayoutCoordinator
+from transcripts.runtime import Runtime, RPC, SETTLEMENT_MAX_ATTEMPTS, SETTLEMENT_RETRY_SECONDS
 from transcripts.server import route, connect_public
-from transcripts.transport import HTTPResponse
-from transcripts.tests.test_kms_signer import KEY_ID
+from transcripts.transport import HTTPResponse, HTTPTransport, tunnel_socket
+from transcripts.wire import receive
+from transcripts.tests.test_kms_signer import KEY_ID, WALLET, SyntheticBroker, transaction
+from transcripts.kms_signer import KmsSigner
+from transcripts.eth_payout import transfer_data
 from transcripts.tests.test_core import Anchor, campaign, request, read, KEY, NOW
 
 OPERATOR = Ed25519PrivateKey.from_private_bytes(b"fixed-public-test-operator-seed!"[:32].ljust(32,b"!"))
@@ -104,6 +110,33 @@ class FakeCoordinator:
         return self.ledger.mark_paid(job_id,self.tx_id,now)
 
 
+class RecoveryTransport:
+    """Real coordinator exercise: transfer mines despite a lost RPC response."""
+    tx_id='0x'+'b'*64
+    signed=b'immutable-synthetic-payment'
+    def __init__(self,failure):
+        self.failure=failure;self.mined=False;self.signs=0;self.broadcasts=[];self.checks=0
+    def sign(self,*args):
+        self.signs+=1
+        return self.signed,self.tx_id
+    def validate(self,signed,tx_id,*args):return (signed,tx_id)==(self.signed,self.tx_id)
+    def broadcast(self,signed,tx_id):
+        assert self.validate(signed,tx_id)
+        self.broadcasts.append((signed,tx_id));self.mined=True
+        if self.failure=='lost_broadcast':
+            self.failure=None
+            raise Rejected('payout_rpc_unavailable')
+    def confirmed(self,*args):
+        self.checks+=1
+        if self.mined and callable(self.failure):
+            failure=self.failure;self.failure=None
+            failure()
+        if self.mined and self.failure=='receipt_rpc':
+            self.failure=None
+            raise Rejected('http_transport_failed')
+        return self.mined
+
+
 class FakeBank:
     instances=[];failure=None
     def __init__(self,policy,credential,**kwargs):
@@ -131,6 +164,9 @@ class FakeProvider:
 class RuntimeTests(unittest.TestCase):
     def setUp(self):
         self.clock=patch("transcripts.runtime.time.time",return_value=NOW+3);self.clock.start()
+        self.monotonic_now=0
+        self.monotonic=patch('transcripts.runtime.time.monotonic',side_effect=lambda:self.monotonic_now);self.monotonic.start()
+        self.sleep=patch('transcripts.runtime.time.sleep',side_effect=self.advance_time);self.sleep_mock=self.sleep.start()
         self.events=[];self.epoch=FakeEpoch();self.archive=FakeArchive(self.events)
         self.policy={"promptDigest":hashlib.sha256(SYSTEM_PROMPT.encode()).hexdigest(),"payoutRpc":"https://rpc.example",
                      "campaigns":[campaign()],"operatorPublicKey":PUBLIC_OPERATOR,"pilotBudgetMinor":50_000_000,
@@ -141,15 +177,19 @@ class RuntimeTests(unittest.TestCase):
         self.runtime.payment=type("FakeFunding",(),{"funding_balances":lambda _: (50_000_000,10**12)})()
         FakeBank.instances=[];FakeBank.failure=None
         FakeProvider.instances=[];FakeProvider.extra_grade=None;FakeProvider.unsafe_metadata=False
-    def tearDown(self):self.epoch.ledger.close();self.clock.stop()
+    def advance_time(self,seconds):self.monotonic_now+=seconds
+    def tearDown(self):
+        self.epoch.ledger.close();self.clock.stop();self.monotonic.stop();self.sleep.stop()
     def job(self):
         status=self.runtime.dispatch("reserve",request(self.policy["campaigns"][0]))
         self.epoch.ledger.submit(status["jobId"],status["bindingDigest"],NOW+3)
         return status["jobId"]
-    def process(self,job_id):
-        payload={"credential":{"origin":"https://bank.example","kind":"bearer","value":"SECRET-BANK-CREDENTIAL"},
+    def payload(self):
+        return {"credential":{"origin":"https://bank.example","kind":"bearer","value":"SECRET-BANK-CREDENTIAL"},
                  "profileId":"1","recipe":{"version":1,"reads":[]},"inferenceKey":"SECRET-INFERENCE-KEY",
                  "notes":"SECRET-LOCAL-NOTES","transcript":{"rawBankMemo":"SECRET-LOCAL-TRANSCRIPT"}}
+    def process(self,job_id,payload=None):
+        if payload is None:payload=self.payload()
         self.runtime.jobs.acquire()
         with patch("transcripts.transport.BankClient",FakeBank),patch("transcripts.providers.ProviderClient",FakeProvider):
             self.runtime.process(job_id,payload)
@@ -211,33 +251,176 @@ class RuntimeTests(unittest.TestCase):
         candidate=copy.deepcopy(original)
         candidate["artifact"]["endpoints"][0]["path"]="/api/accounts/SECRET-ACCOUNT/transactions"
         with self.assertRaises(Rejected):validate_archive_record(self.policy["campaigns"][0],candidate,policy=self.policy)
-    def test_archive_failure_prevents_payment_and_retry_needs_no_credentials(self):
+    def test_initial_archive_transient_retries_before_payment_without_new_credentials(self):
         self.archive.fail_calls={1};job_id=self.job();self.process(job_id)
-        self.assertEqual(self.coordinator.calls,0)
-        self.assertEqual(self.epoch.ledger.status(job_id)["state"],"accepted")
-        self.assertIn(job_id,self.runtime.pending_records)
-        self.assertEqual(self.archive.records,[])
-        self.runtime.reconcile_pending()
         self.assertEqual(self.epoch.ledger.status(job_id)["state"],"paid")
         self.assertEqual(self.coordinator.calls,1)
+        self.assertEqual(self.events,['archive','reconcile','paid','archive'])
+        self.assertEqual(self.archive.calls,3)
         self.assertEqual(len(FakeBank.instances),1);self.assertEqual(len(FakeProvider.instances),1)
-    def test_uncertain_payment_retry_reuses_same_identity(self):
-        self.coordinator.fail_broadcast_once=True;job_id=self.job();self.process(job_id)
-        self.assertEqual(self.epoch.ledger.status(job_id)["state"],"payout_pending")
-        identity=self.epoch.ledger.payout_identity(job_id)
-        self.runtime.reconcile_pending()
+    def assert_mined_failure_recovers(self,failure):
+        transport=RecoveryTransport(failure)
+        self.runtime.coordinator=PayoutCoordinator(self.epoch.ledger,transport)
+        job_id=self.job();self.process(job_id)
         self.assertEqual(self.epoch.ledger.status(job_id)["state"],"paid")
-        self.assertEqual(self.epoch.ledger.payout_identity(job_id),identity)
-    def test_post_payment_archive_failure_retry_does_not_pay_again(self):
+        self.assertEqual(self.epoch.ledger.payout_identity(job_id),(transport.signed,transport.tx_id))
+        self.assertEqual(transport.signs,1);self.assertEqual(len(transport.broadcasts),1)
+        self.assertNotIn(job_id,self.runtime.pending_records)
+        self.assertEqual(len(FakeBank.instances),1);self.assertEqual(len(FakeProvider.instances),1)
+    def test_mined_payment_lost_broadcast_response_recovers_automatically(self):
+        self.assert_mined_failure_recovers('lost_broadcast')
+    def test_mined_payment_receipt_rpc_transient_recovers_automatically(self):
+        self.assert_mined_failure_recovers('receipt_rpc')
+    def emit_http_failure(self,status):
+        # Exercise actual HTTPConnection parsing and HTTPTransport error mapping,
+        # replacing only TLS wrapping/DNS with a local socket pair.
+        client,server=socket.socketpair()
+        server.sendall(f'HTTP/1.1 {status} Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n'.encode())
+        server.shutdown(socket.SHUT_WR)
+        context=Mock();context.wrap_socket.return_value=client
+        try:
+            with patch('transcripts.transport.public_socket',return_value=client), \
+                 patch('ssl.create_default_context',return_value=context):
+                HTTPTransport('direct').request('POST','https://rpc.example/',body=b'{}')
+        finally:
+            client.close();server.close()
+    def test_actual_http_429_after_mining_retries_without_another_payment(self):
+        self.assert_mined_failure_recovers(lambda:self.emit_http_failure(429))
+    def test_actual_http_503_after_mining_retries_without_another_payment(self):
+        self.assert_mined_failure_recovers(lambda:self.emit_http_failure(503))
+    def test_actual_enclave_relay_refusal_retries_without_another_payment(self):
+        def refused():
+            stream=Mock();stream.recv.return_value=b''
+            with patch('transcripts.transport.socket.AF_VSOCK',40,create=True), \
+                 patch('transcripts.transport.socket.socket',return_value=stream):
+                tunnel_socket('rpc.example')
+        self.assert_mined_failure_recovers(refused)
+    def test_actual_archive_connection_closed_retries_final_archive_without_another_payment(self):
+        transport=RecoveryTransport(None)
+        self.runtime.coordinator=PayoutCoordinator(self.epoch.ledger,transport)
+        original=self.archive.persist;calls=[]
+        def persist(record):
+            calls.append(record)
+            if len(calls)==2:
+                stream=Mock();stream.recv.return_value=b''
+                receive(stream)  # Actual archive receive framing raises connection_closed.
+            return original(record)
+        with patch.object(self.archive,'persist',side_effect=persist):
+            job_id=self.job();self.process(job_id)
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'paid')
+        self.assertEqual(len(calls),3);self.assertNotIn(job_id,self.runtime.pending_records)
+        self.assertEqual(transport.signs,1);self.assertEqual(len(transport.broadcasts),1)
+    def test_raw_reads_and_credentials_are_released_before_first_settlement(self):
+        references=[];payload=self.payload()
+        def acquire(bank,job_id,recipe,now):
+            value=read(job_id,acquired_at=now);references.append(weakref.ref(value))
+            return [value]
+        original=self.runtime.settle
+        def settle(job_id):
+            self.assertTrue(FakeBank.instances[0].closed)
+            self.assertEqual(FakeBank.instances[0].credential,{})
+            self.assertTrue(FakeProvider.instances[0].closed)
+            self.assertIsNone(FakeProvider.instances[0].api_key)
+            self.assertIsNone(references[0]())
+            self.assertEqual(payload,{})
+            return original(job_id)
+        with patch.object(FakeBank,'acquire',acquire),patch.object(self.runtime,'settle',new=settle):
+            job_id=self.job();self.process(job_id,payload)
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'paid')
+
+    def kms_recovery_transport(self,first_response):
+        broker=SyntheticBroker();requests=[]
+        def exchange(request):
+            requests.append(copy.deepcopy(request))
+            return first_response if len(requests)==1 else broker(request)
+        signer=KmsSigner(KEY_ID,WALLET,exchange)
+        class Transport(RecoveryTransport):
+            def sign(self,job_id,recipient,amount):
+                self.signs+=1
+                tx=transaction();tx['data']=transfer_data(recipient,amount)
+                result=signer.sign_transaction(tx)
+                self.signed=bytes(result.raw_transaction);self.tx_id='0x'+bytes(result.hash).hex()
+                return self.signed,self.tx_id
+        # Use the synthetic KMS public wallet consistently in the measured fixture.
+        self.epoch.wallet=WALLET.lower();self.policy['payoutAuthority']['wallet']=self.epoch.wallet
+        self.runtime.policy_digest=digest(self.policy)
+        transport=Transport(None)
+        self.runtime.coordinator=PayoutCoordinator(self.epoch.ledger,transport)
+        return transport,requests,broker
+    def test_actual_kms_availability_payload_reaches_runtime_retry_without_duplicate_payment(self):
+        transport,requests,broker=self.kms_recovery_transport({'version':1,'error':'kms_unavailable'})
+        job_id=self.job();self.process(job_id)
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'paid')
+        self.assertEqual(len(requests),2);self.assertEqual(requests[0],requests[1])
+        self.assertEqual(len(broker.requests),1);self.assertEqual(len(transport.broadcasts),1)
+        self.assertEqual(self.epoch.ledger.payout_identity(job_id),(transport.signed,transport.tx_id))
+        self.assertEqual(len(FakeBank.instances),1);self.assertEqual(len(FakeProvider.instances),1)
+    def test_malformed_kms_error_payload_is_permanent_and_never_retried(self):
+        transport,requests,broker=self.kms_recovery_transport({'version':True,'error':'kms_unavailable'})
+        job_id=self.job();self.process(job_id)
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'accepted')
+        self.assertEqual(len(requests),1);self.assertEqual(broker.requests,[])
+        self.assertEqual(transport.broadcasts,[]);self.sleep_mock.assert_not_called()
+    def test_post_payment_archive_failure_automatically_retries_without_payment_again(self):
         self.archive.fail_calls={2};job_id=self.job();self.process(job_id)
         self.assertEqual(self.epoch.ledger.status(job_id)["state"],"paid")
-        self.assertIn(job_id,self.runtime.pending_records)
-        self.runtime.reconcile_pending()
         self.assertEqual(self.events.count("paid"),1)
+        self.assertEqual(self.coordinator.calls,1);self.assertEqual(self.archive.calls,3)
         self.assertNotIn(job_id,self.runtime.pending_records)
         self.assertEqual(self.archive.records[-1]["payload"]["job"]["state"],"paid")
+        self.assertEqual(len(FakeBank.instances),1);self.assertEqual(len(FakeProvider.instances),1)
+    def test_retry_attempt_bound_retains_obligation_for_manual_reconcile(self):
+        self.archive.fail_calls=set(range(1,SETTLEMENT_MAX_ATTEMPTS+1))
+        job_id=self.job();self.process(job_id)
+        self.assertEqual(self.archive.calls,SETTLEMENT_MAX_ATTEMPTS)
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'accepted')
+        self.assertIn(job_id,self.runtime.pending_records);self.assertEqual(self.coordinator.calls,0)
+        self.archive.fail_calls.clear();self.runtime.reconcile_pending()
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'paid')
+        self.assertEqual(len(FakeBank.instances),1);self.assertEqual(len(FakeProvider.instances),1)
+    def test_retry_deadline_includes_transport_time_and_does_not_start_another_attempt(self):
+        def unavailable(record):
+            self.monotonic_now+=SETTLEMENT_RETRY_SECONDS+1
+            raise OSError('synthetic unavailable archive')
+        with patch.object(self.archive,'persist',side_effect=unavailable) as archive:
+            job_id=self.job();self.process(job_id)
+        self.assertEqual(archive.call_count,1);self.sleep_mock.assert_not_called()
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'accepted')
+        self.assertIn(job_id,self.runtime.pending_records)
+    def test_pause_during_retry_stops_automatic_payment_until_operator_resume(self):
+        transport=RecoveryTransport('lost_broadcast')
+        original=transport.broadcast
+        def broadcast(*args):
+            self.epoch.pause()
+            original(*args)
+        transport.broadcast=broadcast
+        self.runtime.coordinator=PayoutCoordinator(self.epoch.ledger,transport)
+        job_id=self.job();self.process(job_id)
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'payout_pending')
+        self.assertEqual(transport.signs,1);self.assertEqual(len(transport.broadcasts),1)
+        self.assertIn(job_id,self.runtime.pending_records)
+        self.runtime.operator(self.operator_message('resume'))
+        self.runtime.reconcile_pending()
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'paid')
+        self.assertEqual(len(transport.broadcasts),1)
+    def test_permanent_validation_failure_is_not_retried(self):
+        with patch.object(self.coordinator,'reconcile',side_effect=Rejected('invalid_transaction')) as reconcile:
+            job_id=self.job();self.process(job_id)
+        self.assertEqual(reconcile.call_count,1);self.sleep_mock.assert_not_called()
+        self.assertIn(job_id,self.runtime.pending_records)
+    def test_failed_final_archive_preserves_published_signed_payload_snapshot(self):
+        class AliasingChannel(SigningChannel):
+            def sign(self,record):return {'payload':record,'signature':'synthetic-signature'}
+        self.runtime.channel=AliasingChannel()
+        self.archive.fail_calls=set(range(2,SETTLEMENT_MAX_ATTEMPTS+2))
+        job_id=self.job();self.process(job_id)
+        self.assertEqual(self.epoch.ledger.status(job_id)['state'],'paid')
+        self.assertEqual(self.runtime.receipts[job_id]['payload']['job']['state'],'accepted')
+        self.assertEqual(self.runtime.pending_records[job_id]['job']['state'],'paid')
+        self.assertIn(job_id,self.runtime.pending_records)
+        self.assertEqual(self.coordinator.calls,1)
     def test_paused_settlement_never_archives_or_pays(self):
-        self.archive.fail_calls={1};job_id=self.job();self.process(job_id)
+        self.archive.fail_calls=set(range(1,SETTLEMENT_MAX_ATTEMPTS+1));job_id=self.job();self.process(job_id)
         self.epoch.pause()
         with self.assertRaisesRegex(Rejected,"payout_paused"):self.runtime.settle(job_id)
         self.assertEqual(self.coordinator.calls,0)
@@ -313,7 +496,7 @@ class RuntimeTests(unittest.TestCase):
 
     def test_refund_waits_for_pending_archive_and_never_discards_obligation(self):
         from unittest.mock import Mock
-        job_id=self.job();self.archive.fail_calls={1,2};self.process(job_id)
+        job_id=self.job();self.archive.fail_calls=set(range(1,2*SETTLEMENT_MAX_ATTEMPTS+1));self.process(job_id)
         self.runtime.retirement=Mock()
         self.runtime.reconcile_retirement()
         self.runtime.retirement.reconcile.assert_not_called()
