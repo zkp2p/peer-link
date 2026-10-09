@@ -15,7 +15,7 @@ from .channel import Channel
 from .epoch import BootEpoch
 from .eth_payout import BaseUSDCPayoutTransport
 from .payout import PayoutCoordinator, RetirementCoordinator
-from .artifacts import extract_artifact,validate_archive_record
+from .artifacts import extract_artifact,validate_archive_record,validate_epoch_descriptor
 from .ledger import REASONS
 from .storage import ArchiveClient
 from .wire import receive,send
@@ -38,11 +38,13 @@ class Runtime:
     def __init__(self,policy,epoch,transport,archive,attester=attest):
         from .providers import SYSTEM_PROMPT
         require(policy['promptDigest']==hashlib.sha256(SYSTEM_PROMPT.encode()).hexdigest(),'prompt_mismatch')
+        validate_epoch_descriptor(epoch.public_descriptor(), policy)
         self.policy,self.policy_digest=policy,digest(policy)
         self.epoch,self.ledger,self.transport,self.archive=epoch,epoch.ledger,transport,archive
         self.channel,self.attester=Channel(),attester
         self.receipts={};self.pending_records={};self.settlement_lock=threading.Lock();self.operator_nonces=set();self.operator_lock=threading.Lock()
         self.jobs=threading.BoundedSemaphore(2)
+        self.funding_preflight=None
         self.rpc=RPC(policy['payoutRpc'],transport)
         self.payment=BaseUSDCPayoutTransport(epoch,self.rpc,pinned_rpc_url=policy['payoutRpc'])
         self.coordinator=PayoutCoordinator(self.ledger,self.payment)
@@ -102,7 +104,7 @@ class Runtime:
     def operator(self,body):
         fields(body,{'payload','signature'});value=body['payload']
         fields(value,{'action','epochId','wallet','nonce','expiresAt'})
-        require(value['action'] in {'activate','pause','resume','reconcile','retire'},'invalid_operator_action')
+        require(value['action'] in {'activate','pause','resume','reconcile','retire','preflight'},'invalid_operator_action')
         require(value['epochId']==self.epoch.epoch_id and value['wallet']==self.epoch.wallet,'epoch_binding_mismatch')
         require(type(value['expiresAt']) is int and time.time()<value['expiresAt']<=time.time()+120,'operator_expired')
         require(isinstance(value['nonce'],str) and len(value['nonce'])==64,'invalid_nonce')
@@ -111,6 +113,14 @@ class Runtime:
         with self.operator_lock:
             require(value['nonce'] not in self.operator_nonces and len(self.operator_nonces)<1000,'operator_replayed')
             self.operator_nonces.add(value['nonce'])
+            if value['action']=='preflight':
+                usdc,gas=self.payment.funding_balances()
+                require(usdc==0,'preflight_requires_unfunded')
+                nonce=int(self.rpc.call('eth_getTransactionCount',[self.epoch.wallet,'pending']),16)
+                probe=self.epoch.check_payout_signing(nonce)
+                self.funding_preflight=digest(self.epoch.public_descriptor())
+                return {'health':self.dispatch('health',{}),'preflight':{
+                    **probe,'usdcBalanceMinor':usdc,'gasBalanceWei':gas,'pendingNonce':nonce}}
             if value['action']=='pause':self.epoch.pause()
             elif value['action']=='resume':self.epoch.resume_after_operator_verification(self.epoch.epoch_id)
             elif value['action']=='reconcile':
@@ -119,6 +129,7 @@ class Runtime:
                 self.epoch.begin_retirement_after_operator_verification(self.epoch.epoch_id,now=int(time.time()))
                 threading.Thread(target=self.reconcile_retirement,daemon=True).start()
             else:
+                require(self.funding_preflight==digest(self.epoch.public_descriptor()),'funding_preflight_required')
                 usdc,gas=self.payment.funding_balances()
                 self.epoch.activate_after_operator_verification(self.epoch.epoch_id,self.epoch.wallet,usdc_balance_minor=usdc,gas_balance_wei=gas)
         return self.dispatch('health',{})
@@ -128,7 +139,7 @@ class Runtime:
             self.epoch.require_active()
             record=self.pending_records[job_id]
             campaign=self.ledger.terms(job_id)['campaign']
-            validate_archive_record(campaign,record)
+            validate_archive_record(campaign,record,policy=self.policy)
             signed=self.channel.sign(record)
             self.archive.persist(signed)
             self.receipts[job_id]=signed
@@ -137,7 +148,7 @@ class Runtime:
                 if result['state']=='paid':break
                 time.sleep(2)
             record['job']=self.ledger.status(job_id)
-            validate_archive_record(campaign,record)
+            validate_archive_record(campaign,record,policy=self.policy)
             signed=self.channel.sign(record)
             self.archive.persist(signed)
             self.receipts[job_id]=signed
@@ -194,10 +205,19 @@ class Runtime:
 
 def main():
     from .transport import HTTPTransport
+    from .kms_signer import KmsSigner
+    from .policy import validate_payout_authority
     parser=argparse.ArgumentParser();parser.add_argument('--vsock-port',type=int,default=5100);parser.add_argument('--egress-port',type=int,default=5101)
     args=parser.parse_args()
     policy=json.loads((ROOT/'policy.json').read_text())
-    runtime=Runtime(policy,BootEpoch.create(),HTTPTransport(mode='vsock'),ArchiveClient())
+    authority=validate_payout_authority(policy['payoutAuthority'])
+    def kms_exchange(request):
+        with socket.socket(socket.AF_VSOCK,socket.SOCK_STREAM) as connection:
+            connection.settimeout(20);connection.connect((3,5103))
+            send(connection,request)
+            return receive(connection)
+    signer=KmsSigner(authority['keyId'],authority['wallet'],kms_exchange)
+    runtime=Runtime(policy,BootEpoch.create(signer,budget_minor=policy['pilotBudgetMinor']),HTTPTransport(mode='vsock'),ArchiveClient())
     with socket.socket(socket.AF_VSOCK,socket.SOCK_STREAM) as listener:
         listener.bind((socket.VMADDR_CID_ANY,args.vsock_port));listener.listen(20)
         while True:

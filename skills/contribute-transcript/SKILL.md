@@ -95,7 +95,15 @@ Run preflight from the trusted checkout:
 ```
 
 Independently verify AWS's signature/certificate chain, fresh nonce/age, approved
-PCR0/1/2/8, key, exact policy/prompt and epoch binding. Job challenge additionally
+PCR0/1/2/8, encryption key, exact policy/prompt and v2 epoch binding. Verify the
+descriptor's KMS key ARN and payout wallet exactly match measured `payoutAuthority`,
+with `operatorRecovery: true`, `ledgerPersistence: enclave_ram_only` and
+`restartRequiresOperatorReview: true`. This acknowledges operator/host signing
+authority outside the enclave, not exclusive enclave or PCR-restricted custody.
+Require `budgetMinor` to equal measured `pilotBudgetMinor` exactly. The architecture
+maximum is $50; the new candidate uses $5 and one Wise contributor slot after a
+separate confirmed $1 recovery test.
+Job challenge additionally
 binds campaign, recipient, reward, provider/model, consent, limits and expiry. Reject
 debug/unreleased/expired images and every mismatch. Never disable checks to continue.
 
@@ -166,14 +174,29 @@ for an already-paid account.
 
 ## Pilot lifecycle limits
 
-Wallet key, ledger and dedup authority are RAM-only for one enclave boot epoch.
-Restart loses them; the client state file and host archive cannot restore custody
-or safely continue old jobs. No automatic refill or across-epoch dedup guarantee.
+The revised payout key is non-exportable in AWS KMS. Authorized operator IAM and
+the host signing broker can sign and recover funds outside the enclave. Ledger,
+deduplication authority and in-process artifacts remain RAM-only. Restart requires
+operator review: the client handle and archive cannot restore the authoritative
+ledger or make old-job continuation or funded-wallet reuse safe. No automatic
+refill or across-epoch dedup guarantee. Runtime reward/refund limits do not constrain
+independent operator signing through KMS. The revised pilot stays paused pending
+its measured release and checks; the earlier enclave-only $50 remains unrecovered
+at this checkpoint and must be reconciled without discarding that live enclave.
+Release operators must exercise the signed paused signing preflight before any
+new funding at zero USDC: real Base RPC balances/nonce plus KMS one-minor-unit
+refund signing. Code does not broadcast and the public response omits signed bytes;
+the host broker sees the signature/digest and can reconstruct that fixed refund.
+Do not claim operator-visible signatures are confined to the method. Contributors rely on the published
+scoped evidence; do not treat this check as a live payout or ledger-recovery proof.
+The $1 recovery test and subsequent $5 candidate allocation need actual confirmed
+chain evidence; do not infer completion from the configured budget.
 The operator-host fsync archive is an availability dependency, not proof the host
 retains data indefinitely.
 
 The signed operator retirement flow irreversibly closes admission, cancels unused
 reservations, finishes/archives existing obligations, and refunds remaining USDC to
-the fixed deployer address. It has no arbitrary recipient, ETH sweep or restart
-recovery. This flow has synthetic coverage; no live refund is claimed until verified.
+the fixed deployer address. The runtime has no arbitrary refund recipient, ETH
+sweep or ledger restore. Operator KMS recovery is separate. This flow has synthetic
+coverage; no live refund is claimed until verified.
 A contributor cannot use retirement to redirect funds or authorize a new payout.

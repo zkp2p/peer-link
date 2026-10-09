@@ -39,19 +39,32 @@
       "model": "z-ai/glm-5.3-flash",
       "consentedUpstreams": ["near", "chutes"],
       "aliasesAllowed": false,
-      "maximumCalls": 1
+      "maximumCalls": 1,
+      "creditFundingStatus": "merchant_credit_verified",
+      "billableInferenceVerified": true
     }
   },
   "pilot": {
     "publicAcceptanceEnabled": false,
-    "nonRestorableEpoch": true,
     "retirement": {
       "status": "implemented_not_live_verified",
       "admissionClosure": "irreversible",
       "refund": "remaining_usdc_to_fixed_deployer",
       "arbitraryRecipient": false,
       "ethSweep": false,
-      "restartRecovery": false
-    }
+      "ledgerRecovery": false,
+      "operatorCustodyRecovery": "aws_kms_iam"
+    },
+    "payoutKeyCustody": "aws_kms",
+    "operatorRecovery": true,
+    "ledgerPersistence": "enclave_ram_only",
+    "restartRequiresOperatorReview": true,
+    "maximumBudgetUSDC": 50,
+    "candidateBudgetUSDC": 5,
+    "fundingVerified": false,
+    "currentCampaignCapacity": 1,
+    "signingPreflightRequiresZeroUSDC": true,
+    "enclaveImageVerified": false,
+    "hostKmsSignatureVerified": true
   }
 }

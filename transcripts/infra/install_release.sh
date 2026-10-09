@@ -14,6 +14,16 @@ base=/opt/peer-link-transcripts
 test "$(nitro-cli --version)" = 'Nitro CLI 1.5.0'
 test -f "$source_root/transcripts/runtime.py"
 test -f "$source_root/transcripts/server.py"
+if python3.11 - "$source_root/transcripts/policy.json" <<'PY'
+import json, sys
+sys.exit(0 if json.load(open(sys.argv[1])).get('payoutAuthority', {}).get('kind') == 'aws_kms' else 1)
+PY
+then
+  # KMS is brokered by the host's narrowly scoped instance role, never live keys.
+  command -v aws >/dev/null
+  test -f "$source_root/transcripts/kms_broker.py"
+  test -f "$source_root/transcripts/kms_signer.py"
+fi
 # Refuse to overwrite an active epoch or silently discard a funded wallet.
 test ! -e "$base/current"
 test "$(nitro-cli describe-enclaves | python3.11 -c 'import json,sys; print(len(json.load(sys.stdin)))')" = 0
@@ -81,7 +91,7 @@ BindsTo=peer-link-transcript-enclave.service
 [Service]
 Type=simple
 WorkingDirectory=/opt/peer-link-transcripts/current
-ExecStart=/opt/peer-link-transcripts/venv/bin/python -m transcripts.server --port 8080 --enclave-cid 16 --vsock-port 5100 --egress-port 5101
+ExecStart=/opt/peer-link-transcripts/venv/bin/python -m transcripts.server --port 8080 --enclave-cid 16 --vsock-port 5100 --egress-port 5101 --kms-port 5103
 Restart=no
 NoNewPrivileges=yes
 PrivateTmp=yes
@@ -94,8 +104,56 @@ StandardOutput=null
 StandardError=null
 UNIT
 systemctl daemon-reload
-# Deliberately do not enable: a host reboot must not silently create a new wallet.
+# Deliberately do not enable: a host reboot must not silently create a new RAM epoch.
 systemctl start peer-link-transcript-enclave.service
 systemctl start peer-link-transcript-relay.service
-systemctl is-active --quiet peer-link-transcript-enclave.service peer-link-transcript-relay.service
+"$base/venv/bin/python" - "$base/current" <<'PY'
+import signal, sys, time
+from pathlib import Path
+from urllib.request import build_opener, ProxyHandler
+
+deadline = time.monotonic() + 30
+
+def deadline_expired(*_):
+    raise TimeoutError('candidate_health_failed')
+
+def check_health():
+    root = Path(sys.argv[1])
+    sys.path.insert(0, str(root))
+    from transcripts.common import digest, require, strict_json
+    from transcripts.artifacts import validate_epoch_descriptor
+    policy = strict_json((root/'transcripts/policy.json').read_bytes(), 1_000_000)
+    expected = digest(policy)
+    opener = build_opener(ProxyHandler({}))
+    while time.monotonic() < deadline:
+        try:
+            with opener.open('http://127.0.0.1:8080/health',
+                             timeout=min(1, max(0.01, deadline-time.monotonic()))) as response:
+                require(response.status == 200, 'candidate_health_failed')
+                health = strict_json(response.read(16_385), 16_384)
+            require(health.get('service') == 'peerlink-transcripts'
+                    and type(health.get('version')) is int and health['version'] == 1
+                    and health.get('mode') == 'nitro-pilot'
+                    and health.get('accepting') is False
+                    and health.get('policyDigest') == expected, 'candidate_health_failed')
+            validate_epoch_descriptor(health.get('epoch'), policy)
+            return
+        except Exception:
+            time.sleep(min(0.5, max(0, deadline-time.monotonic())))
+    raise RuntimeError('candidate_health_failed')
+
+try:
+    signal.signal(signal.SIGALRM, deadline_expired)
+    signal.alarm(30)
+    check_health()
+except Exception:
+    print('Candidate health verification failed.', file=sys.stderr)
+    sys.exit(1)
+finally:
+    signal.alarm(0)
+PY
+if ! systemctl is-active --quiet peer-link-transcript-enclave.service peer-link-transcript-relay.service; then
+  echo 'Candidate health verification failed.' >&2
+  exit 1
+fi
 echo 'Candidate started; independently verify fresh Nitro quote and all gates before credentials/funding.'

@@ -18,6 +18,7 @@ from transcripts.providers import SYSTEM_PROMPT
 from transcripts.runtime import Runtime, RPC
 from transcripts.server import route, connect_public
 from transcripts.transport import HTTPResponse
+from transcripts.tests.test_kms_signer import KEY_ID
 from transcripts.tests.test_core import Anchor, campaign, request, read, KEY, NOW
 
 OPERATOR = Ed25519PrivateKey.from_private_bytes(b"fixed-public-test-operator-seed!"[:32].ljust(32,b"!"))
@@ -64,9 +65,10 @@ class FakeEpoch:
         if epoch_id != self.epoch_id:raise Rejected('epoch_binding_mismatch')
         return self.ledger.begin_retirement(now)
     def public_descriptor(self):
-        return {"version":1,"epochId":self.epoch_id,"payoutWallet":self.wallet,"chainId":CHAIN_ID,
+        return {"version":2,"epochId":self.epoch_id,"payoutWallet":self.wallet,"chainId":CHAIN_ID,
                 "usdcContract":USDC_ADDRESS,"budgetMinor":50_000_000,"maxGasFundingWei":MAX_GAS_FUNDING_WEI,
-                "nonRestorable":True,"persistence":"enclave_ram_only"}
+                "payoutKeyCustody":"aws_kms","payoutKeyId":KEY_ID,"operatorRecovery":True,
+                "ledgerPersistence":"enclave_ram_only","restartRequiresOperatorReview":True}
     def pause(self):self.active=False
     def resume_after_operator_verification(self, epoch_id):
         if epoch_id != self.epoch_id: raise Rejected("epoch_binding_mismatch")
@@ -131,7 +133,8 @@ class RuntimeTests(unittest.TestCase):
         self.clock=patch("transcripts.runtime.time.time",return_value=NOW+3);self.clock.start()
         self.events=[];self.epoch=FakeEpoch();self.archive=FakeArchive(self.events)
         self.policy={"promptDigest":hashlib.sha256(SYSTEM_PROMPT.encode()).hexdigest(),"payoutRpc":"https://rpc.example",
-                     "campaigns":[campaign()],"operatorPublicKey":PUBLIC_OPERATOR}
+                     "campaigns":[campaign()],"operatorPublicKey":PUBLIC_OPERATOR,"pilotBudgetMinor":50_000_000,
+                     "payoutAuthority":{"kind":"aws_kms","keyId":KEY_ID,"wallet":self.epoch.wallet}}
         with patch("transcripts.runtime.Channel",return_value=SigningChannel()):
             self.runtime=Runtime(self.policy,self.epoch,object(),self.archive,attester=lambda *args:b"synthetic-quote")
         self.coordinator=FakeCoordinator(self.epoch.ledger,self.events);self.runtime.coordinator=self.coordinator
@@ -156,13 +159,33 @@ class RuntimeTests(unittest.TestCase):
         value={"action":action,"epochId":self.epoch.epoch_id,"wallet":self.epoch.wallet,"nonce":nonce,"expiresAt":NOW+60}
         value.update(changes)
         return {"payload":value,"signature":b64(OPERATOR.sign(canonical(value)))}
+    def test_operator_preflight_exercises_rpc_and_signing_without_activation(self):
+        self.epoch.pause()
+        probe={"keyId":KEY_ID,"wallet":self.epoch.wallet,"signingVerified":True,"broadcast":False,
+               "transactionHash":"0x"+"e"*64}
+        with patch.object(self.runtime.payment,'funding_balances',return_value=(0,0)), \
+             patch.object(self.epoch,'check_payout_signing',return_value=probe,create=True) as check, \
+             patch.object(self.runtime.rpc,'call',return_value='0x0') as rpc:
+            value=self.runtime.operator(self.operator_message('preflight'))
+        check.assert_called_once_with(0)
+        rpc.assert_called_once_with('eth_getTransactionCount',[self.epoch.wallet,'pending'])
+        self.assertFalse(value['health']['accepting'])
+        self.assertEqual(value['preflight']['usdcBalanceMinor'],0)
+        self.assertTrue(value['preflight']['signingVerified'])
+        self.assertEqual(self.epoch.activations,[])
+    def test_preflight_rejects_a_funded_wallet_before_signing(self):
+        self.epoch.pause()
+        with patch.object(self.epoch,'check_payout_signing',create=True) as check:
+            with self.assertRaisesRegex(Rejected,'preflight_requires_unfunded'):
+                self.runtime.operator(self.operator_message('preflight'))
+        check.assert_not_called()
     def test_archive_before_payment_and_exports_only_redacted_data(self):
         job_id=self.job();self.process(job_id)
         self.assertEqual(self.epoch.ledger.status(job_id)["state"],"paid")
         self.assertEqual(self.events,["archive","reconcile","paid","archive"])
         self.assertNotIn(job_id,self.runtime.pending_records)
         for archived in self.archive.records:
-            validate_archive_record(self.policy["campaigns"][0],archived["payload"])
+            validate_archive_record(self.policy["campaigns"][0],archived["payload"],policy=self.policy)
             encoded=canonical(archived).decode()
             for secret in ("SECRET-BANK-CREDENTIAL","SECRET-INFERENCE-KEY","SECRET-LOCAL-NOTES","SECRET-LOCAL-TRANSCRIPT",
                            "private-account-1","private-transaction-id","private-name-key","private-memo","secret-query-value"):
@@ -184,10 +207,10 @@ class RuntimeTests(unittest.TestCase):
         ]
         for section,key,value in modifications:
             candidate=copy.deepcopy(original);candidate[section][key]=value
-            with self.assertRaises(Rejected):validate_archive_record(self.policy["campaigns"][0],candidate)
+            with self.assertRaises(Rejected):validate_archive_record(self.policy["campaigns"][0],candidate,policy=self.policy)
         candidate=copy.deepcopy(original)
         candidate["artifact"]["endpoints"][0]["path"]="/api/accounts/SECRET-ACCOUNT/transactions"
-        with self.assertRaises(Rejected):validate_archive_record(self.policy["campaigns"][0],candidate)
+        with self.assertRaises(Rejected):validate_archive_record(self.policy["campaigns"][0],candidate,policy=self.policy)
     def test_archive_failure_prevents_payment_and_retry_needs_no_credentials(self):
         self.archive.fail_calls={1};job_id=self.job();self.process(job_id)
         self.assertEqual(self.coordinator.calls,0)
@@ -242,8 +265,29 @@ class RuntimeTests(unittest.TestCase):
             self.runtime.operator(self.operator_message(action="resume",nonce="f"*64,expiresAt=NOW))
         self.runtime.operator(self.operator_message(action="resume",nonce="a"*64))
         self.assertTrue(self.epoch.active)
+    def test_activation_requires_successful_preflight_for_this_epoch(self):
+        self.epoch.pause()
+        with self.assertRaisesRegex(Rejected,'funding_preflight_required'):
+            self.runtime.operator(self.operator_message('activate'))
+        with patch.object(self.runtime.payment,'funding_balances',return_value=(0,0)), \
+             patch.object(self.epoch,'check_payout_signing',side_effect=Rejected('kms_broker_unavailable'),create=True), \
+             patch.object(self.runtime.rpc,'call',return_value='0x0'):
+            with self.assertRaisesRegex(Rejected,'kms_broker_unavailable'):
+                self.runtime.operator(self.operator_message('preflight',nonce='a'*64))
+        self.assertIsNone(self.runtime.funding_preflight)
+        with self.assertRaisesRegex(Rejected,'funding_preflight_required'):
+            self.runtime.operator(self.operator_message('activate',nonce='c'*64))
+        self.runtime.funding_preflight='0'*64
+        with self.assertRaisesRegex(Rejected,'funding_preflight_required'):
+            self.runtime.operator(self.operator_message('activate',nonce='d'*64))
+        self.assertEqual(self.epoch.activations,[])
     def test_activation_reads_chain_balances_and_reconcile_requires_signature(self):
-        self.epoch.pause();self.runtime.operator(self.operator_message(action="activate"))
+        self.epoch.pause()
+        with patch.object(self.runtime.payment,'funding_balances',return_value=(0,0)), \
+             patch.object(self.epoch,'check_payout_signing',return_value={},create=True), \
+             patch.object(self.runtime.rpc,'call',return_value='0x0'):
+            self.runtime.operator(self.operator_message('preflight',nonce='a'*64))
+        self.runtime.operator(self.operator_message(action="activate"))
         self.assertEqual(self.epoch.activations[0][1],{"usdc_balance_minor":50_000_000,"gas_balance_wei":10**12})
         with patch("transcripts.runtime.threading.Thread") as worker:
             self.runtime.operator(self.operator_message(action="reconcile",nonce="c"*64))

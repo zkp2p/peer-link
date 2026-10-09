@@ -5,12 +5,27 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from transcripts.artifacts import WISE_PATH_BINDINGS,extract_artifact,validate_artifact,validate_archive_record
+from transcripts.artifacts import WISE_PATH_BINDINGS,extract_artifact,validate_artifact,validate_archive_record,validate_epoch_descriptor
 from transcripts.common import Rejected,canonical,digest
 from transcripts.epoch import CHAIN_ID,USDC_ADDRESS,MAX_GAS_FUNDING_WEI
 from transcripts.policy import MAX_BUDGET
 from transcripts.recipe import LiveRead
 from transcripts.tests.test_core import campaign as generic_campaign,read as synthetic_read
+
+KMS_KEY_ID = 'arn:aws:kms:us-east-1:000000000000:key/11111111-1111-1111-1111-111111111111'
+
+
+def kms_descriptor(wallet='0x'+'2'*40):
+    return {'version':2,'epochId':'e'*32,'payoutWallet':wallet,
+            'chainId':CHAIN_ID,'usdcContract':USDC_ADDRESS,'budgetMinor':MAX_BUDGET,
+            'maxGasFundingWei':MAX_GAS_FUNDING_WEI,'payoutKeyCustody':'aws_kms',
+            'payoutKeyId':KMS_KEY_ID,'operatorRecovery':True,'ledgerPersistence':'enclave_ram_only',
+            'restartRequiresOperatorReview':True}
+
+
+def kms_policy(campaign, wallet='0x'+'2'*40):
+    return {'campaigns':[campaign],'pilotBudgetMinor':MAX_BUDGET,
+            'payoutAuthority':{'kind':'aws_kms','keyId':KMS_KEY_ID,'wallet':wallet}}
 
 
 class ArtifactTests(unittest.TestCase):
@@ -157,26 +172,81 @@ class ArtifactTests(unittest.TestCase):
                 artifact=copy.deepcopy(original);artifact['coverage']=coverage
                 with self.assertRaises(Rejected):validate_artifact(self.campaign,artifact)
 
-    def test_archive_rejects_private_counts_even_with_matching_artifact_digest(self):
+    def archive_record(self):
         artifact=extract_artifact(self.campaign,self.reads())
         route=self.campaign['inferenceRoutes'][0]
         grade={'rubricVersion':self.campaign['rubricVersion'],'score':100,'useful':True}
-        record={'version':1,'epoch':{'version':1,'epochId':'e'*32,'payoutWallet':'0x'+'2'*40,
-                    'chainId':CHAIN_ID,'usdcContract':USDC_ADDRESS,'budgetMinor':MAX_BUDGET,
-                    'maxGasFundingWei':MAX_GAS_FUNDING_WEI,'nonRestorable':True,'persistence':'enclave_ram_only'},
+        record={'version':1,'epoch':kms_descriptor(),
                 'job':{'jobId':self.job,'campaignId':self.campaign['id'],'state':'accepted',
                     'bindingDigest':'b'*64,'expiresAt':1200,'rewardMinor':self.campaign['rewardMinor'],
                     'payoutAddress':'0x'+'1'*40,'reason':None,'artifactDigest':digest(artifact),'transactionId':None},
-                'artifact':artifact,'modelResult':grade,'policyDigest':digest(self.campaign),
+                'artifact':artifact,'modelResult':grade,'policyDigest':digest(kms_policy(self.campaign)),
                 'inference':{'requestDigest':'d'*64,'responseDigest':digest(grade),'provider':route['provider'],
                     'model':route['models'][0],'privacyMode':route['privacyModes'][0],'inputTokens':10,'outputTokens':10}}
-        validate_archive_record(self.campaign,record)
+        return record
+
+    def test_archive_rejects_private_counts_even_with_matching_artifact_digest(self):
+        record=self.archive_record();policy=kms_policy(self.campaign)
+        validate_archive_record(self.campaign,record,policy=policy)
         for coverage in ({'readCount':3,'historyRecords':1},
                          {'readCount':3,'historyMinimumSatisfied':True,'historyRecords':37}):
             with self.subTest(coverage=coverage):
                 unsafe=copy.deepcopy(record);unsafe['artifact']['coverage']=coverage
                 unsafe['job']['artifactDigest']=digest(unsafe['artifact'])
-                with self.assertRaises(Rejected):validate_archive_record(self.campaign,unsafe)
+                with self.assertRaises(Rejected):validate_archive_record(self.campaign,unsafe,policy=policy)
+
+    def test_epoch_descriptor_requires_exact_recoverable_custody_and_ram_ledger(self):
+        epoch=kms_descriptor();policy=kms_policy(self.campaign)
+        self.assertEqual(validate_epoch_descriptor(epoch,policy),epoch)
+        changes={'version':[1,True],'epochId':['x'*32],'payoutWallet':['0x'+'3'*40],
+                 'chainId':[1,True],'usdcContract':['0x'+'3'*40],'budgetMinor':[1,True],
+                 'maxGasFundingWei':[1,True],'payoutKeyCustody':['enclave_only'],
+                 'payoutKeyId':[KMS_KEY_ID.replace('11111111-', '22222222-',1)],
+                 'operatorRecovery':[False,1],'ledgerPersistence':['persistent'],
+                 'restartRequiresOperatorReview':[False,1]}
+        for name,values in changes.items():
+            for value in values:
+                with self.subTest(name=name,value=value),self.assertRaises(Rejected):
+                    validate_epoch_descriptor(dict(epoch,**{name:value}),policy)
+        for extra in ('nonRestorable','persistence','exclusiveEnclaveSigning','privateKey'):
+            with self.subTest(extra=extra),self.assertRaises(Rejected):
+                validate_epoch_descriptor(dict(epoch,**{extra:True}),policy)
+        for name in epoch:
+            candidate=dict(epoch);candidate.pop(name)
+            with self.subTest(missing=name),self.assertRaises(Rejected):validate_epoch_descriptor(candidate,policy)
+
+    def test_archive_binds_kms_key_wallet_and_whole_measured_policy(self):
+        original=self.archive_record();policy=kms_policy(self.campaign)
+        validate_archive_record(self.campaign,original,policy=policy)
+        for name,value in [('payoutKeyId',KMS_KEY_ID.replace('11111111-','22222222-',1)),
+                           ('payoutWallet','0x'+'3'*40),('operatorRecovery',False),
+                           ('ledgerPersistence','persistent')]:
+            candidate=copy.deepcopy(original);candidate['epoch'][name]=value
+            with self.subTest(name=name),self.assertRaises(Rejected):
+                validate_archive_record(self.campaign,candidate,policy=policy)
+        candidate=copy.deepcopy(original);candidate['policyDigest']=digest(self.campaign)
+        with self.assertRaises(Rejected):validate_archive_record(self.campaign,candidate,policy=policy)
+        for authority in [None,{'kind':'enclave','keyId':KMS_KEY_ID,'wallet':'0x'+'2'*40},
+                          {'kind':'aws_kms','keyId':'alias/synthetic','wallet':'0x'+'2'*40},
+                          dict(policy['payoutAuthority'],exclusive=True)]:
+            modified=copy.deepcopy(policy);modified['payoutAuthority']=authority
+            candidate=copy.deepcopy(original);candidate['policyDigest']=digest(modified)
+            with self.subTest(authority=authority),self.assertRaises(Rejected):
+                validate_archive_record(self.campaign,candidate,policy=modified)
+
+    def test_epoch_budget_matches_measured_policy_instead_of_architecture_ceiling(self):
+        policy=kms_policy(self.campaign);policy['pilotBudgetMinor']=5_000_000
+        epoch=kms_descriptor();epoch['budgetMinor']=5_000_000
+        validate_epoch_descriptor(epoch,policy)
+        record=self.archive_record();record['epoch']=epoch;record['policyDigest']=digest(policy)
+        validate_archive_record(self.campaign,record,policy=policy)
+        with self.assertRaises(Rejected):validate_epoch_descriptor(kms_descriptor(),policy)
+        with self.assertRaises(Rejected):validate_epoch_descriptor(epoch,kms_policy(self.campaign))
+        for value in (True,5_000_000.0,'5000000',4_999_999,50_000_001,None):
+            modified=dict(policy,pilotBudgetMinor=value)
+            candidate=dict(epoch,budgetMinor=value)
+            with self.subTest(value=value),self.assertRaises(Rejected):
+                validate_epoch_descriptor(candidate,modified)
 
 
 if __name__=='__main__':unittest.main()

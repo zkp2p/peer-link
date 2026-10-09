@@ -1,8 +1,9 @@
 # PeerLink transcript contributions
 
 Product decision: 2026-10-09. Status: implemented pilot candidate, **unreleased**.
-The [release manifest](../transcripts/release.json) remains unreleased, no payout
-wallet is funded, and no public bank submissions or paid contributions are enabled.
+The [release manifest](../transcripts/release.json) remains unreleased and no public
+bank submissions or paid contributions are enabled. The earlier enclave-only wallet
+holds unrecovered $50; the revised KMS candidate is a separate wallet and release.
 This document separates the built pilot, observed evidence and remaining roadmap.
 Infrastructure, a verified candidate quote or a synthetic job does not activate a bank.
 
@@ -25,8 +26,9 @@ The model does not choose bank reads, change policy or sign payments in this pil
 
 - One campaign issue per bank, retaining existing issue URLs where possible.
   Publish scope, source access status, fixed reward, available slots and the skill.
-- Collect **1–5 distinct contributors per bank**, normally targeting five and
-  stopping earlier when the evidence is sufficient.
+- Architecture supports **1–5 distinct contributors per bank**, stopping when
+  evidence is sufficient. The current paused Wise experiment has **one slot** and
+  a measured $5 budget; it does not expose five funded contribution slots.
 - Fixed **$5 or $10 USDC per accepted contribution**. Initial US campaigns use
   $10; other rates are explicit campaign policy, not inferred from personal data.
 - At most one paid contribution per contributor/account per bank campaign.
@@ -36,8 +38,10 @@ The model does not choose bank reads, change policy or sign payments in this pil
   model, privacy consent, limits and possible reward before releasing credentials.
 - Peer pays infrastructure, payout gas and accepted rewards. No Peer inference key,
   environment-key fallback or alternate billing route exists in the job runtime.
-- The pilot configures a **$50 USDC ceiling** and separate bounded gas, not a claim
-  of deposited funds. Fund only an independently verified epoch after approval.
+- The architecture permits a **$50 USDC maximum** and separate bounded gas. The
+  revised candidate's measured budget is **$5 USDC**, following a separate confirmed
+  $1 recovery test. This is not a claim that those new funding checks have completed.
+  Fund only an independently verified epoch and its exact budget after approval.
   No automatic refill; reserve slots and budget before paid inference.
 - Preserve the landing design and concise tone. Detailed mechanics belong in the
   [contribution skill](../skills/contribute-transcript/SKILL.md) and docs.
@@ -51,13 +55,17 @@ flowchart LR
     Runner[Bounded read-only recipe executor] -->|Fresh authenticated JSON| Redact[Deterministic schema extraction and validation]
     Redact --> Grade[Fixed rubric request]
     Grade --> Decide[Code checks eligibility and fixed payout]
-    Decide --> Epoch[RAM-only ledger and wallet epoch]
+    Decide --> Epoch[RAM-only ledger epoch]
   end
   Runner <-->|Approved GET reads over verified TLS| Bank[Bank API]
   Grade <-->|Redacted artifact only and contributor-funded inference| Model[Approved provider and exact model]
   Decide -->|Signed redacted record| Archive[Operator host archive with fsync acknowledgment]
   Archive -->|Required acknowledgment before payout| Epoch
-  Epoch -->|One bounded USDC reward in this epoch| Wallet[Contributor payout wallet]
+  Epoch -->|Runtime-validated payout digest| Broker[Host KMS signing broker]
+  Broker --> KMS[Non-exportable AWS KMS payout key]
+  Operator[Authorized operator IAM] -->|Independent signing and fund recovery| KMS
+  KMS -->|Signature| Epoch
+  Epoch -->|Broadcast validated Base USDC transfer| Wallet[Contributor payout wallet]
   Archive --> Engineers[Peer metadata and transformer development]
 ```
 
@@ -66,6 +74,10 @@ inside the enclave; the parent relay forwards ciphertext and sees approved
 hostnames, not credentials or response plaintext. Code pins bank origin/path/GET,
 account identity, deadlines, response sizes, source/model policy and money limits.
 The fixed recipe cannot execute contributed code, shell commands or arbitrary URLs.
+Payout signing is a separate KMS trust boundary. Authorized operator IAM and the
+host broker can sign outside the enclave; measured runtime limits do not constrain
+an operator signing independently. No exclusive-enclave or PCR-restricted KMS
+access is claimed. Bank and inference credentials are not sent to the broker.
 
 The pilot has a Wise identity/acquisition adapter. It reads authenticated profiles,
 checks explicit selection when multiple profiles exist, reads standard balances,
@@ -110,15 +122,18 @@ is not PeerLink's approval. The built adapter fails closed on confidential mode
 and cannot silently downgrade to provider-visible inference.
 
 The official [NEAR quickstart](https://docs.near.ai/cloud/quickstart) and researched
-source/public probes support a dashboard-credit, contributor-API-key integration
-in principle. No valid-key billable test has yet demonstrated it for this pilot.
+source/public probes support a dashboard-credit, contributor-API-key integration.
+On 2026-10-09, one dollar of merchant credit was verified after a 1.015099 Base
+USDC payment, and a real tool-call response was billed to the dedicated key.
 The observed crypto-credit checkout redirects to PingPay and displays a route
 via NEAR Intents. That credit-funding checkout is a separate layer from the
 API-key inference protocol; it is not per-request inference settlement. No x402
 route has been verified, and ordinary HTTP 402/out-of-credits is not an x402
 payment challenge. Do not advertise supported confidential inference or a verified
-NEAR dollar ceiling. A dedicated key with a $0.25 dashboard limit exists, but
-the account has no credits and no funded inference test at this checkpoint.
+NEAR dollar ceiling. The dedicated key was rotated in RAM. The live tool-call
+charged 57,400 nano-USD; a separate strict-JSON probe exhausted its output budget
+and needs a bounded retry. Gateway TCB remains OutOfDate, so this is evidence
+for the provider-visible route, not confidential inference.
 Re-check live keyed behavior, routing, attestation policy and billing before
 enabling the route for public collection.
 
@@ -216,7 +231,7 @@ embedding its own final measurement manifest in the image would be circular.
 Use the independently pinned `--release` and `--policy` files when selecting a
 reviewed checkout. `receipt` obtains fresh preflight and verifies the enclave signature
 and bindings; reported status alone is not authenticated payment evidence. Restoring
-the client handle does not restore a lost enclave epoch or its wallet.
+the client handle does not restore a lost enclave ledger or make funded-wallet reuse safe.
 
 ## Contracts
 
@@ -234,6 +249,18 @@ payout wallet, policy and expiry. No arbitrary code, endpoints or callbacks.
 Credentials are transient; errors, logs and receipts contain fixed codes or validated
 public structures only. Cloud-backed local browser agents remain a separate consent
 boundary from PeerLink's model grading.
+
+The measured policy includes `payoutAuthority` with `kind: aws_kms`, an immutable
+KMS key ARN and its derived wallet. Epoch descriptor v2 has exactly `version`,
+`epochId`, `payoutWallet`, `chainId`, `usdcContract`, `budgetMinor`,
+`maxGasFundingWei`, `payoutKeyCustody`, `payoutKeyId`, `operatorRecovery`,
+`ledgerPersistence` and `restartRequiresOperatorReview`. Clients and archive
+validators require the key ARN/wallet to match measured policy, custody to be
+`aws_kms`, operator recovery and restart review to be `true`, and ledger persistence
+to be `enclave_ram_only`. A v1 enclave-only descriptor is rejected for this release.
+The measured policy also fixes integer `pilotBudgetMinor` from 5,000,000 to
+50,000,000 USDC minor units. Descriptor `budgetMinor` must equal it exactly;
+the architecture maximum does not authorize depositing $50 for a $5 candidate.
 
 ### Redacted artifact and archive
 
@@ -267,19 +294,35 @@ submission remains `payout_pending`; the coordinator reuses/reconciles the same
 signed transaction identity. Atomic slot/budget reservation, duplicates and nonce
 selection are enforced within one running epoch.
 
-The pilot generates a new wallet and authority **inside Nitro at boot**. Wallet
-key, integrity/dedup keys, ledger, nonce state and in-process receipts are RAM-only.
-No key import/export, automatic restore, automatic refill or host-state replay path
-exists. Admission starts paused. Independently verify that exact epoch, fund at
-most the configured $50 USDC and bounded gas once, then explicitly activate it.
-No wallet has been funded at this document's evidence checkpoint.
+The revised pilot uses a non-exportable AWS KMS payout key. Authorized operator
+IAM and the host broker can request signatures and recover funds outside the
+enclave. Its ARN and wallet are policy/attestation bound; exclusive enclave signing
+authority is not claimed. The revised pilot remains paused until its changed
+source/image, signing route and custody bindings pass independent measured checks.
 
-A restart destroys the key and authoritative history. Deduplication and limits do
-**not** carry across epochs; archives cannot reconstruct signing authority or make
-new payments safe. A replacement epoch begins paused/unfunded. Do not automatically
-continue the same funded campaign or describe this as restart-safe production.
-Cross-epoch duplicate reconciliation, persistent rollback-safe authority, recoverable
-custody and durable payment reconciliation remain roadmap/release work.
+Before allocating funds, the signed operator preflight must query real Base RPC
+balances/nonce and exercise KMS signing for a one-minor-unit USDC refund while
+paused with **zero USDC**. Its public response includes only verification status,
+public balances and a hash; code does not broadcast. The host broker sees the
+signature/digest and can reconstruct that fixed refund, so operator-visible
+signatures are not secret or confined to this method. A synthetic check or the old
+image's quote cannot substitute for this route check. Verify bounded real funding
+and transaction receipts separately before activation.
+The current plan first tests $1 operator recovery and confirms its return, then
+allocates the measured $5 candidate budget for one $5 contribution. Neither plan
+alone is evidence of a live transfer or successful refund.
+
+Integrity/dedup keys, ledger, nonce state and in-process receipts remain RAM-only.
+Restart loses authoritative history while KMS custody survives. Operator review
+is mandatory before reactivation. Recovering signing access does **not** recover
+deduplication, reservations or reconciliation authority, and does not make reusing
+the same funded wallet with a blank ledger safe. No automatic restore/refill or
+host-state replay path is trusted. Cross-epoch duplicate reconciliation, persistent
+rollback-safe authority and durable payment reconciliation remain release work.
+
+The earlier enclave-only pilot was funded with $50 USDC. Those funds remain
+unrecovered at this checkpoint; a new KMS key does not restore the old signing key.
+Preserve the old live enclave while operators reconcile its funds and obligations.
 
 ### Built operator retirement
 
@@ -288,7 +331,13 @@ cancels unused reservations. Submitted/verifying/accepted/payment obligations mu
 finish, and pending signed records must archive before retirement can complete.
 The runtime then refunds the remaining bounded USDC balance only to the fixed
 deployer address, reconciling the same refund transaction identity. No arbitrary
-refund recipient, ETH sweep, automatic refill or post-restart recovery exists.
+refund recipient, ETH sweep, automatic refill or ledger restore exists in the runtime.
+Authorized operator KMS recovery is separate and can occur outside runtime rules.
+The implemented recovery CLI defaults to a read-only plan, pins the measured KMS
+wallet and fixed deployer refund, and persists/reconciles one transaction identity
+before broadcast. It requires all other signers to be quiescent; a local lock is
+not a cross-machine nonce coordinator. It does not recover the old enclave-only
+wallet, restore the ledger or sweep residual ETH. See [operations](transcript-operations.md).
 Do not stop a funded enclave before its obligations and refund are independently
 confirmed. The flow is implemented with synthetic tests; no live refund is claimed
 at this evidence checkpoint.
@@ -311,11 +360,11 @@ acceptance remains closed until the measured-release and remaining evidence gate
 
 | Area | Observed evidence | What remains unavailable or unproven |
 | --- | --- | --- |
-| Synthetic transcript suite | 121 credential-free tests passed across policy, bank/provider transports, redaction, epoch, ledger/payout, encrypted runtime, client recovery/receipt, Wise relationships, NEAR ordinary routing and retirement checks. Private history counts are rejected at artifact and archive boundaries. | Fixtures/mocks do not prove live hardware, banking, inference or money movement. |
+| Synthetic transcript suite | At the KMS checkpoint, 162 credential-free tests passed across policy, transports, redaction, ledger/payout, encrypted runtime, client recovery/receipt, KMS signing and operator recovery. Client/artifact checks reject wrong custody, key/wallet, descriptor version and measured budget. | Prior image evidence does not approve the changed KMS release; fixtures/mocks do not prove live hardware, banking, inference or money movement. |
 | Wise read-only local acquisition | Three owner-authorized API reads succeeded for profiles, standard balances and a statement with valid nonempty history; extraction produced 79 structural field paths without retaining private values. | This was local/direct acquisition, not a Wise job executed inside the TEE. No personal identifiers or history counts are published. |
-| Nitro candidate hardware | The final committed candidate passed fresh AWS certificate, COSE signature, nonce/key/policy/epoch and PCR checks. Two independent CI builds matched, and deployed PCR0/1/2 plus every measured input match CI. See [candidate evidence](../transcripts/candidate-evidence.json). | Candidate verification is not a published approved release or live bank acceptance. The checked-in release remains unreleased and the wallet is unfunded. |
-| Inference | Ordinary pinned-provider adapter and usage/result checks have synthetic coverage. NEAR official-doc/source research and keyed hardware probes completed: the model quote was UpToDate, but the gateway quote was OutOfDate; TLS binding matched. | NEAR has a $0.25-limited key but no account credits; no funded live inference, billing receipt or verified NEAR E2EE route demonstrated for this release. |
-| Rewards | Fixed Base USDC signing, transaction/receipt validation, archive ordering and within-epoch retry invariants have synthetic coverage. | No live payout/refund demonstrated; the $50 limit is configuration, not evidence of deposited funds. No cross-epoch recovery guarantee. |
+| Nitro candidate hardware | The prior enclave-only candidate passed fresh AWS certificate, COSE signature, nonce/key/policy/epoch and PCR checks. Two independent CI builds matched deployed PCR0/1/2 and measured inputs. See [candidate evidence](../transcripts/candidate-evidence.json). | This does not verify the changed KMS candidate. Its fresh image/policy/key/wallet bindings and live signing route must be checked; the release remains unapproved and admission paused. |
+| Inference | Ordinary pinned-provider checks have synthetic coverage. Prior NEAR probes found the model quote UpToDate and gateway OutOfDate, with TLS binding matched. The dedicated key was rotated in RAM; one dollar of prepaid credit was delivered. A real tool-call passed schema validation and billed57,400 nano-USD to that key. | The separate strict-JSON probe hit its output limit. No verified NEAR E2EE route or full enclave bank-to-reward job is demonstrated yet. |
+| Rewards and custody | New-host KMS signing and independent signature verification passed; runtime/CLI recovery rules have synthetic coverage. The earlier enclave-only wallet still holds unrecovered $50. | A host signing probe is not a verified full enclave image, recovered old funds, live reward/refund or complete KMS recovery test. The paused Wise candidate permits one $5 slot. KMS recovery is not ledger persistence or safe cross-epoch wallet reuse. |
 | Contributor-agent trials | Claude Opus 5.5 high and Codex high reviewed the local contributor flow. Their findings drove safe secret prompts, clear release gates, recovery commands, receipt checks and Wise relationship fixes. Claude's final follow-up found the practical fixes intact and passed 33 targeted client/artifact tests. | These credential-free trials are not funded enrollment. Live same-job recovery, provider billing and payout still require the funded pilot. |
 | Public availability | Landing/docs/catalog describe the new contribution program with readiness gates. | No claim that all banks are ready, funded or supported in Peer. |
 
@@ -360,8 +409,10 @@ Release work still requires:
   submissions, building on the completed credential-free Claude/Codex trials.
 - Activation of demonstrated source campaigns only, after the remaining evidence
   gates; merged code, public docs and migrated issues do not activate collection.
+- Verify the new KMS key ARN/derived wallet, operator and host IAM signing boundary,
+  measured descriptor/policy binding, and paused signing preflight before funding.
 - For durable/broad service: persistent rollback-safe authority, cross-epoch dedup,
-  recoverable custody, durable reconciliation and verified archive availability.
+  safe wallet reuse, durable reconciliation and verified archive availability.
 
 Maintain one private task spend ledger for hosting, inference, rewards and gas.
 No synthetic result, candidate quote or local bank check substitutes for remaining

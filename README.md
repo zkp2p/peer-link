@@ -56,14 +56,29 @@ redaction, duplicates, budget and the fixed payout; the model cannot choose an
 amount or recipient. Reward availability is campaign-specific, not implied by
 an issue listing. See [terms](docs/incentives.md) and [privacy](docs/privacy.md).
 
-The pilot has a configured $50 USDC reward ceiling with no automatic refill.
-It uses a supervised, non-restorable enclave epoch. Restart loses its key and
-state; this is not a promise of durable public payments or restart-safe receipts.
-Live collection remains closed until the published release gates pass. The built
+The architecture caps rewards at $50 USDC with no automatic refill. The revised
+candidate's measured budget is $5 for one $5 contribution; allocation follows a
+separate $1 recovery test and its confirmed return, not another $50 deposit.
+The current paused Wise experiment permits one contributor, not five.
+The revised payout design uses a non-exportable AWS KMS signing key. Authorized
+operator IAM and the host signing broker can sign outside the enclave and recover
+funds; this is not exclusive enclave custody. The ledger and deduplication authority
+remain RAM-only. Restart requires operator review and does not make wallet reuse
+or old-job continuation safe. Live collection remains closed until the new measured
+release gates pass. The built
 operator retirement flow permanently closes admission, finishes and archives
 existing obligations, and refunds remaining USDC only to the fixed deployer address.
-It has no arbitrary recipient, ETH sweep or recovery after enclave restart; its
-live refund path has not yet been demonstrated.
+Its runtime accepts no arbitrary refund recipient or ETH sweep; its live refund
+path has not yet been demonstrated. Operator KMS recovery is separate from that
+runtime flow. The earlier enclave-only pilot's $50 remains unrecovered at this
+checkpoint; changing custody for a new release does not recover its old key.
+
+Before funding the revised wallet, the signed operator preflight must exercise
+real Base RPC and KMS refund signing while paused with zero USDC. The public
+operator response excludes raw signed bytes, and code does not broadcast. The
+host broker can see the signature/digest and reconstruct the fixed one-unit refund;
+this is not signature secrecy from the operator. The new host signing route and
+independent signature verification passed; a full enclave image is still unverified.
 
 ## Develop and inspect
 

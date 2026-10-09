@@ -67,9 +67,19 @@ Account deduplication uses purpose-scoped keyed identifiers derived from live ba
 account evidence. Never publish those identifiers or ordinary hashes of guessable
 banking values. Public receipts hash already-redacted artifacts only.
 
-The supervised pilot's enclave epoch is non-restorable. Losing its process loses
-its key, ledger and in-memory artifacts; public receipt/storage guarantees must
-match the published release. It is not a durable production storage service.
+The revised payout key is non-exportable in AWS KMS. Authorized operator IAM and
+the host broker can request signatures outside the enclave and recover funds;
+neither exclusive enclave custody nor PCR-restricted KMS access is claimed.
+Attestation binds the KMS key ARN and wallet to the measured policy, not exclusive
+control over every possible signature. Runtime payout limits do not constrain an
+operator signing independently through IAM.
+
+Bank and inference credentials remain transient inside the enclave after encrypted
+submission; the signing broker does not receive them. Restart still loses the
+RAM-only ledger, deduplication authority and in-process artifacts. KMS custody
+recovery does not restore that state or make reusing a funded wallet safe. Operator
+review is required before restarting a campaign. This is not durable production
+storage or payment reconciliation.
 
 ## Local handling and publication
 

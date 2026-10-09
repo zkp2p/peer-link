@@ -73,6 +73,7 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(payload['model'], NEAR_MODEL)
         self.assertFalse(payload['stream'])
         self.assertEqual(payload['max_tokens'], 1000)
+        self.assertEqual(payload['chat_template_kwargs'], {'reasoning_effort':'low'})
         schema = payload['response_format']['json_schema']
         self.assertTrue(schema['strict'])
         self.assertFalse(schema['schema']['additionalProperties'])
@@ -81,6 +82,25 @@ class ProviderTests(unittest.TestCase):
         self.assertEqual(client.routing_metadata, {'servingProvider': 'near', 'modelResponseVerified': False})
         with self.assertRaisesRegex(Rejected, 'inference_call_limit'): client.grade(artifact, 1002)
         self.assertEqual(len(transport.calls), 1)
+    def test_near_low_effort_preserves_contributor_budget_prompt_and_single_call(self):
+        for output_cap in (64,2048):
+            policy,reserved,artifact,result,response=fixture('near',NEAR_MODEL)
+            reserved['limits']['maxOutputTokens']=output_cap
+            transport=MockTransport([HTTPResponse(200,canonical(response),(('x-serving-provider','near'),))])
+            client=ProviderClient(policy,reserved,'synthetic-key',transport)
+            self.assertEqual(client.grade(artifact,1001),result)
+            payload=json.loads(transport.calls[0][2]['body'])
+            self.assertEqual(payload['max_tokens'],output_cap)
+            self.assertEqual(payload['chat_template_kwargs'],{'reasoning_effort':'low'})
+            self.assertEqual(payload['messages'][0],{'role':'system','content':SYSTEM_PROMPT})
+            self.assertEqual(json.loads(payload['messages'][1]['content']),{'rubricVersion':policy['rubricVersion'],
+                             'evidenceRequirements':policy['evidenceRequirements'],'artifact':artifact})
+            with self.assertRaises(Rejected):client.grade(artifact,1002)
+            self.assertEqual(len(transport.calls),1)
+        for provider,model in [('openai','gpt-4o-mini-2024-07-18'),('openrouter','openai/gpt-4o-mini')]:
+            client,transport,artifact,_,_=self.client(provider,model)
+            client.grade(artifact,1001)
+            self.assertNotIn('chat_template_kwargs',json.loads(transport.calls[0][2]['body']))
     def test_near_alias_models_rejected_before_any_network(self):
         for alias in ('zai-org/GLM-5.3-Flash', 'z-ai/glm-5.2', 'deepseek-ai/DeepSeek-V4-Flash', 'attacker/model'):
             policy, reserved, _, _, _ = fixture('near', alias)

@@ -1,6 +1,6 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "Dedicated PeerLink Nitro transcript pilot, SSM only, encrypted-envelope HTTPS ingress; no production access or payout persistence",
+  "Description": "Dedicated PeerLink Nitro transcript pilot, SSM administration, encrypted-envelope HTTPS ingress; optional exact-key KMS operator custody",
   "Parameters": {
     "VpcId": {
       "Type": "AWS::EC2::VPC::Id"
@@ -25,6 +25,12 @@
       "Default": "",
       "AllowedPattern": "(arn:[a-z-]+:sns:[a-z0-9-]+:[0-9]{12}:[A-Za-z0-9_-]{1,256})?",
       "Description": "Existing SNS topic with a confirmed and tested subscription; empty means operator-supervised alarms only"
+    },
+    "PayoutKmsKeyArn": {
+      "Type": "String",
+      "Default": "",
+      "AllowedPattern": "(arn:(aws|aws-us-gov|aws-cn):kms:[a-z0-9-]+:[0-9]{12}:key/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|mrk-[0-9a-f]{32}))?",
+      "Description": "Exact dedicated nonexportable ECC_SECG_P256K1 SIGN_VERIFY key; authorized host/operator custody, no native PCR authorization for KMS Sign"
     }
   },
   "Conditions": {
@@ -34,6 +40,18 @@
           "Fn::Equals": [
             {
               "Ref": "AlarmTopicArn"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasPayoutKmsKey": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "PayoutKmsKeyArn"
             },
             ""
           ]
@@ -69,7 +87,7 @@
         ],
         "Policies": [
           {
-            "PolicyName": "SSMTransportOnly",
+            "PolicyName": "SSMAndPayoutKmsOnly",
             "PolicyDocument": {
               "Version": "2012-10-17",
               "Statement": [
@@ -91,21 +109,71 @@
                   "Resource": "*"
                 },
                 {
+                  "Fn::If": [
+                    "HasPayoutKmsKey",
+                    {
+                      "Effect": "Allow",
+                      "Action": ["kms:GetPublicKey", "kms:Sign"],
+                      "Resource": {
+                        "Ref": "PayoutKmsKeyArn"
+                      }
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                },
+                {
                   "Effect": "Deny",
-                  "NotAction": [
-                    "ssm:UpdateInstanceInformation",
-                    "ssmmessages:CreateControlChannel",
-                    "ssmmessages:CreateDataChannel",
-                    "ssmmessages:OpenControlChannel",
-                    "ssmmessages:OpenDataChannel",
-                    "ec2messages:AcknowledgeMessage",
-                    "ec2messages:DeleteMessage",
-                    "ec2messages:FailMessage",
-                    "ec2messages:GetEndpoint",
-                    "ec2messages:GetMessages",
-                    "ec2messages:SendReply"
-                  ],
+                  "NotAction": {
+                    "Fn::If": [
+                      "HasPayoutKmsKey",
+                      [
+                        "ssm:UpdateInstanceInformation",
+                        "ssmmessages:CreateControlChannel",
+                        "ssmmessages:CreateDataChannel",
+                        "ssmmessages:OpenControlChannel",
+                        "ssmmessages:OpenDataChannel",
+                        "ec2messages:AcknowledgeMessage",
+                        "ec2messages:DeleteMessage",
+                        "ec2messages:FailMessage",
+                        "ec2messages:GetEndpoint",
+                        "ec2messages:GetMessages",
+                        "ec2messages:SendReply",
+                        "kms:GetPublicKey",
+                        "kms:Sign"
+                      ],
+                      [
+                        "ssm:UpdateInstanceInformation",
+                        "ssmmessages:CreateControlChannel",
+                        "ssmmessages:CreateDataChannel",
+                        "ssmmessages:OpenControlChannel",
+                        "ssmmessages:OpenDataChannel",
+                        "ec2messages:AcknowledgeMessage",
+                        "ec2messages:DeleteMessage",
+                        "ec2messages:FailMessage",
+                        "ec2messages:GetEndpoint",
+                        "ec2messages:GetMessages",
+                        "ec2messages:SendReply"
+                      ]
+                    ]
+                  },
                   "Resource": "*"
+                },
+                {
+                  "Fn::If": [
+                    "HasPayoutKmsKey",
+                    {
+                      "Effect": "Deny",
+                      "Action": ["kms:GetPublicKey", "kms:Sign"],
+                      "NotResource": {
+                        "Ref": "PayoutKmsKeyArn"
+                      }
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
                 }
               ]
             }

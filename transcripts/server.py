@@ -79,9 +79,16 @@ def main():
     parser=argparse.ArgumentParser();parser.add_argument('--port',type=int,default=8080);parser.add_argument('--enclave-cid',type=int,default=16)
     parser.add_argument('--vsock-port',type=int,default=5100);parser.add_argument('--egress-port',type=int,default=5101)
     parser.add_argument('--archive-port',type=int,default=5102);parser.add_argument('--archive-dir',default='/var/lib/peer-link-transcripts/artifacts')
+    parser.add_argument('--kms-port',type=int,default=5103)
     args=parser.parse_args()
     threading.Thread(target=serve_archive,args=(args.archive_port,args.enclave_cid,args.archive_dir),daemon=True).start()
     policy=json.loads((Path(__file__).parent/'policy.json').read_text())
+    authority=policy.get('payoutAuthority',{})
+    if authority.get('kind')=='aws_kms':
+        from .kms_broker import KmsBroker,serve
+        broker=KmsBroker(authority['keyId'],authority['wallet'])
+        broker.public_key()  # Fail startup on a wrong key, wallet, or inaccessible role.
+        threading.Thread(target=serve,args=(args.kms_port,args.enclave_cid,broker),daemon=True).start()
     threading.Thread(target=egress_server,args=(args.egress_port,args.enclave_cid,set(policy['egressHosts'])),daemon=True).start()
     slots=threading.BoundedSemaphore(20)
     class Handler(BaseHTTPRequestHandler):

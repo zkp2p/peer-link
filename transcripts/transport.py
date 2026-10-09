@@ -130,7 +130,10 @@ class HTTPTransport:
                 require(all(v.lower() == "identity" for k, v in response_headers if k == "content-encoding"),
                         "response_encoding")
                 chunks, count = [], 0
-                while True:
+                # A completed fixed-length read closes HTTPResponse's file and
+                # may release the Connection: close socket. Do not touch that
+                # socket again merely to discover the already-known end of body.
+                while not response.isclosed():
                     remaining = end - time.monotonic()
                     require(remaining > 0, "request_timeout")
                     secure.settimeout(remaining)
@@ -140,6 +143,7 @@ class HTTPTransport:
                     count += len(chunk)
                     require(count <= max_bytes, "response_size")
                     chunks.append(chunk)
+                require(response.length in (None, 0), "response_incomplete")
                 return HTTPResponse(response.status, b"".join(chunks), response_headers)
             finally:
                 connection.close()

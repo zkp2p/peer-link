@@ -198,7 +198,43 @@ def validate_artifact(campaign, artifact):
     return artifact
 
 
-def validate_archive_record(campaign, record):
+def validate_epoch_descriptor(epoch, policy, *, code="epoch_mismatch"):
+    """Bind operator-recoverable KMS custody to the independently measured policy.
+
+    The descriptor does not claim exclusive enclave signing authority or durable
+    ledger state. Exact fields reject legacy custody and optimistic recovery flags.
+    """
+    import re
+    from .common import address
+    from .epoch import CHAIN_ID, USDC_ADDRESS, MAX_GAS_FUNDING_WEI
+    from .policy import MAX_BUDGET
+    fields(epoch, {"version", "epochId", "payoutWallet", "chainId", "usdcContract", "budgetMinor",
+                   "maxGasFundingWei", "payoutKeyCustody", "payoutKeyId", "operatorRecovery",
+                   "ledgerPersistence", "restartRequiresOperatorReview"})
+    require(isinstance(policy, dict), code)
+    budget = policy.get("pilotBudgetMinor")
+    require(type(budget) is int and 5_000_000 <= budget <= MAX_BUDGET, code)
+    authority = policy.get("payoutAuthority")
+    fields(authority, {"kind", "keyId", "wallet"})
+    require(authority["kind"] == "aws_kms" and isinstance(authority["keyId"], str)
+            and re.fullmatch(r"arn:aws(?:-cn|-us-gov)?:kms:[a-z0-9-]+:[0-9]{12}:key/"
+                             r"(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|mrk-[0-9a-f]{32})",
+                             authority["keyId"]), code)
+    require(type(epoch["version"]) is int and epoch["version"] == 2
+            and isinstance(epoch["epochId"], str) and re.fullmatch(r"[0-9a-f]{32}", epoch["epochId"]), code)
+    require(epoch["payoutWallet"] == address(authority["wallet"])
+            and address(epoch["payoutWallet"]) == epoch["payoutWallet"]
+            and epoch["payoutKeyCustody"] == "aws_kms" and epoch["payoutKeyId"] == authority["keyId"], code)
+    require(type(epoch["chainId"]) is int and epoch["chainId"] == CHAIN_ID
+            and epoch["usdcContract"] == USDC_ADDRESS and type(epoch["budgetMinor"]) is int
+            and epoch["budgetMinor"] == budget and type(epoch["maxGasFundingWei"]) is int
+            and epoch["maxGasFundingWei"] == MAX_GAS_FUNDING_WEI
+            and epoch["operatorRecovery"] is True and epoch["ledgerPersistence"] == "enclave_ram_only"
+            and epoch["restartRequiresOperatorReview"] is True, code)
+    return epoch
+
+
+def validate_archive_record(campaign, record, *, policy):
     """Validate the complete unsigned public record before enclave egress/signing.
 
     Exact field sets prevent raw bank/model/credential blobs from being accidentally
@@ -207,24 +243,12 @@ def validate_archive_record(campaign, record):
     """
     import re
     from .common import address, digest, hex_digest
-    # Deferred to avoid the ledger -> artifacts -> epoch -> ledger import cycle.
-    from .epoch import CHAIN_ID, USDC_ADDRESS, MAX_GAS_FUNDING_WEI
-    from .policy import MAX_BUDGET
     fields(record, {"version", "epoch", "job", "artifact", "modelResult", "inference", "policyDigest"})
     require(type(record["version"]) is int and record["version"] == 1, "unsafe_archive")
     validate_artifact(campaign, record["artifact"])
-    hex_digest(record["policyDigest"])
-    epoch = record["epoch"]
-    fields(epoch, {"version", "epochId", "payoutWallet", "chainId", "usdcContract", "budgetMinor",
-                   "maxGasFundingWei", "nonRestorable", "persistence"})
-    require(type(epoch["version"]) is int and epoch["version"] == 1 and isinstance(epoch["epochId"],str)
-            and re.fullmatch(r"[0-9a-f]{32}",epoch["epochId"]), "unsafe_archive")
-    address(epoch["payoutWallet"])
-    require(type(epoch["chainId"]) is int and epoch["chainId"] == CHAIN_ID
-            and epoch["usdcContract"] == USDC_ADDRESS and type(epoch["budgetMinor"]) is int
-            and epoch["budgetMinor"] == MAX_BUDGET and type(epoch["maxGasFundingWei"]) is int
-            and epoch["maxGasFundingWei"] == MAX_GAS_FUNDING_WEI and epoch["nonRestorable"] is True
-            and epoch["persistence"] == "enclave_ram_only", "unsafe_archive")
+    require(isinstance(policy, dict) and campaign in policy.get("campaigns", [])
+            and record["policyDigest"] == digest(policy), "unsafe_archive")
+    validate_epoch_descriptor(record["epoch"], policy, code="unsafe_archive")
     job = record["job"]
     fields(job, {"jobId", "campaignId", "state", "bindingDigest", "expiresAt", "rewardMinor",
                  "payoutAddress", "reason", "artifactDigest", "transactionId"})
