@@ -41,23 +41,26 @@ FORBIDDEN_HEADERS = frozenset({"host", "content-length", "content-type", "transf
                                "accept-encoding", "upgrade", "te", "trailer", "expect", "keep-alive",
                                "proxy-authorization", "proxy-connection", "x-http-method-override", "x-http-method",
                                "x-method-override"})
-# A session must include at least one header that plausibly carries a secret; the
-# anonymous probe replays the request with every other header.
-SECRET_HEADER = re.compile(r"cookie|authorization|token|csrf|xsrf|auth|session|secret|key|signature|sid|jwt|"
-                           r"credential|passw|device|fingerprint|ticket")
+# Headers every browser sends. A credential needs at least one header outside this
+# set, and the anonymous probe replays the request with only these.
+PUBLIC_HEADERS = frozenset({"accept", "accept-language", "user-agent", "origin", "referer", "x-requested-with",
+                            "cache-control", "pragma", "dnt", "priority", "sec-fetch-dest", "sec-fetch-mode",
+                            "sec-fetch-site", "sec-ch-ua", "sec-ch-ua-mobile", "sec-ch-ua-platform"})
 HEADER_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]{0,63}")
 HOSTNAME = re.compile(r"(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}")
-TEST_HOST = re.compile(r"(?:^|[.-])(?:sandbox|test|testing|dev|develop|developer|developers|staging|stage|uat|demo|"
-                       r"docs|mock|qa|preprod|sit)(?:[.-]|$)")
+TEST_HOST = re.compile(r"sandbox|staging|nonprod|preprod|playground|devportal|(?:^|[.-])(?:test|testing|dev|develop|"
+                       r"developer|developers|stage|stg|uat|demo|docs|mock|qa|sit|beta|preview)[0-9]{0,2}(?:[.-]|$)")
 # Host labels kept verbatim in a transcript; any other label under the bank
 # domain may be a tenant or customer name and is shown as {sub}.
 INFRA_LABEL = re.compile(r"(?:www|api|apis|app|apps|secure|online|web|m|mobile|my|login|auth|id|account|accounts|"
                          r"bank|banking|ib|ibank|ebank|ebanking|digital|connect|gateway|gw|services|service|client|"
                          r"clients|portal|pay|payments|wallet|open|openapi|public|edge|prod|production|global|"
                          r"personal|business|retail|internet|netbank|netbanking|home|main|core|rest|graphql|data|"
-                         r"bff|mw)[0-9a-z]{0,6}")
+                         r"bff|mw)(?:[0-9]{1,3}[0-9a-f]{0,4})?")
 KEY = re.compile(r"[A-Za-z_][A-Za-z0-9_-]{0,47}")
 TOKEN = re.compile(r"[A-Za-z](?:[A-Za-z_.-]|[0-9](?![0-9])){0,39}")
+# What a status field may hold when checking the role; wider than what is retained.
+STATUS_VALUE = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,39}")
 FORMAT = re.compile(r"[a-z0-9_]+(?::[a-z0-9_]+){0,2}")
 FIELD_PATH = re.compile(r"\$(?:\[\]|\.(?:\{key\}|[A-Za-z_][A-Za-z0-9_-]{0,47}))*")
 ROLE_SUFFIX = re.compile(r"(?:\.[A-Za-z_][A-Za-z0-9_-]{0,47})+")
@@ -69,31 +72,51 @@ BODY_TYPES = {"application/json", "application/x-www-form-urlencoded"}
 # replaying only a history view; these rules refuse the recognisable state changes.
 WRITE_VERBS = frozenset({"send", "pay", "create", "update", "delete", "cancel", "submit", "confirm", "execute",
                          "approve", "initiate", "schedule", "remove", "add", "edit", "modify", "withdraw", "deposit",
-                         "logout", "enroll", "register", "set", "make"})
-WRITE_LAST = WRITE_VERBS | {"transfer", "payment", "payout", "order", "withdrawal", "now", "new"}
+                         "logout", "enroll", "register", "set", "make", "move", "capture", "freeze", "unfreeze",
+                         "lock", "unlock", "block", "activate", "deactivate", "refund", "void", "reverse", "dispute",
+                         "reset", "accept", "reject", "decline", "sign", "authorize", "link", "unlink", "revoke"})
+WRITE_NOUNS = frozenset({"transfer", "payment", "payout", "order", "withdrawal", "now", "new", "beneficiary",
+                         "payee", "recipient", "contact", "mandate"})
 READ_WORDS = frozenset({"history", "list", "activity", "activities", "search", "recent", "latest", "summary",
-                        "details", "detail", "statement", "statements", "export", "transactions", "query", "lookup",
-                        "view", "get", "fetch", "read", "find", "inquiry", "enquiry"})
+                        "details", "detail", "statement", "statements", "export", "transactions", "entries",
+                        "records", "feed", "query", "lookup", "view", "get", "fetch", "read", "find", "inquiry",
+                        "enquiry"})
 PAGINATION = {"limit", "size", "page", "pagesize", "perpage", "count", "offset", "skip", "top"}
-QUERY_ENUMS = {"type", "types", "status", "order", "sort", "direction", "kind", "format", "view", "currency",
-               "sortby", "sortorder"}
+QUERY_ENUMS = {"type", "types", "status", "order", "sort", "direction", "kind", "format", "currency", "sortby",
+               "sortorder"}
 SELECTOR_KEYS = {"sortby", "orderby", "sort", "order", "sortfield", "sortkey", "orderfield", "field", "fields",
                  "groupby", "column", "columns", "include", "expand", "select"}
-PERSONAL_ANCESTORS = ("address", "location", "geo", "contact", "owner", "holder", "person", "customer", "user",
-                      "recipient", "sender", "payer", "payee", "beneficiary", "counterparty", "merchant", "name",
-                      "billing", "shipping", "profile", "identity")
-ENUM_KEY = re.compile(
-    r"(?:transaction|txn|tx|payment|transfer|order|record|entry|activity|item|operation|posting|settlement|verbose|"
-    r"ux|display|detail|sub|source|target|from|to|original|base|quote|debit|credit|fee|amount|instructed|charged|"
-    r"processing|completion|current|final|overall|payout|payin|local|foreign)*"
-    r"(?:status|state|type|kind|currency|currencycode|scheme|direction|method|rail|network|statuscode)")
+PERSONAL_WORDS = frozenset({"address", "location", "geo", "contact", "owner", "holder", "person", "customer", "user",
+                            "recipient", "sender", "payer", "payee", "beneficiary", "counterparty", "merchant",
+                            "name", "billing", "shipping", "profile", "identity"})
+GENERIC_TAIL = frozenset({"info", "details", "detail", "data", "object", "record", "dto", "model", "summary"})
+_ENUM_PREFIX = (r"(?:transaction|txn|tx|payment|transfer|order|record|entry|activity|item|operation|posting|booking|"
+                r"settlement|clearing|verbose|ux|display|detail|sub|original|base|quote|debit|credit|fee|amount|"
+                r"instructed|charged|processing|completion|current|final|overall|payout|payin|local|foreign|internal|"
+                r"external|raw|ledger|wire|ach|card)")
+# A bare "state" may be a place and a "method" may be a customer-named instrument,
+# so state needs a payment prefix and method is never kept. Currency codes are safe
+# under any party prefix.
+ENUM_KEY = re.compile(_ENUM_PREFIX + r"*(?:status|type|kind|scheme|direction|rail|network|statuscode)|"
+                      + _ENUM_PREFIX + r"+state|(?:" + _ENUM_PREFIX[3:-1] + r"|source|target|from|to)*(?:currency|currencycode)")
 # After one of these the next path segment names a person, account or tenant.
+PATH_WORDS = frozenset({"u", "apis", "rest", "svc", "rpc", "graphql", "odata", "secure", "public", "private", "gateway",
+                        "bff", "proxy", "edge", "oauth", "oauth2", "core", "digital", "retail", "prod", "production",
+                        "services", "me", "my", "open", "openapi", "sdk", "mw", "gw", "ib", "net", "portal", "banking",
+                        "ebanking", "ibank", "mbank", "consumer", "customer", "customers", "members", "home", "dashboard",
+                        "overview", "ajax", "json", "xml", "jsonrpc", "query", "queries", "lookup", "inquiry",
+                        "enquiry", "feed", "timeline", "ledger", "movements", "operations", "payments", "p2ppayments",
+                        "quickpay", "billpay", "zelle", "interac", "pix", "upi", "sepa", "wires", "cards", "loans",
+                        "deposits", "investments", "rewards", "en", "us", "uk", "eu", "www", "app", "apps", "web",
+                        "mobile", "ios", "android", "client", "clients", "auth", "session", "sessions", "bank"})
 COLLECTIONS = frozenset({"users", "user", "u", "accounts", "account", "acct", "orgs", "org", "organizations",
                          "organization", "profiles", "profile", "customers", "customer", "members", "member",
                          "people", "person", "companies", "company", "merchants", "merchant", "cards", "card",
                          "wallets", "wallet", "clients", "client", "tenants", "tenant", "businesses", "business",
                          "contacts", "contact", "recipients", "recipient", "payees", "payee", "beneficiaries",
-                         "beneficiary"})
+                         "beneficiary", "workspaces", "workspace", "teams", "team", "groups", "group", "projects",
+                         "project", "spaces", "space", "stores", "store", "shops", "shop", "sites", "site",
+                         "entities", "entity", "households", "household"})
 FOLLOW = frozenset({"history", "list", "search", "activity", "activities", "recent", "latest", "summary", "details",
                     "detail", "statement", "statements", "export", "all", "me", "current", "self", "query",
                     "transactions", "transfers", "payments", "balances", "balance", "info", "overview"})
@@ -110,19 +133,58 @@ COMPACT_DATE = re.compile(r"(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01
 UUID = re.compile(r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}")
 TIME_KEY = re.compile(r"(time|date|created|updated|timestamp|settled|completed|posted|expires|when|at|ts)$")
 # Matched after every Unicode currency symbol has been folded to "$".
-MONEY = re.compile(r"[-+(]?\s?(?:[A-Za-z]{1,4}\.?\$?|\$)?\s?[-+]?"
+MONEY = re.compile(r"[-+(]?\s?(?:[A-Za-z]{1,4}\.?\$?\s|[A-Za-z]{1,4}\.?\$|\$\s?)?[-+]?"
                    r"(?:0|[1-9]\d{0,2}(?:[.,'\u00a0 ]\d{3})+|[1-9]\d*)(?:[.,]\d{1,4})?"
-                   r"\s?(?:[A-Za-z]{1,4}|[$%])?\)?")
+                   r"(?:\s?[$%]|\s[A-Za-z]{1,4})?\)?")
 MONTH_DATE = re.compile(r"(?i)(?:(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.? \d{1,2},? \d{4}"
                         r"|\d{1,2} (?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?,? \d{4})"
                         r"(?:,? \d{1,2}:\d{2}(?::\d{2})?(?: ?[ap]m)?)?")
 DOTNET_DATE = re.compile(r"/Date\(-?\d{9,14}(?:[+-]\d{4})?\)/")
 NOTE_FORBIDDEN = tuple(re.compile(pattern) for pattern in (
     r"\d{6,}", r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", r"[A-Za-z0-9_-]{28,}",
-    r"(?i)bearer\s+[A-Za-z0-9]", r"eyJ[A-Za-z0-9_-]{8,}", r"\d{2,}[\s.\-/]\d{2,}[\s.\-/]\d{2,}",
+    r"(?i)bearer\s+[A-Za-z0-9]", r"eyJ[A-Za-z0-9_-]{8,}", r"\d{2,}\D{1,3}\d{2,}\D{1,3}\d{2,}",
     r"(?:\d[ -]?){12,}"))
-
-
+# Words that field names, path segments and enum-style query values are made of.
+# A name seen only once is kept when every word in it is here; a name that recurs
+# across rows is kept whatever its language.
+FIELD_WORDS = frozenset("""
+a access account accounts acct ach action active activity additional address aba agent alias all allowed amount
+amounts api app applied approval approved asc asset at atm attachment attachments attributes auth authorization
+authorized available avatar avg b2b bacs balance balances bank banking base batch beneficiary bic bill billing
+birth body bonus booked booking box branch brand build bulk business buy by c can cancelled canceled cap capture
+captured card cards cash cashback cashtag category categories ccy chaps channel charge charged charges check cheque
+child children chip city class cleared clearing client close closed closing code codes color comment company compact
+completed completion config contact contactless content conversion converted correlation cost count counter
+counterparty country county created creation credit crypto csv currency current cursor customer d data date
+datetime day days debit decimal default delivery deposit desc description destination detail details device
+digest direction disabled discount display dispute disputed district dob document documents domain done due
+e earned effective email enabled end entity entries entry epoch error errors event exchange expires expiry
+external extra failed failure family fednow fee fees field fields file files final first flag floor foreign
+format formatted fps fraud frequency from full fx gender given gratuity gross group groups gst guid handle has
+hash held hidden high history hold holder holding holdings host hour href html iban icon id ids ifsc image in
+inactive inbound incoming index info initial instant institution instructed interac internal interval invoice
+is isin iso issued issuer item items journal json key kind kyc label language last lat latitude ledger leg legal
+legs level limit limits line link linked links list local locale location logo lon long longitude low lng mail
+main major mask masked max mcc member memo merchant message meta metadata method mid middle min minor minute
+mobile mode model modified month more ms multi name net network next nickname no nonce note notes number num
+object of offline offset on online only open opening operation order orders org organization origin original
+other out outbound outgoing overall owner p2p page pages paid parent part parts party path payee payer payin
+payload payment payments payout pending percent percentage period permission permissions phone photo pin pix
+plan points pos position positions postal posted posting precision preferred prefix prev previous price primary
+processing product profile promo proof properties province provider purchase purpose qty quantity quote rail
+rank rate ratio raw reason receipt receipts receive received receiver recipient reconciled record records
+recurring ref reference refund refunded region registered related relation release released remaining request
+requested response result results reversed reward rewards risk role roles routing row rows rtp running sale
+scale scheduled scheme scope scopes score second secondary security self sell send sender sent sepa seq sequence
+service session settled settlement share shares short side sign signature single size sort source spei spent
+split splits standard start state statement status store street sub subtotal success suffix sum summary supplier
+surname swift symbol t tag tags target tax team terminal text threshold ticker tid tier time timestamp
+timezone tip title to token total trace tracking trade trades trading transaction transactions transfer
+transfers ts tx txn type types tz uncleared unit unix updated upi uri url used user username utc uuid v value
+values vat vendor verified version view visible volume vpa wallet warning was web week weight wire withdrawal
+workspace year zelle zip daily weekly monthly yearly annual hourly lifetime today yesterday recent
+latest oldest newest free paid premium basic savings checking joint individual personal corporate
+""".split())
 def validate_open_campaign(campaign):
     """Policy shape for a campaign whose reads come from the contributor's recipe."""
     descriptor = campaign["openSource"]
@@ -200,23 +262,48 @@ def _words(text):
 
 
 def _graphql_read(document):
-    # Strip a byte-order mark, insignificant commas/whitespace and leading comments.
-    text = re.sub(r"^(?:[\s,﻿]|#[^\n]*\n?)+", "", document)
-    return text.startswith("{") or re.match(r"query\b", text) is not None or (
-        re.match(r"fragment\b", text) is not None and re.search(r"(?:^|[\s}])mutation\b", text) is None
-        and re.search(r"(?:^|[\s}])subscription\b", text) is None)
+    """True when every operation in a GraphQL document is a query."""
+    text = re.sub(r'"""[\s\S]*?"""|"(?:[^"\\\n]|\\.)*"|#[^\n]*', " ", document.replace("\ufeff", " "))
+    depth, operations = 0, []
+    for token in re.findall(r"[{}]|[A-Za-z_][A-Za-z0-9_]*", text):
+        if token == "{":
+            if depth == 0 and (not operations or operations[-1] is None):
+                operations.append("query")  # An anonymous selection set is a query.
+            depth += 1
+        elif token == "}":
+            depth = max(0, depth - 1)
+            if depth == 0:
+                operations.append(None)
+        elif depth == 0 and token in {"query", "mutation", "subscription", "fragment"}:
+            if operations and operations[-1] is None:
+                operations.pop()
+            operations.append(token)
+            operations.append(token if token == "fragment" else "open")
+    kinds = {kind for kind in operations if kind not in (None, "open")}
+    return bool(kinds) and kinds <= {"query", "fragment"} and "query" in kinds | ({"query"} if "fragment" in kinds else set())
+
+
+def _names_write(text):
+    """Words naming a state change, unless a read word such as history or list is present."""
+    words = _words(text)
+    if not words or any(word in READ_WORDS for word in words):
+        return False
+    singular = [word[:-3] + "y" if word.endswith("ies") else word.rstrip("s") for word in words]
+    return any(word in WRITE_VERBS or word in WRITE_NOUNS for word in words + singular)
 
 
 def _write_guard(read):
     """Refuse requests that name a state change. Not a proof of read-only behaviour."""
-    parts = [_words(part.rpartition(".")[0] or part) for part in urlsplit(read["url"]).path.split("/") if part]
-    last = parts[-1] if parts else []
-    # The final segment names the action: /transfer/history and /pay/activity/list
-    # read; /payments/send/{id}, /transfer/now and a bare /transfers collection do not.
-    require(not (last and (last[0] in WRITE_LAST or len(last) == 1 and last[0].rstrip("s") in WRITE_LAST)),
-            "write_request_refused")
-    if not (last and last[0] in READ_WORDS):
-        require(not any(words and words[0] in WRITE_VERBS for words in parts), "write_request_refused")
+    parts = [part.rpartition(".")[0] or part for part in urlsplit(read["url"]).path.split("/") if part]
+    # Ignore trailing identifiers and version markers: /transfer/4821 and /pay/activity/v2.
+    while parts and re.fullmatch(r"[0-9a-fA-F-]{3,}|\d+|v\d{1,2}", parts[-1]):
+        parts.pop()
+    last = parts[-1] if parts else ""
+    # The final segment names the action: /payment-history and /pay/activity/list
+    # read; /payments/send, /transfer/now, /wire-transfers and /beneficiaries do not.
+    require(not _names_write(last), "write_request_refused")
+    if not any(word in READ_WORDS for word in _words(last)):
+        require(not any(_words(part) and _words(part)[0] in WRITE_VERBS for part in parts), "write_request_refused")
     if read["contentType"] == "application/json":
         try:
             body = strict_json(read["body"], maximum=65536)
@@ -229,20 +316,18 @@ def _write_guard(read):
         if not isinstance(item, dict):
             continue
         document, operation, method = item.get("query"), item.get("operationName"), item.get("method")
-        persisted = any(name in item for name in ("extensions", "id", "queryId", "doc_id", "documentId"))
+        persisted = any(name in item for name in ("extensions", "id", "queryId", "doc_id", "documentId", "sha256Hash"))
         if isinstance(document, str) and document.strip():
             require(_graphql_read(document), "write_request_refused")
-        elif persisted and (isinstance(operation, str) or "extensions" in item):
+        elif persisted:
             # The document cannot be inspected; only a name that says Query is replayed.
             require(isinstance(operation, str) and operation.endswith("Query"), "write_request_refused")
         if isinstance(operation, str):
-            words = _words(operation)
             require(re.search(r"Mutation|(?<![A-Za-z])mutation", operation) is None
-                    and not (words and words[0] in WRITE_LAST and not operation.endswith("Query")),
-                    "write_request_refused")
+                    and not (_names_write(operation) and not operation.endswith("Query")), "write_request_refused")
         if isinstance(method, str):
             # RPC-style bodies name the action in "method".
-            require(not any(word in WRITE_LAST for word in _words(method)), "write_request_refused")
+            require(not _names_write(method), "write_request_refused")
 
 
 def validate_open_recipe(campaign, recipe, max_reads=20):
@@ -261,8 +346,8 @@ def validate_open_recipe(campaign, recipe, max_reads=20):
             require(read["method"] == "POST" and isinstance(read["contentType"], str)
                     and read["contentType"] in BODY_TYPES and isinstance(read["body"], str)
                     and len(read["body"].encode("utf-8", "replace")) <= 16384
-                    and all(char in "\t\n\r" or ord(char) >= 32 and ord(char) != 127 for char in read["body"]),
-                    "recipe_invalid")
+                    and all(char in "\t\n\r" or ord(char) >= 32 and ord(char) != 127
+                            and not 0xD800 <= ord(char) <= 0xDFFF for char in read["body"]), "recipe_invalid")
         else:
             fields(read, {"url"})
         permitted_endpoint(campaign, read["url"], read_method(read))
@@ -303,7 +388,8 @@ def credential_headers(credential, origin):
         total += len(name) + len(value)
         headers[name] = value
     require(total <= 16384, "credential_headers_invalid")
-    require(any(SECRET_HEADER.search(name.lower()) for name in headers), "credential_not_secret")
+    # Something beyond what every browser sends must carry the session.
+    require(any(name.lower() not in PUBLIC_HEADERS for name in headers), "credential_not_secret")
     return headers
 
 
@@ -380,9 +466,9 @@ class OpenBankClient:
             require(value > 0, "request_timeout")
             return value
 
-        # Replay the identity and history reads without the secret-bearing headers.
-        # Whatever answers must not contain the selected identity or history rows.
-        public = {name: value for name, value in self.headers.items() if not SECRET_HEADER.search(name.lower())}
+        # Replay the identity and history reads with only the headers any browser
+        # sends. Whatever answers must not contain the selected identity or history rows.
+        public = {name: value for name, value in self.headers.items() if name.lower() in PUBLIC_HEADERS}
         if not any(name.lower() == "accept" for name in public):
             public["Accept"] = "application/json"
         gated = {recipe["identity"]["read"], recipe["history"]["read"]}
@@ -446,9 +532,22 @@ def _digits_ok(text):
     return re.search(r"\d{3,}", text) is None and re.search(r"\d{2,}(?!$)", text) is None
 
 
+def _known(text, extra=frozenset()):
+    """Every word of a name is a common field-name word (singular or plural)."""
+    if _alnum(text) in FIELD_WORDS:
+        return True
+
+    def common(word):
+        forms = (word, word[:-1] if word.endswith("s") else word, word[:-3] + "y" if word.endswith("ies") else word)
+        return any(form in FIELD_WORDS or form in extra for form in forms) or word.isdigit() and len(word) <= 2
+
+    words = _words(text)
+    return bool(words) and all(common(word) for word in words)
+
+
 def _key_ok(key):
     """Static screen for a retained field name; shared with the validator."""
-    return (isinstance(key, str) and KEY.fullmatch(key) is not None and _digits_ok(key) and not _random_like(key)
+    return (isinstance(key, str) and KEY.fullmatch(key) is not None and re.search(r"\d{5,}", key) is None
             and not (len(key) >= 16 and re.fullmatch(r"[0-9a-fA-F]+", key)))
 
 
@@ -459,18 +558,24 @@ def _segment_ok(part):
         if extension.lower() not in SEGMENT_EXTENSIONS:
             return False
         part = base
+    # A path word outside the vocabulary may be a handle or a tenant slug.
     return (re.fullmatch(r"[A-Za-z][A-Za-z0-9_-]{0,47}", part) is not None and _digits_ok(part)
-            and not _random_like(part))
+            and not _random_like(part) and _known(part, PATH_WORDS))
 
 
 def _param_ok(name):
     return isinstance(name, str) and PARAM.fullmatch(name) is not None and _digits_ok(name)
 
 
+def _personal(name):
+    words = [word for word in _words(name) if word not in GENERIC_TAIL]
+    return bool(words) and words[-1] in PERSONAL_WORDS
+
+
 def _enum_key(name, ancestors=()):
     if not isinstance(name, str) or ENUM_KEY.fullmatch(_normal(name)) is None:
         return False
-    return not any(word in _normal(part) for part in ancestors for word in PERSONAL_ANCESTORS)
+    return not any(_personal(part) for part in ancestors if isinstance(part, str))
 
 
 def _type(value):
@@ -552,6 +657,8 @@ def value_format(value, name=""):
         return "email"
     if re.fullmatch(r"https?://\S{1,2000}", text):
         return "url"
+    if text.startswith("+") and re.fullmatch(r"\+[\d\s().-]{7,20}", text) and 8 <= sum(c.isdigit() for c in text) <= 15:
+        return "phone"
     if _money(text):
         return "money_text"
     if len(text) >= 16 and re.fullmatch(r"[0-9a-fA-F]+", text):
@@ -598,35 +705,48 @@ def _tainted(bodies):
     return found
 
 
-def _safe_key(key, tainted):
-    return key if _key_ok(key) and key.lower() not in tainted else "{key}"
+class _Names:
+    """Decides which object keys of one response are field names.
+
+    A key that recurs across the objects at the same place (the rows of a list) is
+    a field name in any language. A key seen once is kept only when it is made of
+    common field-name words; anything else, such as a handle, an account nickname
+    or an id used as a key, is rendered {key}.
+    """
+    def __init__(self, body, tainted):
+        self.tainted, self.instances, self.seen, count = tainted, {}, {}, [0]
+
+        def walk(value, path):
+            count[0] += 1
+            require(count[0] <= 60000 and len(path) <= 40, "transcript_too_large")
+            if isinstance(value, dict):
+                self.instances[path] = self.instances.get(path, 0) + 1
+                for key, item in value.items():
+                    self.seen[(path, key)] = self.seen.get((path, key), 0) + 1
+                    walk(item, path + (key,))
+            elif isinstance(value, list):
+                for item in value:
+                    walk(item, path + ("[]",))
+
+        walk(body, ())
+
+    def name(self, path, key):
+        if not _key_ok(key):
+            return "{key}"
+        objects, holders = self.instances.get(path, 0), self.seen.get((path, key), 0)
+        recurring = objects >= 2 and holders >= 2 and holders * 10 >= objects * 3
+        if _known(key):
+            return key
+        return key if recurring and key.lower() not in self.tainted else "{key}"
 
 
-def _dynamic_map(value, tainted):
-    """An object whose keys are data: ids, handles, currency codes, dates."""
-    if len(value) < 3:
-        return False
-    unsafe = sum(_safe_key(key, tainted) == "{key}" for key in value)
-    if unsafe * 5 >= len(value) * 2:
-        return True
-    kinds = {_type(item) for item in value.values()}
-    if len(kinds) == 1 and kinds <= {"boolean", "integer", "number", "string", "null"}:
-        return True  # {"alice": true, "bob": true, ...} or {"usd": 10, "eur": 5, ...}
-    # Entities keyed by a handle or id: every value is an object and they share a field.
-    children = [set(item) for item in value.values() if isinstance(item, dict) and item]
-    return len(children) == len(value) and bool(set.intersection(*children))
-
-
-def _child(key, tainted, dynamic):
-    return "{key}" if dynamic else _safe_key(key, tainted)
-
-
-def _shapes(body, tainted, enum_prefix=None):
+def _shapes(body, tainted, enum_prefix=None, names=None):
     """Field paths with types and formats. Status tokens are kept only under
     enum_prefix (the history rows), never from profile or account reads."""
+    names = names or _Names(body, tainted)
     entries, objects, present, count = {}, {}, {}, [0]
 
-    def walk(value, path, name, ancestors, depth):
+    def walk(value, path, raw, name, ancestors, depth):
         count[0] += 1
         require(depth <= 16 and count[0] <= 60000, "transcript_too_large")
         entry = entries.setdefault(path, {"types": set(), "formats": set(), "values": set(), "enum": False,
@@ -635,18 +755,17 @@ def _shapes(body, tainted, enum_prefix=None):
         if isinstance(value, dict):
             require(len(value) <= 1000, "transcript_too_large")
             objects[path] = objects.get(path, 0) + 1
-            dynamic = _dynamic_map(value, tainted)
             seen = set()
             for key, item in value.items():
-                target = path + "." + _child(key, tainted, dynamic)
+                target = path + "." + names.name(raw, key)
                 if target not in seen:
                     seen.add(target)
                     present[target] = present.get(target, 0) + 1
-                walk(item, target, key if isinstance(key, str) else "", ancestors + (name,), depth + 1)
+                walk(item, target, raw + (key,), key if isinstance(key, str) else "", ancestors + (name,), depth + 1)
         elif isinstance(value, list):
             require(len(value) <= 2000, "transcript_too_large")
             for item in value:
-                walk(item, path + "[]", name, ancestors, depth + 1)
+                walk(item, path + "[]", raw + ("[]",), name, ancestors, depth + 1)
         else:
             style = value_format(value, name)
             if style is not None:
@@ -656,15 +775,18 @@ def _shapes(body, tainted, enum_prefix=None):
                     and leaf == name and _enum_key(name, ancestors)):
                 entry["enum"] = True
                 token = value.strip()
-                if not TOKEN.fullmatch(token):
+                if token.lower() in tainted and token not in ISO_CURRENCIES or (
+                        not TOKEN.fullmatch(token) and STATUS_VALUE.fullmatch(token)):
+                    # The same text is an ordinary value elsewhere, or the code
+                    # carries a digit run: the list is kept without it.
+                    entry["withheld"] = True
+                elif not TOKEN.fullmatch(token):
                     entry["overflow"] = True  # Free text under a status-like key: not an enum.
-                elif token.lower() in tainted and token not in ISO_CURRENCIES:
-                    entry["withheld"] = True  # The same text occurs as an ordinary value elsewhere.
                 else:
                     entry["values"].add(token)
                     entry["overflow"] = entry["overflow"] or len(entry["values"]) > MAX_ENUM_VALUES
 
-    walk(body, "$", "", (), 0)
+    walk(body, "$", (), "", (), 0)
     result = {}
     for path in sorted(entries):
         entry = entries[path]
@@ -682,18 +804,16 @@ def _shapes(body, tainted, enum_prefix=None):
     return result
 
 
-def shape_path(body, path, tainted):
+def shape_path(body, path, tainted, names=None):
     """Recipe selector rendered exactly as _shapes names it: indexes become [],
-    and keys follow the same data-key collapse as the response they walk."""
-    rendered = "$"
+    and each key gets the name the response walk gives it."""
+    names = names or _Names(body, tainted)
+    rendered, raw = "$", ()
     for part in path:
         if type(part) is int:
-            rendered += "[]"
-            body = body[part] if isinstance(body, list) and part < len(body) else None
+            rendered, raw = rendered + "[]", raw + ("[]",)
         else:
-            dynamic = isinstance(body, dict) and _dynamic_map(body, tainted)
-            rendered += "." + _child(part, tainted, dynamic)
-            body = body.get(part) if isinstance(body, dict) else None
+            rendered, raw = rendered + "." + names.name(raw, part), raw + (part,)
     return rendered
 
 
@@ -714,7 +834,7 @@ def _template(url, tainted):
         if label != "{param}" and normal in PAGINATION and re.fullmatch(r"\d{1,4}", value):
             shown = value
         elif (label != "{param}" and normal in QUERY_ENUMS and len(tokens) <= 6
-              and all(TOKEN.fullmatch(token) and token.lower() not in tainted for token in tokens)):
+              and all(TOKEN.fullmatch(token) and _known(token) and token.lower() not in tainted for token in tokens)):
             shown = value
         else:
             shown = "{" + (value_format(value) or "empty") + "}"
@@ -736,7 +856,7 @@ def _body_shape(spec, tainted):
         return {"contentType": spec["contentType"], "fields": shapes}
     shapes = {}
     for name, value in parse_qsl(spec["body"], keep_blank_values=True):
-        label = name if _key_ok(name) and name.lower() not in tainted else "{key}"
+        label = name if _key_ok(name) and _known(name) else "{key}"
         entry = shapes.setdefault("$." + label, {"types": ["string"], "formats": set()})
         entry["formats"].add(value_format(value, name) or "empty")
     for entry in shapes.values():
@@ -767,6 +887,7 @@ def extract_transcript(campaign, reads, context):
     require(_has_rows(rows, campaign["evidenceRequirements"]["minRecords"]), "insufficient_history")
     notes = validate_notes(context["notes"])
     lowered, squeezed = notes.lower(), _alnum(notes)
+    words = set(re.findall(r"[a-z]+", lowered))
     require(str(identity_value).lower() not in lowered, "unsafe_notes")
     for value in tainted:
         # Identifier-like values, multi-word values such as names, and the same
@@ -774,6 +895,8 @@ def extract_transcript(campaign, reads, context):
         if (len(value) >= 6 and re.search(r"[\d@]", value) or len(value) >= 5 and " " in value) and value in lowered:
             raise Rejected("unsafe_notes")
         if len(value) >= 8 and re.search(r"\d", value) and len(_alnum(value)) >= 8 and _alnum(value) in squeezed:
+            raise Rejected("unsafe_notes")
+        if len(value) >= 5 and value.isalpha() and value not in FIELD_WORDS and value in words:
             raise Rejected("unsafe_notes")
     selectors = {name: shape_path(bodies[recipe[name]["read"]], recipe[name]["path"], tainted)
                  for name in ("identity", "history")}
@@ -852,7 +975,7 @@ def validate_transcript(campaign, artifact):
     require(isinstance(names, list) and 1 <= len(names) <= 24
             and all(isinstance(name, str) and HEADER_NAME.fullmatch(name) and name == name.lower()
                     and name not in FORBIDDEN_HEADERS and re.search(r"\d{3,}", name) is None for name in names)
-            and names == sorted(set(names)) and any(SECRET_HEADER.search(name) for name in names), "unsafe_artifact")
+            and names == sorted(set(names)) and any(name not in PUBLIC_HEADERS for name in names), "unsafe_artifact")
     requests = artifact["requests"]
     require(isinstance(requests, list) and 1 <= len(requests) <= descriptor["maxReads"], "unsafe_artifact")
     for name in ("identity", "history"):
@@ -861,7 +984,8 @@ def validate_transcript(campaign, artifact):
         require(isinstance(artifact[name]["path"], str), "unsafe_artifact")
     total = 0
     for index, request in enumerate(requests):
-        require(isinstance(request, dict) and request.get("method") in {"GET", "POST"}, "unsafe_artifact")
+        require(isinstance(request, dict) and isinstance(request.get("method"), str)
+                and request["method"] in {"GET", "POST"}, "unsafe_artifact")
         fields(request, {"step", "method", "origin", "path", "query", "status", "gated", "fields"}
                | ({"body"} if request["method"] == "POST" else set()))
         require(type(request["step"]) is int and request["step"] == index + 1
@@ -886,8 +1010,8 @@ def validate_transcript(campaign, artifact):
             elif _normal(name) in PAGINATION:
                 require(re.fullmatch(r"\d{1,4}", value), "unsafe_artifact")
             else:
-                require(_normal(name) in QUERY_ENUMS and all(TOKEN.fullmatch(token) for token in value.split(",")),
-                        "unsafe_artifact")
+                require(_normal(name) in QUERY_ENUMS and all(
+                    TOKEN.fullmatch(token) and _known(token) for token in value.split(",")), "unsafe_artifact")
         history = index == artifact["history"]["step"] - 1
         total += _validate_shapes(request["fields"], enum_prefix=artifact["history"]["path"] + "[]" if history else None)
     require(total <= MAX_FIELDS, "unsafe_artifact")
@@ -916,7 +1040,12 @@ def parse_proposal(content):
     object in the reply is tried and the last one holding a mapping wins.
     """
     require(isinstance(content, str) and len(content) <= 65536, "model_output_not_json")
-    text = re.sub(r"<think>.*?</think>", "", content, flags=re.S)
+    text, kept = content, []
+    while "<think>" in text:
+        head, _, rest = text.partition("<think>")
+        kept.append(head)
+        text = rest.partition("</think>")[2]
+    text = "".join(kept) + text
     decoder, value, attempts = json.JSONDecoder(), None, 0
     for match in re.finditer(r"\{", text):
         attempts += 1
@@ -968,7 +1097,7 @@ CHECKS = {
     "timestamp": (0.9, _timestamp),
     "counterparty": (0.5, _scalar),
     "currency": (0.9, lambda value: isinstance(value, str) and value.strip() in ISO_CURRENCIES),
-    "status": (0.9, lambda value: isinstance(value, str) and TOKEN.fullmatch(value.strip()) is not None),
+    "status": (0.9, lambda value: isinstance(value, str) and STATUS_VALUE.fullmatch(value.strip()) is not None),
 }
 
 
@@ -1063,17 +1192,11 @@ def check_assessment(campaign, reads, context, artifact, result):
     return result
 
 
-def payment_aliases(campaign, reads, context, artifact, result):
-    """Private overlap witnesses: the verified payment ids of the newest rows.
+def row_witnesses(reads, context):
+    """Private overlap witnesses: the canonical form of each of the newest rows.
 
-    The account identity is contributor-declared, so a second submission of the
-    same history under another identity selector still collides on these.
+    The account identity is contributor-declared, so the ledger also compares these.
+    Two submissions sharing at least two identical rows are the same history, which
+    the two sides of one payment or small numeric ids never are.
     """
-    if "paymentId" not in result["mapping"]:
-        return []
-    domain = campaign_domain(campaign, "https://" + urlsplit(reads[0].url).hostname)
-    prefix = artifact["history"]["path"] + "[]"
-    keys = result["mapping"]["paymentId"][len(prefix) + 1:].split(".")
-    values = [select(row, keys) for row in _history_rows(reads, context)]
-    return ["open-payment:" + domain + ":" + str(value) for value in values
-            if value is not None and value != ""][:MAX_PAYMENT_ALIASES]
+    return [canonical(row).decode() for row in _history_rows(reads, context)[:MAX_PAYMENT_ALIASES]]

@@ -160,7 +160,7 @@ class ProviderClient:
         # A provider that omits usage is charged an estimate of about three bytes a token.
         input_tokens = usage.get("prompt_tokens") if type(usage.get("prompt_tokens")) is int else len(encoded) // 3 + 1
         output_tokens = (usage.get("completion_tokens") if type(usage.get("completion_tokens")) is int
-                         else len(content.encode()) // 3 + 1)
+                         else len(content.encode("utf-8", "replace")) // 3 + 1)
         integer(input_tokens, 0, 100000, "inference_usage_invalid")
         integer(output_tokens, 0, 20000, "inference_usage_invalid")
         self.input_tokens += input_tokens
