@@ -1261,171 +1261,6 @@
         "kind": "open-json-read-v1",
         "maxReads": 6
       }
-    },
-    {
-      "version": 1,
-      "id": "wise-open-validation-a",
-      "bankId": "gb/wise",
-      "bankName": "Wise (internal validation)",
-      "country": "GB",
-      "issueUrl": "https://github.com/zkp2p/peer-link/issues/64",
-      "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 1,
-      "sources": [
-        {
-          "origin": "https://wise.com",
-          "paths": ["/"],
-          "methods": ["GET", "POST"],
-          "parameterNames": [],
-          "headerNames": []
-        }
-      ],
-      "inferenceRoutes": [
-        {
-          "provider": "openai",
-          "models": ["*"],
-          "privacyModes": ["provider_visible"]
-        },
-        {
-          "provider": "openrouter",
-          "models": ["*"],
-          "privacyModes": ["provider_visible"]
-        },
-        {
-          "provider": "near",
-          "models": ["*"],
-          "privacyModes": ["provider_visible"]
-        },
-        {
-          "provider": "openai_compatible",
-          "models": ["*"],
-          "privacyModes": ["provider_visible"]
-        }
-      ],
-      "rubricVersion": "transcript-mapping-v1",
-      "safeSchemaFields": [],
-      "evidenceRequirements": {
-        "historyPath": [],
-        "minRecords": 3,
-        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
-        "minScore": 85
-      },
-      "openSource": {
-        "version": 1,
-        "kind": "open-json-read-v1",
-        "maxReads": 6
-      }
-    },
-    {
-      "version": 1,
-      "id": "wise-open-validation-b",
-      "bankId": "gb/wise",
-      "bankName": "Wise (internal validation)",
-      "country": "GB",
-      "issueUrl": "https://github.com/zkp2p/peer-link/issues/64",
-      "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 1,
-      "sources": [
-        {
-          "origin": "https://wise.com",
-          "paths": ["/"],
-          "methods": ["GET", "POST"],
-          "parameterNames": [],
-          "headerNames": []
-        }
-      ],
-      "inferenceRoutes": [
-        {
-          "provider": "openai",
-          "models": ["*"],
-          "privacyModes": ["provider_visible"]
-        },
-        {
-          "provider": "openrouter",
-          "models": ["*"],
-          "privacyModes": ["provider_visible"]
-        },
-        {
-          "provider": "near",
-          "models": ["*"],
-          "privacyModes": ["provider_visible"]
-        },
-        {
-          "provider": "openai_compatible",
-          "models": ["*"],
-          "privacyModes": ["provider_visible"]
-        }
-      ],
-      "rubricVersion": "transcript-mapping-v1",
-      "safeSchemaFields": [],
-      "evidenceRequirements": {
-        "historyPath": [],
-        "minRecords": 3,
-        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
-        "minScore": 85
-      },
-      "openSource": {
-        "version": 1,
-        "kind": "open-json-read-v1",
-        "maxReads": 6
-      }
-    },
-    {
-      "version": 1,
-      "id": "wise-open-validation-c",
-      "bankId": "gb/wise",
-      "bankName": "Wise (internal validation)",
-      "country": "GB",
-      "issueUrl": "https://github.com/zkp2p/peer-link/issues/64",
-      "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 1,
-      "sources": [
-        {
-          "origin": "https://wise.com",
-          "paths": ["/"],
-          "methods": ["GET", "POST"],
-          "parameterNames": [],
-          "headerNames": []
-        }
-      ],
-      "inferenceRoutes": [
-        {
-          "provider": "openai",
-          "models": ["*"],
-          "privacyModes": ["provider_visible"]
-        },
-        {
-          "provider": "openrouter",
-          "models": ["*"],
-          "privacyModes": ["provider_visible"]
-        },
-        {
-          "provider": "near",
-          "models": ["*"],
-          "privacyModes": ["provider_visible"]
-        },
-        {
-          "provider": "openai_compatible",
-          "models": ["*"],
-          "privacyModes": ["provider_visible"]
-        }
-      ],
-      "rubricVersion": "transcript-mapping-v1",
-      "safeSchemaFields": [],
-      "evidenceRequirements": {
-        "historyPath": [],
-        "minRecords": 3,
-        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
-        "minScore": 85
-      },
-      "openSource": {
-        "version": 1,
-        "kind": "open-json-read-v1",
-        "maxReads": 6
-      }
     }
   ],
   "privacy": {
@@ -1447,7 +1282,7 @@
     "keyId": "arn:aws:kms:us-east-1:411399509833:key/5e49914d-80d9-4140-a4c2-4bf00e3ac7ea",
     "wallet": "0xd297f105b145cd1d4ddb1d31392300e934bc3559"
   },
-  "pilotBudgetMinor": 50000000,
+  "pilotBudgetMinor": 10000000,
   "stateAuthority": {
     "kind": "aws_lambda_dynamodb",
     "region": "us-east-1",
@@ -1456,6 +1291,6 @@
     "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/34433f8c-357e-4011-9f05-a23ce8da7bd8",
     "credentialRoleArn": "arn:aws:iam::411399509833:role/peerlink-transcript-kms-pilot-HostRole-CtMw2KLCWL9c",
     "maxCiphertextBytes": 327680,
-    "initialWalletNonce": 5
+    "initialWalletNonce": 10
   }
 }

@@ -271,7 +271,9 @@ def main():
         if args.command=='terms':
             print(json.dumps(terms(release,policy,args.campaign,args.provider,args.model,args.privacy or 'provider_visible'),sort_keys=True));return
         if args.command=='campaigns':
-            result={'campaigns':[campaign_summary(item) for item in policy['campaigns']
+            # The whole epoch shares this funded amount; --live shows what is left of it.
+            result={'epochBudgetUSDC':policy['pilotBudgetMinor']//1000000,
+                    'campaigns':[campaign_summary(item) for item in policy['campaigns']
                                  if args.campaign is None or item['id']==args.campaign]}
             if args.live:
                 client=Client(args.service or release.get('serviceUrl'),release,policy)

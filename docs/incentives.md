@@ -2,7 +2,8 @@
 
 Each campaign pays a fixed **$5 or $10 USDC on Base** for one accepted
 transcript. All campaigns in a release share one funded budget of at most
-**$50**, with no automatic refill. A successful reservation, made by the client
+**$50**, with no automatic refill; the amount funded for the current release is
+stated in its manifest and may be much less than the sum of all slots. A successful reservation, made by the client
 after it verifies the enclave against the pinned
 [release manifest](../transcripts/release.json), is what admits a job. A bank
 issue, a logo or this page does not guarantee remaining capacity; run

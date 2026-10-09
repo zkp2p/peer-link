@@ -70,7 +70,9 @@ inference endpoint can be allowed without letting a model award a reward.
 - Each accepted contribution earns the campaign's fixed **$5 or $10 USDC**; one
   paid contribution per bank account per campaign.
 - All campaigns share one funded budget of at most **$50** per release epoch
-  with no automatic refill. A successful reservation, valid for ten minutes, is
+  with no automatic refill. The amount funded for the current release is in
+  its [manifest](transcripts/release.json), and `campaigns --live` shows what
+  is left. A successful reservation, valid for ten minutes, is
   what admits a job. A listing is not a promise of capacity.
 - **The contributor pays for inference**, one call per job, including when the
   job is rejected. Peer pays infrastructure, gas and rewards.

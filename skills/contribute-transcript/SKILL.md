@@ -64,8 +64,9 @@ pinned release without reserving anything; run it if any later command reports
 
 `campaigns` lists each campaign with its `kind`, reward, allowed `domains` and
 inference routes. `--live` adds `availability`: remaining slots per campaign and
-the remaining shared budget. One funded budget of at most $50 covers all
-campaigns and is not refilled automatically, so stop here if the bank's
+the remaining shared budget. One funded budget covers all campaigns for the
+release: `epochBudgetUSDC` in the output, at most $50 and often less. It is not
+refilled automatically, so stop here if the bank's
 `slotsRemaining` is 0 or `budgetRemainingMinor` is below the reward (USDC has six
 decimals, so 5000000 is $5). The hint is unsigned; only a reservation in step 5
 admits a job.
