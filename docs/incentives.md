@@ -1,6 +1,7 @@
 # Transcript contribution rewards
 
-**Wise has an approved release: successful reservation is required before secret input.**
+**No public paid campaign is currently available. Do not collect keys or spend on
+inference for planned contributions. Wise is excluded from reward recruitment.**
 The [release manifest](../transcripts/release.json), independently verified release
 and a successful live reservation control admission. Approval and static issue
 text cannot guarantee remaining capacity. A bank issue, logo, host deployment
@@ -64,7 +65,7 @@ The architecture reward ceiling is **$50 USDC**, with separate bounded gas
 and no automatic refill. The completed supervised Wise experiment used a measured
 **$5 USDC budget** and one contributor slot after a confirmed $1 recovery test.
 That $5 reward was paid; **that completed test allocation has no remaining capacity**.
-The separate durable Wise release has its own initial allocation and verification. Future campaigns must publish available
+The separate durable Wise tests provide internal validation, not public enrollment. Future campaigns must publish available
 capacity and reserve their reward funds before accepting contributions. A budget
 ceiling or a planned per-transcript rate is not a funded award.
 
@@ -82,16 +83,15 @@ restore. Operator KMS recovery is a separate trust boundary. The earlier
 enclave-only pilot's funded $50 remains unrecovered at this checkpoint; new custody
 does not restore its old signing key.
 
-## Approved Wise campaign
+## Internal Wise validation
 
-[Wise #239](https://github.com/zkp2p/peer-link/issues/239) has an initial allocation
-of two $5 Base USDC awards ($10 total). An operator-paid validation contribution counts toward that limit. Other
-banks remain planned. No static page promises a remaining slot: obtain a successful
-reservation before sharing keys or paying for inference. The authenticated Wise
-job paid automatically, and the same signed receipt was recovered after restart
-without another submission or model call. See the separately scoped
-[durable evidence](../transcripts/durable-pilot-evidence.json); the older RAM-only
-pilot does not approve this release.
+Wise is already an integration/reference and is excluded from new transcript
+incentivization. The completed operator-owned tests used bounded reward transfers
+to validate acquisition, grading, payout and restart recovery; they are not public
+campaigns or a promise of funded slots. See the separately scoped
+[durable evidence](../transcripts/durable-pilot-evidence.json). Other bank rewards
+remain planned and require their own verified source adapter, release approval and
+reserved funds before enrollment.
 
 ## Retired provider awards
 

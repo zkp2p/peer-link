@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "status": "approved",
+  "status": "unreleased",
   "serviceUrl": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
   "policyDigest": "9354bf3e0d73617496a89e25f5c68f9325fbc4f98870bc0f91afa5f04082a3b3",
   "measurements": {
@@ -9,8 +9,9 @@
     "2": "9f9fed04780ccce313e4e0b07d4e0867e9c9eafa0b997ac3e5fc2c31fb0a4afa42434748834ef0e658a222e394f24796",
     "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
   },
-  "expiresAt": 1794118937,
+  "expiresAt": 0,
   "limitations": [
+    "Wise is already integrated and is excluded from public transcript incentives. This measured image is an internal validation reference only; no public paid campaign is approved.",
     "Wise API campaign wise-api-public-v1 only; at most two accepted contributions at five Base USDC each. Other banks remain planned. A successful live reservation is required.",
     "Contributor-funded approved inference receives redacted structural evidence with consent and may charge for rejected jobs. Confidential NEAR inference remains unavailable.",
     "Payout custody is operator-recoverable AWS KMS. AWS and account administrators remain trusted for infrastructure and key-policy control; this is not escrow.",

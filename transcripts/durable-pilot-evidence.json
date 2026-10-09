@@ -1,7 +1,7 @@
 {
   "version": 1,
   "service": "peerlink-transcript-contributions",
-  "scope": "Capped Wise API public pilot; operator-owned validation counts toward its two awards. Other banks remain planned.",
+  "scope": "Internal owner-authorized Wise API validation only. Wise is already integrated and is excluded from public transcript incentives; other bank campaigns remain planned.",
   "sourceCommit": "629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e",
   "serviceUrl": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
   "policyDigest": "9354bf3e0d73617496a89e25f5c68f9325fbc4f98870bc0f91afa5f04082a3b3",
@@ -122,9 +122,12 @@
     "maximumContributors": 2,
     "operatorValidationConsumesOneAward": true,
     "admissionRequirement": "successful_live_reservation",
-    "signedResumeVerifiedAt": 1791527362
+    "signedResumeVerifiedAt": 1791527362,
+    "publicIncentiveCampaignEnabled": false,
+    "wiseExcludedFromIncentives": true
   },
   "limits": [
+    "Historical Wise test payments are internal validation evidence, not a public reward offer. The public release is not approved for incentivized contributions.",
     "This evidence does not prove confidential NEAR hosted-model execution or per-request x402/NEAR Intents payment; neither mode is enabled.",
     "Model usefulness scoring is probabilistic; authenticated bank acquisition, redaction, limits, deduplication and payment authorization are enforced separately.",
     "Hardware proofs verify monotonic state takeover and paid recovery, not a live stale-writer attack; conditional-write fencing is separately regression-tested.",
@@ -132,5 +135,17 @@
     "This single-host pilot requires signed operator resume after restart. A published release or issue is not a reservation or guarantee of remaining capacity.",
     "A coincident bank/provider failure and state-status outage can leave pre-acceptance work pending. The next valid reservation after its original 600-second expiry releases that slot; a reviewed restart of the same image rejects interrupted work. Operator reconcile alone does not terminalize this case.",
     "A restart between paid-state commit and final receipt archival may require signed operator reconcile while paused. Automatic status-poll repair of this crash window is deferred; no bank/model replay or new payment is required."
-  ]
+  ],
+  "incentiveRetirement": {
+    "reason": "Wise already integrated; excluded from incentivization",
+    "publicAdmissionPermanentlyClosed": true,
+    "state": "refunded",
+    "outstandingObligations": 0,
+    "refundUsdcMinor": 5000000,
+    "transactionId": "0x814d4207d3982a1b1744bae14e74a0faa4149c05b000f54310dd25b3ccbce39d",
+    "exactTransferAndRecipientBalanceDeltaVerified": true,
+    "remainingUsdcMinor": 0,
+    "reconciledSameRefundIdentity": true,
+    "verifiedAt": 1791529950
+  }
 }

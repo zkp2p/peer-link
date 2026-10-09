@@ -4,8 +4,8 @@ The paid contribution is authenticated, redacted banking evidence from your own
 account. Peer engineers build the integration. You do not implement a provider,
 claim an issue by commenting, or open a provider PR.
 
-**Wise has an approved release; a successful reservation is required before
-secret input.** Check the [release manifest](transcripts/release.json),
+**No public paid campaign is currently available. Stop before collecting secrets
+or spending on inference.** Check the [release manifest](transcripts/release.json),
 [verification and recovery guide](docs/transcript-operations.md), and bank campaign before continuing.
 A campaign is usable only with an approved independently verified release, active
 source policy and a successful funded reservation before secret collection.
@@ -13,11 +13,11 @@ Approval does not guarantee remaining capacity.
 
 The single [Merit project profile](https://terminal.merit.systems/zkp2p/peer-link) points to PeerLink
 for discovery. Bank-specific rewards and enrollment remain in PeerLink campaign
-issues; contributors do not claim separate Merit bounties. The approved first campaign
-is [Wise #239](https://github.com/zkp2p/peer-link/issues/239) only: at most two
-$5 Base USDC awards and an initial $10 allocation. The operator-paid validation
-contribution counts toward that limit. See the scoped
-[durable evidence](transcripts/durable-pilot-evidence.json); other banks remain planned.
+issues; contributors do not claim separate Merit bounties. Bank rewards remain
+planned at the published fixed $5/$10 rates, collecting 1–5 distinct contributors
+when enabled. Wise is an existing integration/reference, excluded from reward
+recruitment. Its paid tests are [internal validation](transcripts/durable-pilot-evidence.json),
+not public enrollment.
 
 ## Entry point
 

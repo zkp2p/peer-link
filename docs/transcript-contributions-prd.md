@@ -1,22 +1,22 @@
 # PeerLink transcript contributions
 
-Product decision: 2026-10-09. Status: **approved Wise durable release**.
-The [release manifest](../transcripts/release.json) approves Wise only; successful
-reservation is required before secret input. The earlier enclave-only wallet
+Product decision: 2026-10-09. Status: **internal Wise validation completed; public incentives planned**.
+No public paid campaign is currently available. Wise is an existing integration
+and is excluded from reward recruitment; the [release](../transcripts/release.json)
+and future campaign funding/verification gates must permit any public collection. The earlier enclave-only wallet
 holds unrecovered $50; the revised KMS candidate is a separate wallet and release.
 This document separates the built pilot, observed evidence and remaining roadmap.
 Infrastructure, a verified candidate quote or a synthetic job does not activate a bank.
 
-## Approved Wise release
+## Internal Wise validation; public incentives planned
 
-[Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239) is the first
-public launch scope: at most two distinct contributors, **$5 Base USDC per accepted
-transcript**, and an initial $10 allocation. Other banks remain planned. An
-operator-paid validation contribution counts toward the two-award limit; no static
-page guarantees remaining capacity. Verify the approved, unexpired release and
-obtain a successful reservation before collecting credentials or paying for inference.
+**No public paid campaign is currently available.** Bank transcript rewards remain
+planned at the published fixed $5/$10 rates, with 1–5 distinct contributors per bank
+when enabled. Wise is an existing integration/reference, excluded from reward
+recruitment. Its completed paid tests are internal validation, not public enrollment.
+Do not collect credentials or spend on inference for a planned campaign.
 
-The approved service is `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
+The internal validation service was `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
 with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
 Fresh Nitro verification, authenticated Wise reads, ordinary NEAR grading, an
 automatic confirmed $5 payout and paid-job recovery after an enclave restart passed.
@@ -47,8 +47,9 @@ separate receipt signer is encrypted in durable state. Later snapshot recovery
 cannot recover old bank-upload decryption keys. KMS administrators remain trusted
 for encrypted metadata/deduplication secrecy, and cloud availability remains a
 trust boundary; missing, mismatched or unavailable state must
-stop admission. Release-specific hardware and paid-job/restart verification passed for Wise;
-other bank adapters and confidential inference require separate approval.
+stop admission. Hardware and paid-job/restart verification passed for the internal Wise test.
+Public incentives need a separately verified non-Wise source and release approval;
+confidential inference remains unavailable.
 
 ## Problem and outcome
 
@@ -72,8 +73,8 @@ The model does not choose bank reads, change policy or sign payments in this pil
 - Architecture supports **1–5 distinct contributors per bank**, stopping when
   evidence is sufficient. The supervised Wise experiment has a **one-slot limit**
   and measured $5 budget. Its test consumed that slot/budget; remaining funded
-  capacity in that completed test allocation is zero; the durable Wise campaign
-  has separate approval and funding.
+  capacity in that completed test allocation is zero; the durable Wise tests
+  provide separate internal validation only.
 - Fixed **$5 or $10 USDC per accepted contribution**. Initial US campaigns use
   $10; other rates are explicit campaign policy, not inferred from personal data.
 - At most one paid contribution per contributor/account per bank campaign.
@@ -402,7 +403,7 @@ enclave. Its ARN and wallet are policy/attestation bound; exclusive enclave sign
 authority is not claimed. The `c2bc4b0` candidate passed independent rebuild and
 live Nitro source/image, policy/key/wallet checks. That historical one-slot pilot
 did not approve public admission or demonstrate persistence. The later durable
-Wise release has separate hardware, paid-job and restart proof linked above.
+Wise tests have separate internal hardware, paid-job and restart proof linked above.
 
 Before allocating funds, the signed operator preflight must query real Base RPC
 balances/nonce and exercise KMS signing for a one-minor-unit USDC refund while
@@ -480,7 +481,7 @@ acceptance remains closed until the measured-release and remaining evidence gate
 | Rewards and custody | New-host KMS signing and independent signature verification passed. A separately funded $1 external operator recovery confirmed its exact USDC return to the fixed deployer and zero remaining balance with the relay stopped. The Wise job separately confirmed its $5 reward after one signed operator reconciliation. The earlier enclave-only wallet still holds unrecovered $50. | Operator recovery does not prove enclave retirement. The one-slot test leaves zero funded capacity. KMS recovery is not ledger persistence or safe cross-epoch wallet reuse. |
 | Contributor-agent trials | Claude Opus 5.5 high and Codex high reviewed the local contributor flow. Their findings drove safe secret prompts, clear release gates, recovery commands, receipt checks and Wise relationship fixes. Claude's final follow-up found the practical fixes intact and passed 33 targeted client/artifact tests. A fresh live client restored the paid Wise job and identical signed receipt with zero new reservations/submissions. | This is same-epoch client recovery, not enclave-ledger recovery after restart. |
 | Durable contributor smoke | An independent local agent exercised the actual CLI/Client/Runtime and encrypted state using synthetic external dependencies: reservation/save before input, full capacity without keys, fresh-ingress restart and identical signed paid receipt, expiry-only renewal, changed-pin refusal and explicit reserved submission. Interrupted submitted work failed without rerunning bank/model calls. | No live AWS, bank, provider or transfer evidence; the changed durable image still needs its own rebuild/hardware/restore proof before public approval. |
-| Durable hardware and paid restart | Source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e` passed fresh Nitro/KMS bootstrap and zero-fund restart. One encrypted Wise submission acquired authenticated reads and used contributor-funded ordinary NEAR grading, followed by an automatic confirmed $5 payout. After signed pause and enclave restart, the client recovered the same signed paid receipt with no new reservation, submission or model call; the inference key was disabled before recovery. See [durable evidence](../transcripts/durable-pilot-evidence.json). | Wise only. Static evidence does not guarantee capacity, confidential inference, every bank's source support or availability of cloud dependencies. |
+| Durable hardware and paid restart | Source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e` passed fresh Nitro/KMS bootstrap and zero-fund restart. One encrypted Wise submission acquired authenticated reads and used contributor-funded ordinary NEAR grading, followed by an automatic confirmed $5 payout. After signed pause and enclave restart, the client recovered the same signed paid receipt with no new reservation, submission or model call; the inference key was disabled before recovery. See [durable evidence](../transcripts/durable-pilot-evidence.json). | Internal Wise validation only; Wise is excluded from reward recruitment. No public paid campaign is available. Static evidence does not guarantee confidential inference, other bank support or cloud availability. |
 | Public availability | Landing/docs/catalog describe the new contribution program with readiness gates. | No claim that all banks are ready, funded or supported in Peer. |
 
 Evidence must remain scoped to its actual source/image version and observation date.

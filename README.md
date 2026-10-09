@@ -9,11 +9,11 @@ your inference API key to grade its usefulness. Peer engineers turn accepted evi
 into Curator metadata and attestation transformers. You do not write a provider or
 open a contribution PR.
 
-**Status: approved Wise release; a successful reservation is required.** A bank
+**Status: no public paid campaign is currently available.** A bank
 listing, a deployed host, or synthetic tests do not establish live availability.
 Only use an independently verified approved [release](transcripts/release.json)
-and a successful reservation in the enabled Wise campaign. Approval does not
-guarantee remaining capacity; other banks remain planned.
+and a successful reservation in an enabled campaign before any secret collection.
+Bank rewards remain planned; Wise is excluded from reward recruitment.
 
 [Website](https://link.peer.xyz) · [Contribution guide](CONTRIBUTING.md) ·
 [Campaign issues](https://github.com/zkp2p/peer-link/issues) · [Rewards](docs/incentives.md) ·
@@ -67,13 +67,13 @@ by a [confirmed $5 payout](https://basescan.org/tx/0x88899fbe3b6036390f19207ec91
 The job first returned `payout_pending` and needed one signed operator reconciliation.
 A fresh client restored the same signed receipt without another reservation or
 submission. That completed one-slot test allocation has no remaining capacity;
-it does not establish availability in the separate durable campaign.
+it does not establish public availability.
 The revised payout design uses a non-exportable AWS KMS signing key. Authorized
 operator IAM and the host signing broker can sign outside the enclave and recover
 funds; this is not exclusive enclave custody. The completed one-slot pilot
 kept ledger and deduplication authority RAM-only. Restart of that historical pilot
 requires operator review and does not make its wallet reuse or old-job continuation
-safe. The approved durable Wise release below has passed the new release gates. The built
+safe. The durable Wise tests below provide internal validation only. The built
 operator retirement flow permanently closes admission, finishes and archives
 existing obligations, and refunds remaining USDC only to the fixed deployer address.
 Its runtime accepts no arbitrary refund recipient or ETH sweep; its live refund
@@ -94,16 +94,15 @@ release approval remains a separate gate. The
 verified the fixed deployer return and zero remaining USDC with the relay stopped;
 it does not prove the enclave retirement flow.
 
-## Approved Wise release
+## Internal Wise validation; public incentives planned
 
-[Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239) is the first
-public launch scope: at most two distinct contributors, **$5 Base USDC per accepted
-transcript**, and an initial $10 allocation. Other banks remain planned. An
-operator-paid validation contribution counts toward the two-award limit; no static
-page guarantees remaining capacity. Verify the approved, unexpired release and
-obtain a successful reservation before collecting credentials or paying for inference.
+**No public paid campaign is currently available.** Bank transcript rewards remain
+planned at the published fixed $5/$10 rates, with 1–5 distinct contributors per bank
+when enabled. Wise is an existing integration/reference, excluded from reward
+recruitment. Its completed paid tests are internal validation, not public enrollment.
+Do not collect credentials or spend on inference for a planned campaign.
 
-The approved service is `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
+The internal validation service was `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
 with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
 Fresh Nitro verification, authenticated Wise reads, ordinary NEAR grading, an
 automatic confirmed $5 payout and paid-job recovery after an enclave restart passed.

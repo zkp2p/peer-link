@@ -111,17 +111,16 @@ function render(providers: Provider[], catalogUnavailable = false) {
     card.className = "integration-tile";
     card.href = integration.href;
     const place = countryNames.of(integration.country) ?? integration.country;
-    const isWiseCampaign = integration.href === "https://github.com/zkp2p/peer-link/issues/239";
-    const rewardDescription = isWiseCampaign
-      ? "$5 per accepted transcript. Release approval and a successful reservation are required; availability can change."
-      : `Planned $${integration.bounty} per accepted transcript. View the campaign issue for availability.`;
+    const rewardDescription = `Planned $${integration.bounty} per accepted transcript. No public paid campaign is currently available.`;
     card.setAttribute(
       "aria-label",
       integration.hasAdapter
         ? `${integration.name}, ${place}. View experimental adapter.`
-        : integration.bounty
-          ? `${integration.name}, ${place}. ${rewardDescription}`
-          : `${integration.name}, ${place}. View bank integration discussion.`,
+        : integration.name === "Wise"
+          ? `${integration.name}, ${place}. View the existing Wise reference; no transcript reward recruitment.`
+          : integration.bounty
+            ? `${integration.name}, ${place}. ${rewardDescription}`
+            : `${integration.name}, ${place}. View bank integration discussion.`,
     );
     const logo = document.createElement("span");
     logo.className = "integration-logo";

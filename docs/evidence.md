@@ -3,8 +3,9 @@
 A submitted recipe or local capture is a navigation hint. Only fresh reads made by
 the enclave's authenticated bank transport establish source acquisition. Synthetic
 fixtures, browser self-reports, model inference and bank listings do not prove live
-acceptance. The [current release](../transcripts/release.json) approves Wise only;
-a successful reservation is required before secret input.
+acceptance. No public paid campaign is currently available; the
+[release](../transcripts/release.json) and a future successful reservation must
+permit collection before any secret input. Wise tests are internal validation only.
 
 ## Source and account identity
 
@@ -75,7 +76,7 @@ date and remaining limitations accurately. A paid transcript does not prove fina
 bank settlement, recipient credit, support for every payment type, or readiness in
 Peer production. Peer engineers separately review metadata and transformers.
 
-## Durable Wise release evidence
+## Internal durable Wise evidence
 
 A separate credential-free contributor smoke exercised the actual CLI, client,
 runtime, encryption and durable-state path with synthetic external dependencies.
@@ -96,8 +97,8 @@ binds the current ingress key and persistent receipt identity. KMS administrator
 remain trusted for encrypted metadata/deduplication secrecy; storage does not
 guarantee cloud availability.
 
-The Wise public launch scope is two $5 awards with a $10 initial allocation; an
-operator-paid validation contribution counts toward that limit. Source
+Wise is excluded from reward recruitment. The operator-owned paid validation
+provides measured-runtime evidence, not an available public campaign. Source
 `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e` and service API
 `https://9lb70whku9.execute-api.us-east-1.amazonaws.com` have separate
 [durable evidence](../transcripts/durable-pilot-evidence.json). Fresh Nitro/KMS

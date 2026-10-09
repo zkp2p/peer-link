@@ -2,8 +2,9 @@
 
 PeerLink collects authenticated banking transcripts from account owners. Users do
 not write a provider, open a PR, or claim a Merit bounty. Peer builds the integration
-from accepted structural evidence. **Wise has an approved transcript release; other
-banks remain planned.** A successful live reservation is required before secret input.
+from accepted structural evidence. **No public paid campaign is currently available.**
+Bank rewards remain planned. Wise is an existing integration/reference, excluded
+from reward recruitment; its paid tests are internal validation only.
 
 ## Campaign pages and amounts
 
@@ -15,7 +16,8 @@ account/contributor at its published fixed rate:
 - **$10 USDC per accepted transcript:** Chase, Bank of America and Wells Fargo.
 - **$5 USDC per accepted transcript:** the other currently listed bank campaigns.
 
-Wise has an initial two-award allocation; other listed rates remain planned. An approved release, demonstrated bank
+Listed rates remain planned. Wise is excluded from the incentivization layer.
+An approved release, demonstrated bank
 source, available slot and reserved reward are required before a submission. Read
 [reward terms](incentives.md) and the [contribution skill](../skills/contribute-transcript/SKILL.md).
 
@@ -24,14 +26,14 @@ read-only history source, and useful gaps in schema or transaction-type coverage
 A bank's logo, a legacy adapter or a public campaign page does not establish live
 support. No bank-specific conversion or settled-volume ranking is claimed here.
 
-## Approved release scope
+## Public readiness
 
-[Wise #239](https://github.com/zkp2p/peer-link/issues/239) is the first approved
-collection: at most two distinct contributors at $5 each, with an initial $10
-allocation. The authorized paid validation counts toward that limit. Check the
-[release evidence](../transcripts/durable-pilot-evidence.json) and reserve a funded
-slot; a bank page does not guarantee availability. Other banks remain planned
-until their source and release gates pass.
+No public paid campaign is currently available. Non-Wise banks require a verified
+source adapter, measured-release approval and reserved funds before enrollment.
+The completed [Wise evidence](../transcripts/durable-pilot-evidence.json) records
+internal acquisition, grading, payment and restart tests; it is not an invitation
+to claim a Wise reward. Future contributors must obtain their own successful
+reservation before sharing keys or spending on inference.
 
 ## Merit and legacy work
 

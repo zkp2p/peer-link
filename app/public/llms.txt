@@ -16,14 +16,13 @@
 
 ## Status
 
-Wise #239 has the first approved transcript release: $5 Base USDC per accepted contribution,
-at most two contributors and an initial $10 allocation. Release-specific Nitro,
-automatic payout and paid-job recovery after restart passed. Other banks remain planned. The operator-paid
-validation contribution counts toward the two-award limit. Independently pin the
-approved release, verify fresh attestation and obtain a successful reservation
-before collecting credentials or spending on inference. Static copy cannot promise
-remaining capacity. The pinned release controls verification, published campaign
-terms control eligibility, and the service reservation controls admission.
+No public paid campaign is currently available. Bank rewards remain planned at
+the published fixed $5/$10 rates with 1–5 distinct contributors when enabled.
+Wise is an existing integration/reference, excluded from reward recruitment;
+its completed paid tests are internal validation only. Stop before collecting
+credentials or spending on inference for a planned campaign. Future enrollment
+requires an independently pinned approved release, fresh attestation and a
+successful funded reservation. Neither static copy nor an issue reserves a slot.
 
 ## Rewards
 

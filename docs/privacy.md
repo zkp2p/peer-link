@@ -1,6 +1,7 @@
 # Transcript privacy
 
-**Current status: approved Wise transcript release only. Other banks remain planned.**
+**Current status: no public paid campaign is available. Do not collect bank sessions
+or inference keys for planned contributions. Wise tests are internal validation only.**
 Independently pin the [release](../transcripts/release.json), verify fresh attestation,
 and reserve a funded slot before collecting or sending keys. Follow the
 [contribution skill](../skills/contribute-transcript/SKILL.md).

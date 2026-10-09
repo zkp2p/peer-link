@@ -8,13 +8,14 @@
   "contributionSkill": "https://github.com/zkp2p/peer-link/blob/main/skills/contribute-transcript/SKILL.md",
   "campaigns": "https://github.com/zkp2p/peer-link/issues",
   "verification": {
-    "status": "approved_release_published",
-    "endpoint": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
+    "status": "no_public_paid_campaign",
+    "endpoint": null,
     "scheduledJudgment": false,
-    "automaticPayout": true,
+    "automaticPayout": false,
     "release": "https://github.com/zkp2p/peer-link/blob/main/transcripts/release.json",
-    "secretSubmissionRequirement": "approved_release_fresh_attestation_and_successful_reservation",
-    "payoutScope": "accepted_reserved_jobs"
+    "secretSubmissionRequirement": "future_approved_campaign_fresh_attestation_and_successful_reservation",
+    "payoutScope": "accepted_reserved_jobs",
+    "acceptsSecrets": false
   },
   "rewards": {
     "currency": "USDC",
@@ -25,7 +26,9 @@
     },
     "paidContributionsPerAccountPerCampaign": 1,
     "allCampaignsFunded": false,
-    "automaticRefill": false
+    "automaticRefill": false,
+    "publicCampaignsAvailable": false,
+    "wiseIncentivized": false
   },
   "inference": {
     "billing": "contributor",
@@ -84,14 +87,11 @@
     "meritProjectProfile": "https://terminal.merit.systems/zkp2p/peer-link",
     "individualMeritBounties": false
   },
-  "publicCampaign": {
-    "status": "approved_release_published",
+  "internalValidation": {
+    "status": "completed_internal_validation_not_public_enrollment",
     "bank": "wise",
-    "maximumContributors": 2,
-    "rewardUSDC": 5,
     "otherBanks": "planned",
     "durableState": "encrypted_snapshot_immutable_lambda_cas_verified_scope",
-    "campaign": "https://github.com/zkp2p/peer-link/issues/239",
     "descriptorVersion": 3,
     "restartRequiresOperatorReview": true,
     "credentialsPersisted": false,
@@ -99,14 +99,10 @@
     "receiptSignerPersistedEncrypted": true,
     "submissionEnvelopesPersisted": false,
     "historicalIngressKeysRecoverableFromSnapshot": false,
-    "policyId": "wise-api-public-v1",
     "measuredSource": "629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e",
     "evidence": "https://github.com/zkp2p/peer-link/blob/main/transcripts/durable-pilot-evidence.json",
-    "initialBudgetUSDC": 10,
     "ledgerPersistence": "aws_dynamodb_encrypted_snapshot",
-    "admissionRequirement": "successful_live_reservation",
-    "reservationRoute": "/v1/reservations",
-    "operatorValidationCountsTowardAwardLimit": true,
-    "hardwarePaidRestartProof": "verified_scoped"
+    "hardwarePaidRestartProof": "verified_scoped",
+    "excludedFromRewardRecruitment": true
   }
 }

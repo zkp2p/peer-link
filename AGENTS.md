@@ -7,12 +7,13 @@ bank campaign. The [PRD](docs/transcript-contributions-prd.md) describes the int
 product; the [release](transcripts/release.json) and actual verification evidence
 control availability.
 
-**Approved Wise release: a successful reservation is required before secret input.** An
+**No public paid campaign is currently available; stop before secret collection.** An
 infrastructure deployment, synthetic fixture, legacy adapter or open bank issue
 cannot enable live collection. Independently verify a reviewed measured Nitro release,
 fresh attestation, encryption-key/policy bindings and a successful funded reservation
-in the enabled Wise campaign before secret collection or any encrypted submission.
-Approval is not a capacity guarantee; other banks remain planned. Never replace
+in an enabled future campaign before secret collection or any encrypted submission.
+Bank rewards remain planned. Wise is excluded from reward recruitment; its
+completed tests are internal validation only. Approval is not a capacity guarantee. Never replace
 missing evidence with invented PCRs,
 mock quotes or a server's `verified` flag.
 
@@ -107,16 +108,15 @@ expired/replayed jobs, privacy/model mismatch, malformed grading, private-data l
 duplicate accounts, capacity/budget races and payout reconciliation. Distinguish
 synthetic tests from real hardware, inference, owner-authorized bank and payment evidence.
 
-## Approved Wise release
+## Internal Wise validation; public incentives planned
 
-[Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239) is the first
-public launch scope: at most two distinct contributors, **$5 Base USDC per accepted
-transcript**, and an initial $10 allocation. Other banks remain planned. An
-operator-paid validation contribution counts toward the two-award limit; no static
-page guarantees remaining capacity. Verify the approved, unexpired release and
-obtain a successful reservation before collecting credentials or paying for inference.
+**No public paid campaign is currently available.** Bank transcript rewards remain
+planned at the published fixed $5/$10 rates, with 1–5 distinct contributors per bank
+when enabled. Wise is an existing integration/reference, excluded from reward
+recruitment. Its completed paid tests are internal validation, not public enrollment.
+Do not collect credentials or spend on inference for a planned campaign.
 
-The approved service is `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
+The internal validation service was `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
 with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
 Fresh Nitro verification, authenticated Wise reads, ordinary NEAR grading, an
 automatic confirmed $5 payout and paid-job recovery after an enclave restart passed.
@@ -147,8 +147,9 @@ separate receipt signer is encrypted in durable state. Later snapshot recovery
 cannot recover old bank-upload decryption keys. KMS administrators remain trusted
 for encrypted metadata/deduplication secrecy, and cloud availability remains a
 trust boundary; missing, mismatched or unavailable state must
-stop admission. Release-specific hardware and paid-job/restart verification passed for Wise;
-other bank adapters and confidential inference require separate approval.
+stop admission. Hardware and paid-job/restart verification passed for the internal Wise test.
+Public incentives need a separately verified non-Wise source and release approval;
+confidential inference remains unavailable.
 
 ## Commands and layout
 

@@ -2,20 +2,19 @@
 
 This is a dedicated PeerLink deployment. It does not change a production attestor,
 reuse its signing key, or inherit its approval. The deployment may expose public
-campaign/status/attestation metadata. The approved Wise release requires successful
-reservation before secret input; other banks remain planned. Infrastructure creation, a signed EIF and a successful synthetic job do not
+campaign/status/attestation metadata. No public paid campaign is available;
+Wise tests are internal validation and bank rewards remain planned. Infrastructure creation, a signed EIF and a successful synthetic job do not
 establish live bank acceptance.
 
-## Approved Wise release
+## Internal Wise validation; public incentives planned
 
-[Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239) is the first
-public launch scope: at most two distinct contributors, **$5 Base USDC per accepted
-transcript**, and an initial $10 allocation. Other banks remain planned. An
-operator-paid validation contribution counts toward the two-award limit; no static
-page guarantees remaining capacity. Verify the approved, unexpired release and
-obtain a successful reservation before collecting credentials or paying for inference.
+**No public paid campaign is currently available.** Bank transcript rewards remain
+planned at the published fixed $5/$10 rates, with 1–5 distinct contributors per bank
+when enabled. Wise is an existing integration/reference, excluded from reward
+recruitment. Its completed paid tests are internal validation, not public enrollment.
+Do not collect credentials or spend on inference for a planned campaign.
 
-The approved service is `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
+The internal validation service was `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
 with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
 Fresh Nitro verification, authenticated Wise reads, ordinary NEAR grading, an
 automatic confirmed $5 payout and paid-job recovery after an enclave restart passed.
@@ -46,8 +45,20 @@ separate receipt signer is encrypted in durable state. Later snapshot recovery
 cannot recover old bank-upload decryption keys. KMS administrators remain trusted
 for encrypted metadata/deduplication secrecy, and cloud availability remains a
 trust boundary; missing, mismatched or unavailable state must
-stop admission. Release-specific hardware and paid-job/restart verification passed for Wise;
-other bank adapters and confidential inference require separate approval.
+stop admission. Hardware and paid-job/restart verification passed for the internal Wise test.
+Public incentives need a separately verified non-Wise source and release approval;
+confidential inference remains unavailable.
+
+The Wise incentive epoch was subsequently retired because Wise is already integrated.
+Admission is permanently closed, all obligations are complete, and the remaining
+**5 USDC** was refunded to the fixed deployer in transaction
+`0x814d4207d3982a1b1744bae14e74a0faa4149c05b000f54310dd25b3ccbce39d`.
+The canonical successful transfer, recipient balance increase and zero remaining
+USDC were independently verified; signed retirement reconciliation recorded
+`refunded` using the same transaction identity. This proves the new durable
+retirement refund only. The original enclave-only 50 USDC remains unrecovered.
+Do not resume, refill or reuse this retired Wise incentive epoch. Keep its internal
+validation receipts, historical pins and existing integration reference.
 
 ## Publish the independent approval manifest
 
@@ -64,8 +75,8 @@ hashes after the manifest/docs commit. The client release identity excludes only
 A changed endpoint, policy, measurement or other field needs explicit review.
 
 Static discovery and the initial budget do not establish current funded capacity.
-Admission requires a fresh successful reservation; the operator-paid validation
-contribution counts toward the two-award limit. Publish no “one slot left” promise.
+Future public admission requires a separately approved source and a fresh successful
+reservation. Wise is excluded from reward recruitment. Publish no “one slot left” promise.
 
 ## Architecture and limits
 
@@ -281,7 +292,8 @@ review of old obligations, transactions and balances before any wallet reuse.
 After the paused signing preflight, complete a separately authorized $1 KMS recovery
 test and confirm its return before allocating the new candidate's measured $5 budget.
 The architecture maximum is $50; it is not the current funding amount. The paused
-Wise campaign capacity is one contributor. Require
+The completed internal one-slot Wise pilot had capacity one. For any future
+campaign, require
 descriptor `budgetMinor` to match measured `pilotBudgetMinor` exactly. Fund only an
 independently attested epoch address and once within that exact budget plus bounded
 gas. Record address, epoch, funding transaction and chain
@@ -292,8 +304,8 @@ Missing or mismatched state must stop admission. KMS permits operator fund recov
 after enclave loss, but not safe continuation with a blank ledger. The prior enclave-only wallet
 already holds $50 USDC that remains unrecovered at this checkpoint. Leave that
 old live enclave intact while reconciling it; installing the KMS release cannot
-recover its old key. Only the separately approved Wise scope may admit reservations;
-other banks require their own source and funding approval.
+recover its old key. No public paid campaign is currently available; non-Wise banks require
+their own source, funding and release approval.
 
 Before a planned stop, use the implemented signed operator `retire` action. It
 irreversibly closes admission and cancels unused reservations, while submitted,
@@ -424,7 +436,7 @@ released before settlement. Only the broker's exact version-1 `kms_unavailable`
 response is normalized for retry; malformed responses and signature/key-integrity
 failures remain permanent.
 
-## Supervised recovery limits of the approved Wise image
+## Supervised recovery limits of the internally validated Wise image
 
 The approved `629b8798` image has two deferred recovery automation limitations.
 If a bank/provider failure coincides with an unavailable state authority while the
