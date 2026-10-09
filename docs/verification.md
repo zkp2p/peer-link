@@ -1,10 +1,11 @@
 # Verification and agent maintenance
 
 > Historical provider-verifier workflow. The status and rules below describe that
-> separate Mercury experiment. Current transcript contributions use the
+> separate Mercury experiment. The transcript workflow is documented in the
 > [contribution skill](../skills/contribute-transcript/SKILL.md),
-> [approved Wise release](../transcripts/release.json) and
-> [durable release evidence](../transcripts/durable-pilot-evidence.json).
+> [unreleased public manifest](../transcripts/release.json) and
+> [internal Wise validation evidence](../transcripts/durable-pilot-evidence.json).
+> Wise is excluded from incentives; no public paid campaign is currently available.
 
 ## October 4 operational activation
 
