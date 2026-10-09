@@ -62,10 +62,14 @@ terms and status. Rewards use PeerLink's service, not separate Merit developer
 bounties. Legacy #74 was closed and removed from award discovery without cancelling valid
 prior obligations.
 
-[Bank of America #74](https://github.com/zkp2p/peer-link/issues/74) remains a separate
-**$50 legacy provider assignment** for Primuez, due **October 16, 2026** under its
-original terms. Its issue is administratively closed as a commitment record,
-not an active listing or a decision on acceptance/payment. The new **$10 transcript campaign is [#235](https://github.com/zkp2p/peer-link/issues/235)**.
+[Bank of America #74](https://github.com/zkp2p/peer-link/issues/74) is archived after
+Primuez [voluntarily withdrew on October 9, 2026](https://github.com/zkp2p/peer-link/issues/74#issuecomment-6074393805),
+citing unavailable authorized account access for live verification. The proposed
+adapter and synthetic tests were not accepted as a live-verified integration;
+there is no active assignment or accepted award on that issue. Original terms
+and discussion remain preserved. The new **$10 transcript campaign is
+[#235](https://github.com/zkp2p/peer-link/issues/235)**. It requires authorized Bank
+of America account access and remains planned, not open for submissions.
 
 The former 20-bank Merit funding plan, developer assignments and technical scope
 notes are [archived in the October 2 version](https://github.com/zkp2p/peer-link/blob/86fe6ca5cfd32d4d5e76015488fc3df83885020b/docs/integration-priorities.md).
