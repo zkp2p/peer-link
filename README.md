@@ -15,7 +15,8 @@ Only use an independently verified approved [release](transcripts/release.json)
 and an active, funded bank campaign.
 
 [Website](https://link.peer.xyz) · [Contribution guide](CONTRIBUTING.md) ·
-[Campaign issues](https://github.com/zkp2p/peer-link/issues) · [Rewards](docs/incentives.md)
+[Campaign issues](https://github.com/zkp2p/peer-link/issues) · [Rewards](docs/incentives.md) ·
+[Merit project profile](https://terminal.merit.systems/zkp2p/peer-link)
 
 ## Start with your local agent
 
@@ -68,8 +69,8 @@ submission. The one-slot experiment has no remaining funded capacity; public
 collection stays closed.
 The revised payout design uses a non-exportable AWS KMS signing key. Authorized
 operator IAM and the host signing broker can sign outside the enclave and recover
-funds; this is not exclusive enclave custody. The ledger and deduplication authority
-remain RAM-only. Restart requires operator review and does not make wallet reuse
+funds; this is not exclusive enclave custody. The completed one-slot pilot
+kept ledger and deduplication authority RAM-only. Restart requires operator review and does not make wallet reuse
 or old-job continuation safe. Live collection remains closed until the new measured
 release gates pass. The built
 operator retirement flow permanently closes admission, finishes and archives
@@ -91,6 +92,24 @@ release approval remains a separate gate. The
 [$1 operator recovery receipt](https://basescan.org/tx/0xf1447663200c551dbe42d2d989982563209076b56f9d1f56f8175895eb39e5da)
 verified the fixed deployer return and zero remaining USDC with the relay stopped;
 it does not prove the enclave retirement flow.
+
+## Public launch candidate — in progress
+
+The next release is preparing [Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239)
+only: up to two distinct contributors at **$5 USDC per accepted transcript**,
+with a planned $10 budget reserved before admission. Other bank
+pages remain planned. No public job is available until the approved measured
+release, funded campaign and remaining capacity are independently verified.
+
+The v3 candidate is adding encrypted job/deduplication/payout snapshots and a
+version-fenced state authority. Restore stays paused for operator review and
+chain reconciliation; interrupted bank/model calls fail without a paid retry.
+Bank sessions and inference keys remain transient. Bank-upload ingress keys are
+fresh per boot and never persisted; only the separate receipt signer is encrypted
+in durable state. Later snapshot recovery cannot recover prior upload decryption
+keys. KMS administrators remain trusted for metadata/deduplication secrecy.
+These protections are still under verification; see the
+[durable contract and release gates](docs/transcript-contributions-prd.md).
 
 ## Develop and inspect
 

@@ -3,8 +3,8 @@
 # cryptographic checking is not campaign/release approval.
 set -euo pipefail
 umask 077
-if [[ $# != 3 ]]; then
-  echo 'usage: install_release.sh SOURCE_ROOT SIGNED_EIF MEASUREMENT_MANIFEST' >&2
+if [[ $# != 3 && $# != 4 ]]; then
+  echo 'usage: install_release.sh SOURCE_ROOT SIGNED_EIF MEASUREMENT_MANIFEST [HOST_INSTANCE_ID]' >&2
   exit 2
 fi
 source_root=$(realpath "$1")
@@ -63,11 +63,32 @@ python3.11 -m venv "$base/venv"
 "$base/venv/bin/pip" install --disable-pip-version-check --no-cache-dir --only-binary=:all: \
   -r "$base/releases/candidate/transcripts/requirements.lock"
 ln -s "$base/releases/candidate" "$base/current"
+# Durable state calls use enclave TLS/SigV4. Start the memory-only credential
+# forwarder before enclave boot; exact instance identity comes from the reviewed
+# installation target, never a contributor or arbitrary runtime request.
+durable_dependencies=''
+if python3.11 - "$source_root/transcripts/policy.json" <<'PY'
+import json, sys
+sys.exit(0 if json.load(open(sys.argv[1])).get('stateAuthority') is not None else 1)
+PY
+then
+  if [[ $# != 4 ]]; then
+    echo 'Durable installation requires the reviewed host instance ID.' >&2
+    exit 1
+  fi
+  credential_role=$(python3.11 - "$source_root/transcripts/policy.json" <<'PY'
+import json, sys
+print(json.load(open(sys.argv[1]))['stateAuthority']['credentialRoleArn'])
+PY
+)
+  bash "$base/current/transcripts/infra/install_credentials.sh" "$credential_role" "$4"
+  durable_dependencies='peer-link-transcript-credentials.service'
+fi
 cat > /etc/systemd/system/peer-link-transcript-enclave.service <<'UNIT'
 [Unit]
 Description=Dedicated PeerLink transcript enclave candidate
-After=nitro-enclaves-allocator.service
-Requires=nitro-enclaves-allocator.service
+After=nitro-enclaves-allocator.service peer-link-transcript-relay.service
+Requires=nitro-enclaves-allocator.service peer-link-transcript-relay.service
 
 [Service]
 Type=oneshot
@@ -81,15 +102,24 @@ Restart=no
 StandardOutput=null
 StandardError=null
 UNIT
+if [[ -n "$durable_dependencies" ]]; then
+  install -d -m 700 /etc/systemd/system/peer-link-transcript-enclave.service.d
+  printf '%s\n' '[Unit]' "After=$durable_dependencies" "Requires=$durable_dependencies" \
+    > /etc/systemd/system/peer-link-transcript-enclave.service.d/durable-state.conf
+else
+  # An explicitly reviewed non-durable install cannot inherit a stale drop-in.
+  rm -f /etc/systemd/system/peer-link-transcript-enclave.service.d/durable-state.conf
+fi
 cat > /etc/systemd/system/peer-link-transcript-relay.service <<'UNIT'
 [Unit]
 Description=Ciphertext ingress and TLS-byte egress for dedicated transcript enclave
-After=peer-link-transcript-enclave.service network-online.target
-Requires=peer-link-transcript-enclave.service
-BindsTo=peer-link-transcript-enclave.service
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-Type=simple
+Type=notify
+NotifyAccess=main
+TimeoutStartSec=35
 WorkingDirectory=/opt/peer-link-transcripts/current
 ExecStart=/opt/peer-link-transcripts/venv/bin/python -m transcripts.server --port 8080 --enclave-cid 16 --vsock-port 5100 --egress-port 5101 --kms-port 5103
 Restart=no
@@ -105,8 +135,10 @@ StandardError=null
 UNIT
 systemctl daemon-reload
 # Deliberately do not enable: a host reboot must not silently create a new RAM epoch.
-systemctl start peer-link-transcript-enclave.service
+# Type=notify waits for egress5101/archive5102/KMS5103 bind/listen. The separate
+# credential Type=notify service already confirmed5104 before this point.
 systemctl start peer-link-transcript-relay.service
+systemctl start peer-link-transcript-enclave.service
 "$base/venv/bin/python" - "$base/current" <<'PY'
 import signal, sys, time
 from pathlib import Path

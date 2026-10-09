@@ -13,3 +13,5 @@ These assets were retrieved unchanged on October 2, 2026 from icon links in the 
 Other bank logos predate this source register and are preserved from the existing repository; this file does not claim to have reverified their provenance. Peer wordmarks are documented separately in [PEER-ASSETS.md](PEER-ASSETS.md).
 
 Chase serves JPEG bytes at its `.png` icon URL; the local `.jpg` extension matches the unchanged response format.
+
+Wise artwork was retrieved unchanged on October 9, 2026 from its official [newsroom logo kit](https://newsroom.wise.com/en-NAM/assets/228784/): [`wise.png`](wise.png), served as the page logo at https://d21buns5ku92am.cloudfront.net/69646/logo/retina-1677657632.png. SHA-256: `9ab5f0b5bae5c06911ab8752f0c4d3f51831146fb752147a622a95e09478af8b`.

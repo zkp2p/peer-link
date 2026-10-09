@@ -62,9 +62,10 @@ def egress_connection(conn,allowed):
     finally:conn.close()
 
 
-def egress_server(port,cid,allowed):
+def egress_server(port,cid,allowed,*,ready=None):
     with socket.socket(socket.AF_VSOCK,socket.SOCK_STREAM) as listener:
         listener.bind((socket.VMADDR_CID_ANY,port));listener.listen(16)
+        if ready is not None:ready.set()
         slots=threading.BoundedSemaphore(16)
         while True:
             conn,peer=listener.accept()
@@ -81,15 +82,17 @@ def main():
     parser.add_argument('--archive-port',type=int,default=5102);parser.add_argument('--archive-dir',default='/var/lib/peer-link-transcripts/artifacts')
     parser.add_argument('--kms-port',type=int,default=5103)
     args=parser.parse_args()
-    threading.Thread(target=serve_archive,args=(args.archive_port,args.enclave_cid,args.archive_dir),daemon=True).start()
+    from .infra.listener_ready import notify_ready,start_listeners
+    listeners=[(serve_archive,(args.archive_port,args.enclave_cid,args.archive_dir))]
     policy=json.loads((Path(__file__).parent/'policy.json').read_text())
     authority=policy.get('payoutAuthority',{})
     if authority.get('kind')=='aws_kms':
         from .kms_broker import KmsBroker,serve
         broker=KmsBroker(authority['keyId'],authority['wallet'])
         broker.public_key()  # Fail startup on a wrong key, wallet, or inaccessible role.
-        threading.Thread(target=serve,args=(args.kms_port,args.enclave_cid,broker),daemon=True).start()
-    threading.Thread(target=egress_server,args=(args.egress_port,args.enclave_cid,set(policy['egressHosts'])),daemon=True).start()
+        listeners.append((serve,(args.kms_port,args.enclave_cid,broker)))
+    listeners.append((egress_server,(args.egress_port,args.enclave_cid,set(policy['egressHosts']))))
+    start_listeners(listeners)
     slots=threading.BoundedSemaphore(20)
     class Handler(BaseHTTPRequestHandler):
         protocol_version='HTTP/1.1'
@@ -118,6 +121,8 @@ def main():
             data=canonical(result)
             self.send_response(code);self.send_header('Content-Type','application/json');self.send_header('Cache-Control','no-store')
             self.send_header('X-Content-Type-Options','nosniff');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data)
-    ThreadingHTTPServer(('0.0.0.0',args.port),Handler).serve_forever()
+    with ThreadingHTTPServer(('0.0.0.0',args.port),Handler) as http:
+        notify_ready()
+        http.serve_forever()
 
 if __name__=='__main__':main()

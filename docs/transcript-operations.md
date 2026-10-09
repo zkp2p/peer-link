@@ -6,6 +6,40 @@ campaign/status/attestation metadata while live contribution and payout gates re
 closed. Infrastructure creation, a signed EIF and a successful synthetic job do not
 establish live bank acceptance.
 
+## Public launch candidate — in progress
+
+The next release is preparing [Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239)
+only: up to two distinct contributors at **$5 USDC per accepted transcript**,
+with a planned $10 budget reserved before admission. Other bank
+pages remain planned. No public job is available until the approved measured
+release, funded campaign and remaining capacity are independently verified.
+
+The v3 design encrypts canonical SQLite state snapshots under AES-GCM, with an
+immutable AWS Lambda/DynamoDB compare-and-swap authority. Descriptor v3 binds
+`ledgerPersistence: aws_dynamodb_encrypted_snapshot`, `stateNamespace`,
+`stateAuthorityArn` and `stateWrappingKeyId` alongside the payout fields. KMS
+Recipient decryption checks the approved PCR0/host-role PCR3 bindings; AWS HTTPS
+terminates inside the enclave. Atomic revision/writer-generation checks fence
+stale workers. Accepted grade/artifact metadata commits atomically, and exact
+signed transaction bytes/nonce persist before broadcast.
+
+Restore preserves the same epoch and encrypted durable receipt-signing key only for the exact
+policy digest, campaigns, wallet, namespace and immutable authority. It starts
+paused until signed operator resume and chain reconciliation; changed policy cannot
+silently restore or initialize previously funded state. Interrupted submitted or
+verifying work fails as `interrupted_execution` without rerunning bank or model
+calls. A reserved job retains its expiry and needs a fresh challenge, explicit owner
+consent and new secrets before any submission.
+
+Bank sessions, inference keys, raw reads and submission envelopes never enter the
+snapshot. Ingress RSA private keys are fresh per boot and never persisted; only the
+separate receipt signer is encrypted in durable state. Later snapshot recovery
+cannot recover old bank-upload decryption keys. KMS administrators remain trusted
+for encrypted metadata/deduplication secrecy, and cloud availability remains a
+trust boundary; missing, mismatched or unavailable state must
+stop admission. These protections are under implementation and verification, not
+approved public availability.
+
 ## Architecture and limits
 
 `transcripts/infra/pilot.cfn.json` provisions one `c6i.xlarge` (4 vCPU, 8 GiB), with

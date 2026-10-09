@@ -16,10 +16,11 @@ class ArchiveClient:
         require(reply=={'stored':expected},'storage_unavailable')
         return expected
 
-def serve_archive(port,cid,directory):
+def serve_archive(port,cid,directory,*,ready=None):
     directory=Path(directory);directory.mkdir(parents=True,exist_ok=True,mode=0o700)
     with socket.socket(socket.AF_VSOCK,socket.SOCK_STREAM) as server:
         server.bind((socket.VMADDR_CID_ANY,port));server.listen(8)
+        if ready is not None:ready.set()
         while True:
             connection,peer=server.accept()
             with connection:

@@ -1,4 +1,10 @@
-# Launch review — October 2, 2026
+# Archived launch review — October 2, 2026
+
+This page records the retired provider/verifier program. Its old allocations and
+activation steps are historical. Current transcript release status is in the
+[PRD](transcript-contributions-prd.md) and [release manifest](../transcripts/release.json).
+Merit now has one [project discovery profile](https://terminal.merit.systems/zkp2p/peer-link);
+bank campaign rewards are administered through PeerLink.
 
 ## Status update — October 2, 2026 (evening)
 

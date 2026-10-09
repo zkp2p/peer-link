@@ -2,13 +2,13 @@
   "version": 1,
   "status": "unreleased",
   "serviceUrl": null,
-  "policyDigest": "d3eda4dcbe1cbf717a4cddd732ae10f05cf0b5e2c5384e326bd5644d106f03cb",
+  "policyDigest": "9354bf3e0d73617496a89e25f5c68f9325fbc4f98870bc0f91afa5f04082a3b3",
   "measurements": {},
   "expiresAt": 0,
   "limitations": [
     "No public secret submissions until an independently pinned approved release is published.",
     "Only Wise has a reviewed authenticated account identity adapter.",
     "Confidential NEAR inference is unavailable pending verified E2EE integration.",
-    "Payout signing uses operator-recoverable AWS KMS; the job ledger and dedup state remain RAM-only and restart requires operator review."
+    "Durable state and restart-safe settlement are under verification; public intake remains closed. Payout custody is operator-recoverable AWS KMS."
   ]
 }

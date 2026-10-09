@@ -1,0 +1,405 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Retained enclave-ciphertext state authority; no host replacement, no plaintext secret grants",
+  "Parameters": {
+    "HostRoleArn": {
+      "Type": "String",
+      "AllowedPattern": "arn:aws:iam::[0-9]{12}:role/[A-Za-z0-9+=,.@_/-]+"
+    },
+    "HostRolePcr3": {
+      "Type": "String",
+      "AllowedPattern": "(?!0{96}$)[a-f0-9]{96}"
+    },
+    "StateNamespace": {
+      "Type": "String",
+      "AllowedPattern": "[a-z0-9][a-z0-9-]{0,63}"
+    },
+    "LambdaEnvironmentKeyArn": {
+      "Type": "String",
+      "Default": "",
+      "AllowedPattern": "(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36})?",
+      "Description": "Exact independently verified AWS-managed aws/lambda environment key; no state-master decrypt grant"
+    },
+    "LambdaEnvironmentFunctionArn": {
+      "Type": "String",
+      "Default": "",
+      "AllowedPattern": "(arn:aws:lambda:[a-z0-9-]+:[0-9]{12}:function:[A-Za-z0-9_-]+)?",
+      "Description": "Exact unqualified authority ARN observed in successful Lambda environment decrypt context"
+    },
+    "ApprovedImageSha384": {
+      "Type": "String",
+      "Default": "",
+      "AllowedPattern": "((?!0{96}$)[a-f0-9]{96})?",
+      "Description": "Empty keeps all secret operations denied; set only independently reviewed actual PCR0"
+    }
+  },
+  "Conditions": {
+    "HasApprovedImage": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "ApprovedImageSha384"
+            },
+            ""
+          ]
+        }
+      ]
+    },
+    "HasLambdaEnvironmentKey": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "LambdaEnvironmentKeyArn"
+            },
+            ""
+          ]
+        }
+      ]
+    }
+  },
+  "Resources": {
+    "StateTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "BillingMode": "PAY_PER_REQUEST",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "namespace",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "namespace",
+            "KeyType": "HASH"
+          }
+        ],
+        "DeletionProtectionEnabled": true,
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true,
+          "RecoveryPeriodInDays": 35
+        },
+        "SSESpecification": {
+          "SSEEnabled": false
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "peer-link-transcripts"
+          },
+          {
+            "Key": "Component",
+            "Value": "durable-state"
+          }
+        ]
+      }
+    },
+    "StateKey": {
+      "Type": "AWS::KMS::Key",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "Description": "Enclave-only persistent state/dedup secret; separate from operator-recoverable payout key",
+        "KeySpec": "SYMMETRIC_DEFAULT",
+        "KeyUsage": "ENCRYPT_DECRYPT",
+        "EnableKeyRotation": true,
+        "KeyPolicy": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Sid": "AccountAdministrationNoPlaintextUse",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Sub": "arn:${AWS::Partition}:iam::${AWS::AccountId}:root"
+                }
+              },
+              "Action": [
+                "kms:DescribeKey",
+                "kms:GetKeyPolicy",
+                "kms:PutKeyPolicy",
+                "kms:EnableKey",
+                "kms:DisableKey",
+                "kms:UpdateKeyDescription",
+                "kms:ScheduleKeyDeletion",
+                "kms:CancelKeyDeletion",
+                "kms:List*",
+                "kms:TagResource",
+                "kms:UntagResource",
+                "kms:EnableKeyRotation",
+                "kms:DisableKeyRotation",
+                "kms:GetKeyRotationStatus"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Fn::If": [
+                "HasApprovedImage",
+                {
+                  "Sid": "OnlyApprovedRecipientAndRole",
+                  "Effect": "Allow",
+                  "Principal": {
+                    "AWS": {
+                      "Ref": "HostRoleArn"
+                    }
+                  },
+                  "Action": ["kms:GenerateDataKey", "kms:Decrypt"],
+                  "Resource": "*",
+                  "Condition": {
+                    "StringEqualsIgnoreCase": {
+                      "kms:RecipientAttestation:ImageSha384": {
+                        "Ref": "ApprovedImageSha384"
+                      },
+                      "kms:RecipientAttestation:PCR3": {
+                        "Ref": "HostRolePcr3"
+                      }
+                    },
+                    "StringEquals": {
+                      "kms:EncryptionContext:Namespace": {
+                        "Ref": "StateNamespace"
+                      }
+                    }
+                  }
+                },
+                {
+                  "Ref": "AWS::NoValue"
+                }
+              ]
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "peer-link-transcripts"
+          },
+          {
+            "Key": "Component",
+            "Value": "durable-state"
+          }
+        ]
+      }
+    },
+    "AuthorityRole": {
+      "Type": "AWS::IAM::Role",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "MonotonicStateOnly",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+                  "Resource": {
+                    "Fn::GetAtt": ["StateTable", "Arn"]
+                  },
+                  "Condition": {
+                    "ForAllValues:StringEquals": {
+                      "dynamodb:LeadingKeys": [
+                        {
+                          "Ref": "StateNamespace"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "Effect": "Deny",
+                  "NotAction": {
+                    "Fn::If": [
+                      "HasLambdaEnvironmentKey",
+                      ["dynamodb:GetItem", "dynamodb:UpdateItem", "kms:Decrypt"],
+                      ["dynamodb:GetItem", "dynamodb:UpdateItem"]
+                    ]
+                  },
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Deny",
+                  "Action": ["dynamodb:GetItem", "dynamodb:UpdateItem"],
+                  "NotResource": {
+                    "Fn::GetAtt": ["StateTable", "Arn"]
+                  }
+                },
+                {
+                  "Fn::If": [
+                    "HasLambdaEnvironmentKey",
+                    {
+                      "Sid": "LambdaEnvironmentOnly",
+                      "Effect": "Allow",
+                      "Action": "kms:Decrypt",
+                      "Resource": {
+                        "Ref": "LambdaEnvironmentKeyArn"
+                      },
+                      "Condition": {
+                        "StringEquals": {
+                          "kms:EncryptionContext:aws:lambda:FunctionArn": {
+                            "Ref": "LambdaEnvironmentFunctionArn"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                },
+                {
+                  "Fn::If": [
+                    "HasLambdaEnvironmentKey",
+                    {
+                      "Sid": "DenyAllOtherKeyDecrypt",
+                      "Effect": "Deny",
+                      "Action": "kms:Decrypt",
+                      "NotResource": {
+                        "Ref": "LambdaEnvironmentKeyArn"
+                      }
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                },
+                {
+                  "Fn::If": [
+                    "HasLambdaEnvironmentKey",
+                    {
+                      "Sid": "DenyOtherLambdaEnvironment",
+                      "Effect": "Deny",
+                      "Action": "kms:Decrypt",
+                      "Resource": {
+                        "Ref": "LambdaEnvironmentKeyArn"
+                      },
+                      "Condition": {
+                        "StringNotEquals": {
+                          "kms:EncryptionContext:aws:lambda:FunctionArn": {
+                            "Ref": "LambdaEnvironmentFunctionArn"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "peer-link-transcripts"
+          },
+          {
+            "Key": "Component",
+            "Value": "durable-state"
+          }
+        ]
+      }
+    },
+    "Authority": {
+      "Type": "AWS::Lambda::Function",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "Runtime": "python3.12",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": ["AuthorityRole", "Arn"]
+        },
+        "Code": {
+          "ZipFile": "\"\"\"Opaque monotonic state authority, published as an immutable Lambda version.\n\nOnly this Lambda role may update its DynamoDB item. It cannot decrypt state.\nCallers authenticate AWS TLS inside the enclave; the parent has Invoke only.\nNo request bodies, ciphertext, credentials or exceptions are logged here.\n\"\"\"\nimport base64\nimport hashlib\nimport os\nimport re\n\nMAX_CIPHERTEXT = 327_680\nMAX_WRAPPED_MASTER = 6_144\nMAX_REVISION = 2**63 - 1\nCOMMON = {\"version\", \"action\", \"nonce\", \"namespace\"}\nHEAD = {\"revision\", \"ciphertextDigest\", \"ciphertext\", \"wrappedMaster\", \"lastOpId\", \"writerGeneration\", \"writeCommitment\"}\nCREATE = COMMON | {\"revision\", \"ciphertextDigest\", \"ciphertext\", \"wrappedMaster\", \"opId\", \"writerGeneration\", \"writeCommitment\"}\nCOMMIT = COMMON | {\"expectedRevision\", \"expectedCiphertextDigest\", \"expectedWriterGeneration\",\n                   \"revision\", \"ciphertextDigest\", \"ciphertext\", \"opId\", \"writerGeneration\", \"writeCapability\", \"writeCommitment\"}\n_client = None\n\n\nclass StateRejected(Exception):\n    pass\n\n\ndef require(ok, code=\"state_invalid\"):\n    if not ok:\n        raise StateRejected(code)\n\n\ndef number(value, minimum=0):\n    require(type(value) is int and minimum <= value <= MAX_REVISION)\n    return value\n\n\ndef hex64(value):\n    require(isinstance(value, str) and re.fullmatch(\"[0-9a-f]{64}\", value) is not None)\n    return value\n\n\ndef op32(value):\n    require(isinstance(value, str) and re.fullmatch(\"[0-9a-f]{32}\", value) is not None)\n    return value\n\n\ndef blob(value, limit, minimum=1):\n    require(isinstance(value, str) and len(value) <= 4 * ((limit + 2) // 3))\n    try:\n        raw = base64.b64decode(value, validate=True)\n    except Exception:\n        raise StateRejected(\"state_invalid\") from None\n    require(minimum <= len(raw) <= limit and base64.b64encode(raw).decode() == value)\n    return raw\n\n\ndef decode_head(item, namespace):\n    require(isinstance(item, dict) and set(item) == HEAD | {\"namespace\"}, \"state_unavailable\")\n    require(item[\"namespace\"] == {\"S\": namespace}, \"state_unavailable\")\n    try:\n        result = {name: item[name][\"S\"] for name in [\"ciphertextDigest\", \"lastOpId\", \"writeCommitment\"]}\n        for name in [\"revision\", \"writerGeneration\"]:\n            require(set(item[name]) == {\"N\"}, \"state_unavailable\")\n            result[name] = int(item[name][\"N\"])\n        for name in [\"ciphertext\", \"wrappedMaster\"]:\n            require(set(item[name]) == {\"B\"}, \"state_unavailable\")\n            raw = bytes(item[name][\"B\"])\n            result[name] = base64.b64encode(raw).decode()\n        for name in [\"ciphertextDigest\", \"lastOpId\", \"writeCommitment\"]:\n            require(set(item[name]) == {\"S\"}, \"state_unavailable\")\n        number(result[\"revision\"]); number(result[\"writerGeneration\"], 1)\n        op32(result[\"lastOpId\"]); hex64(result[\"ciphertextDigest\"])\n        hex64(result[\"writeCommitment\"])\n        ciphertext = blob(result[\"ciphertext\"], MAX_CIPHERTEXT, 29)\n        blob(result[\"wrappedMaster\"], MAX_WRAPPED_MASTER)\n        require(hashlib.sha256(ciphertext).hexdigest() == result[\"ciphertextDigest\"], \"state_unavailable\")\n        return result\n    except Exception:\n        raise StateRejected(\"state_unavailable\") from None\n\n\nclass Authority:\n    def __init__(self, client, table, namespace):\n        require(isinstance(namespace, str) and re.fullmatch(\"[a-z0-9][a-z0-9-]{0,63}\", namespace) is not None)\n        self.client, self.table, self.namespace = client, table, namespace\n\n    def load(self):\n        result = self.client.get_item(TableName=self.table, Key={\"namespace\": {\"S\": self.namespace}},\n                                      ConsistentRead=True)\n        item = result.get(\"Item\")\n        return None if item is None else decode_head(item, self.namespace)\n\n    def invoke(self, request):\n        nonce = request.get(\"nonce\") if isinstance(request, dict) else None\n        response = {\"version\": 1, \"nonce\": nonce, \"namespace\": self.namespace}\n        try:\n            require(isinstance(request, dict) and type(request.get(\"version\")) is int and request[\"version\"] == 1)\n            hex64(nonce)\n            require(request.get(\"namespace\") == self.namespace)\n            action = request.get(\"action\")\n            if action == \"load\":\n                require(set(request) == COMMON)\n                return {**response, \"head\": self.load()}\n            require(action in {\"create\", \"commit\"})\n            require(set(request) == (CREATE if action == \"create\" else COMMIT))\n            revision = number(request[\"revision\"])\n            generation = number(request[\"writerGeneration\"], 1)\n            operation = op32(request[\"opId\"])\n            commitment = hex64(request[\"writeCommitment\"])\n            ciphertext = blob(request[\"ciphertext\"], MAX_CIPHERTEXT, 29)\n            cipher_digest = hex64(request[\"ciphertextDigest\"])\n            require(hashlib.sha256(ciphertext).hexdigest() == cipher_digest)\n            values = {\":revision\": {\"N\": str(revision)}, \":generation\": {\"N\": str(generation)},\n                      \":digest\": {\"S\": cipher_digest}, \":cipher\": {\"B\": ciphertext}, \":op\": {\"S\": operation},\n                      \":commitment\": {\"S\": commitment}}\n            names = {\"#revision\": \"revision\", \"#generation\": \"writerGeneration\", \"#digest\": \"ciphertextDigest\",\n                     \"#cipher\": \"ciphertext\", \"#op\": \"lastOpId\", \"#commitment\": \"writeCommitment\"}\n            update = \"SET #revision=:revision, #generation=:generation, #digest=:digest, #cipher=:cipher, #op=:op, #commitment=:commitment\"\n            if action == \"create\":\n                require(revision == 0 and generation == 1)\n                wrapped = blob(request[\"wrappedMaster\"], MAX_WRAPPED_MASTER)\n                values[\":wrapped\"] = {\"B\": wrapped}\n                names.update({\"#wrapped\": \"wrappedMaster\", \"#namespace\": \"namespace\"})\n                update += \", #wrapped=:wrapped\"\n                condition = \"attribute_not_exists(#namespace)\"\n            else:\n                old_revision = number(request[\"expectedRevision\"])\n                old_generation = number(request[\"expectedWriterGeneration\"], 1)\n                old_digest = hex64(request[\"expectedCiphertextDigest\"])\n                # Only the enclave learns this preimage through its own TLS.\n                # Store/hash it before DynamoDB: no capability in DDB data logs.\n                capability = bytes.fromhex(hex64(request[\"writeCapability\"]))\n                old_commitment = hashlib.sha256(capability).hexdigest()\n                require(revision == old_revision + 1 and generation in {old_generation, old_generation + 1})\n                values.update({\":oldRevision\": {\"N\": str(old_revision)}, \":oldGeneration\": {\"N\": str(old_generation)},\n                               \":oldDigest\": {\"S\": old_digest}, \":oldCommitment\": {\"S\": old_commitment}})\n                condition = \"#revision=:oldRevision AND #generation=:oldGeneration AND #digest=:oldDigest AND #commitment=:oldCommitment\"\n            try:\n                result = self.client.update_item(TableName=self.table, Key={\"namespace\": {\"S\": self.namespace}},\n                    UpdateExpression=update, ConditionExpression=condition, ExpressionAttributeNames=names,\n                    ExpressionAttributeValues=values, ReturnValues=\"ALL_NEW\")\n                head = decode_head(result[\"Attributes\"], self.namespace)\n            except Exception as error:\n                if getattr(error, \"response\", {}).get(\"Error\", {}).get(\"Code\") != \"ConditionalCheckFailedException\":\n                    raise\n                # Resolve lost acknowledgments without allocating a fresh signature\n                # or transaction. The ten-minute DynamoDB token is not our authority.\n                head = self.load()\n                require(head is not None and head[\"revision\"] == revision and head[\"writerGeneration\"] == generation\n                        and head[\"lastOpId\"] == operation and head[\"ciphertextDigest\"] == cipher_digest\n                        and head[\"ciphertext\"] == request[\"ciphertext\"] and head[\"writeCommitment\"] == commitment, \"state_conflict\")\n                if action == \"create\":\n                    require(head[\"wrappedMaster\"] == request[\"wrappedMaster\"], \"state_conflict\")\n            return {**response, \"head\": head}\n        except StateRejected as error:\n            return {\"version\": 1, \"nonce\": nonce, \"error\": str(error)}\n        except Exception:\n            return {\"version\": 1, \"nonce\": nonce, \"error\": \"state_unavailable\"}\n\n\ndef handler(event, _context):\n    global _client\n    try:\n        if _client is None:\n            import boto3\n            _client = boto3.client(\"dynamodb\", region_name=os.environ[\"AWS_REGION\"])\n        return Authority(_client, os.environ[\"TABLE_NAME\"], os.environ[\"STATE_NAMESPACE\"]).invoke(event)\n    except Exception:\n        # No AWS error body, private payload or credentials cross this boundary.\n        return {\"version\": 1, \"nonce\": event.get(\"nonce\") if isinstance(event, dict) else None,\n                \"error\": \"state_unavailable\"}\n"
+        },
+        "Timeout": 15,
+        "MemorySize": 128,
+        "RuntimeManagementConfig": {
+          "UpdateRuntimeOn": "FunctionUpdate"
+        },
+        "Environment": {
+          "Variables": {
+            "TABLE_NAME": {
+              "Ref": "StateTable"
+            },
+            "STATE_NAMESPACE": {
+              "Ref": "StateNamespace"
+            }
+          }
+        },
+        "Description": "Opaque CAS-only authority source SHA256 81d8eac66ee347c601632377f23118d4e5cf782ca4b36fb143a6f761d4b42b4a",
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "peer-link-transcripts"
+          },
+          {
+            "Key": "Component",
+            "Value": "durable-state"
+          }
+        ]
+      }
+    },
+    "AuthorityVersion": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "Authority"
+        },
+        "Description": "Reviewed authority source SHA256 81d8eac66ee347c601632377f23118d4e5cf782ca4b36fb143a6f761d4b42b4a"
+      }
+    }
+  },
+  "Outputs": {
+    "StateTableName": {
+      "Value": {
+        "Ref": "StateTable"
+      }
+    },
+    "StateTableArn": {
+      "Value": {
+        "Fn::GetAtt": ["StateTable", "Arn"]
+      }
+    },
+    "StateKeyArn": {
+      "Value": {
+        "Fn::GetAtt": ["StateKey", "Arn"]
+      }
+    },
+    "StateNamespace": {
+      "Value": {
+        "Ref": "StateNamespace"
+      }
+    },
+    "AuthorityVersionArn": {
+      "Value": {
+        "Ref": "AuthorityVersion"
+      }
+    },
+    "AuthoritySourceSha256": {
+      "Value": "81d8eac66ee347c601632377f23118d4e5cf782ca4b36fb143a6f761d4b42b4a"
+    }
+  }
+}

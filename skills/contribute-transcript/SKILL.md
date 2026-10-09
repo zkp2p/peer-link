@@ -29,6 +29,7 @@ From that trusted checkout, install the pinned local environment and inspect pub
 status/terms without collecting keys:
 
 ```sh
+npm ci --ignore-scripts
 npm run transcripts:setup
 .local/transcript-venv/bin/python -m transcripts.cli status
 .local/transcript-venv/bin/python -m transcripts.cli terms
@@ -45,7 +46,9 @@ Before proceeding, show the owner:
 - The bank campaign's published $5/$10 USDC reward and available capacity. It
   collects 1–5 distinct contributors, at most one paid contribution per account/
   contributor per campaign. Handles/wallets do not prove distinct humans; pilot
-  deduplication is limited to the running epoch. Not every listed bank is funded.
+  deduplication was limited to the running epoch. The planned durable release
+  preserves deduplication only within its exact policy/state identity. Not every
+  listed bank is funded.
 - The approved provider/model, upstreams and `provider_visible` consent. Only
   validated redacted structure and fixed grading instructions reach inference;
   bank sessions, raw bank values and payout keys never enter model prompts.
@@ -54,7 +57,8 @@ Before proceeding, show the owner:
   environment-key fallback exists. Default limits: one call, 50,000 conservative
   encoded-request input units, 2048 output tokens, 10 bank reads and 120 seconds.
   NEAR requests low reasoning effort within the reserved output limit. An explicitly
-  lower contributor limit remains binding; no automatic paid retry exists.
+  lower limit in a reservation remains binding; the current CLI uses the fixed
+  defaults above. No automatic paid retry exists.
   Provider quotas can lag; there is no guaranteed exact dollar ceiling.
 - Ordinary NEAR uses canonical `z-ai/glm-5.3-flash`, consent naming NEAR and Chutes,
   no aliases, and one call. Serving headers are gateway assertions, not independent
@@ -101,25 +105,34 @@ Run preflight from the trusted checkout:
 ```
 
 Independently verify AWS's signature/certificate chain, fresh nonce/age, approved
-PCR0/1/2/8, encryption key, exact policy/prompt and v2 epoch binding. Verify the
-descriptor's KMS key ARN and payout wallet exactly match measured `payoutAuthority`,
-with `operatorRecovery: true`, `ledgerPersistence: enclave_ram_only` and
-`restartRequiresOperatorReview: true`. This acknowledges operator/host signing
-authority outside the enclave, not exclusive enclave or PCR-restricted custody.
+PCR0/1/2/8, encryption key, exact policy/prompt and the released epoch/state binding.
+Verify the descriptor's KMS key ARN and payout wallet exactly match measured
+`payoutAuthority`; for the planned v3 release require
+`ledgerPersistence: aws_dynamodb_encrypted_snapshot`,
+`restartRequiresOperatorReview: true`, exact `stateNamespace`, immutable
+`stateAuthorityArn` and `stateWrappingKeyId`, all matching measured policy and the
+released client. Operator/host signing authority exists outside the enclave; this
+is not exclusive enclave or PCR-restricted payout custody. Do not accept the old
+RAM-only pilot contract as approval for the changed durable release.
 Require `budgetMinor` to equal measured `pilotBudgetMinor` exactly. The architecture
-maximum is $50; the new candidate uses $5 and one Wise contributor slot after a
-separate confirmed $1 recovery test.
-Job challenge additionally
-binds campaign, recipient, reward, provider/model, consent, limits and expiry. Reject
+maximum is $50; the planned Wise #239 release uses $10 for at most two $5 rewards.
+It currently has zero funded public capacity. Never infer funding from this plan.
+For the new protocol, fresh preflight context v2 includes `receiptPublicKey`, bound
+by the AWS quote through its hashed context and the current ingress public key.
+Challenge v2 binds `receiptKeyDigest` plus campaign, recipient, reward, provider/model,
+consent, limits and expiry. Reject
 debug/unreleased/expired images and every mismatch. Never disable checks to continue.
 
 Use `contribute` with approved `--campaign`, `--payout` (your Base address),
 `--provider`, `--model`, `--privacy provider_visible`, `--consent`, and an explicit
-`--state .local/job-state.json`. The client reserves the job and saves its public
-recovery handle without overwriting an existing file, before submitting secrets.
+`--state .local/wise-job.json`. The client reserves the job and saves its public
+recovery handle without overwriting an existing file, before reading stdin or
+prompting for secrets. Inspect the saved request and pinned campaign to confirm
+the payout address, fixed reward, provider/model, privacy mode and limits match
+the owner’s choices.
 
-Prefer `--prompt-secrets`: trusted local tooling supplies only this nonsecret
-recipe payload through stdin; the owner enters bank and inference keys on a
+Prefer `--prompt-secrets`: trusted local tooling supplies only the recipe
+without key values through stdin; the owner enters bank and inference keys on a
 controlling TTY with echo disabled after verified preflight. The placeholders below
 form a complete three-read recipe, using invented profile `100001` and balance
 `200001` IDs. Replace them only with IDs observed in the owner's authorized local
@@ -143,6 +156,22 @@ and statement interval. Do not submit these invented values unchanged:
 }
 ```
 
+After the approved release and funded campaign checks pass, save only that
+recipe without keys in restricted ignored `.local/wise-recipe.json`. Replace
+the payout placeholder with your own Base address and use a new state path:
+
+```sh
+.local/transcript-venv/bin/python -m transcripts.cli contribute \
+  --campaign wise-api-public-v1 --payout YOUR_BASE_ADDRESS \
+  --provider near --model z-ai/glm-5.3-flash \
+  --privacy provider_visible --consent --prompt-secrets \
+  --state .local/wise-job.json < .local/wise-recipe.json
+```
+
+This is the planned Wise #239 command; stop if the reviewed policy, release or
+campaign does not authorize it. The owner enters keys only at hidden TTY prompts.
+The state path must not already exist; retain it to poll/restore the same job.
+
 The local recipe can still contain private account IDs; keep it in memory or
 restricted ignored `.local/` storage. Never store keys in that file. If there is
 no controlling TTY or safe echo control, secret prompting fails closed; do not paste
@@ -158,15 +187,40 @@ Do not create another contribution, replay the envelope, or pay inference again 
 resolve uncertainty:
 
 ```sh
-.local/transcript-venv/bin/python -m transcripts.cli job --state .local/job-state.json
-.local/transcript-venv/bin/python -m transcripts.cli receipt --state .local/job-state.json
+.local/transcript-venv/bin/python -m transcripts.cli job --state .local/wise-job.json
+.local/transcript-venv/bin/python -m transcripts.cli receipt --state .local/wise-job.json
 ```
+
+The public local state v2 pins the durable receipt public key and stable job epoch.
+Restore discards its old ingress key, verifies fresh attestation for the current
+one and requires the same receipt signer, epoch and policy before trusting it.
+Never substitute the new ingress key as a receipt signing identity. If the release
+manifest expired, stop and obtain an independently reviewed renewal with the same
+service, policy and measurement pins. Expiry-only renewal can recover the same
+handle; changed pins cannot silently replace its identity.
 
 `job` reports state and fixed reason codes. `receipt` performs fresh preflight and
 verifies the enclave signature, exact job/policy/epoch/recipient bindings, redacted
 artifact, grade digest and inference limits. A state report alone is not authenticated
 payment proof. Paid evidence requires the exact Base USDC receipt and canonical
 L2 confirmations; it is not a claim of Ethereum economic finality.
+
+`contribute` creates a new reservation and refuses an existing state file. To
+continue an existing **reserved, unexpired** job after interruption, use its saved
+handle with explicit owner consent and new transient keys:
+
+```sh
+.local/transcript-venv/bin/python -m transcripts.cli submit-reserved \
+  --state .local/wise-job.json --consent --prompt-secrets < .local/wise-recipe.json
+```
+
+This checks the saved terms, current approved quote, expiry and reserved status
+before reading stdin or prompting. It prints the original payout address, reward,
+provider/model, privacy mode and limits for inspection. It creates no reservation
+and does not overwrite state. Do not add payout/campaign/provider/model overrides.
+The SDK equivalent is `Client.restore(state)` followed by explicit
+`Client.submit_reserved(payload, consent=True)`. Polling never resubmits or runs
+paid inference; submitted/verifying/paid jobs cannot use this continuation.
 
 The receipt hashes the exact canonical grading request and accepted parsed grade,
 not independent provider cryptographic evidence. Ordinary serving headers do not
@@ -178,11 +232,35 @@ start a new attempt for an uncertain old job. A terminal failed/expired job perm
 another attempt only under current campaign terms and capacity, never another award
 for an already-paid account.
 
-## Pilot lifecycle limits
+## Public launch candidate — in progress
+
+The next release is preparing [Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239)
+only: up to two distinct contributors at **$5 USDC per accepted transcript**,
+with a planned $10 budget reserved before admission. Other bank
+pages remain planned. No public job is available until the approved measured
+release, funded campaign and remaining capacity are independently verified.
+
+The v3 candidate adds encrypted snapshots and a version-fenced state authority.
+Restore must stay paused until signed operator resume and chain reconciliation.
+Interrupted submitted/verifying work fails as `interrupted_execution`; never
+resubmit secrets or pay for a new model call automatically. Reserved-job recovery
+requires fresh attestation/challenge, explicit owner consent and new transient
+secrets. Verify the matching released client procedure before using that route.
+
+Bank sessions, inference keys, raw reads and submission envelopes are never
+persisted. Ingress private keys are fresh per boot and never persisted; only the
+separate receipt signer persists encrypted. Snapshot recovery cannot recover an
+earlier boot's bank-upload key. KMS administrators remain trusted for encrypted
+metadata/deduplication secrecy. State must
+remain bound to exact policy, campaigns, wallet, namespace and immutable authority.
+Missing or unavailable state must stop admission. See the [planned durable
+contract](../../docs/transcript-contributions-prd.md); no public availability is claimed.
+
+## Completed pilot lifecycle limits
 
 The revised payout key is non-exportable in AWS KMS. Authorized operator IAM and
 the host signing broker can sign and recover funds outside the enclave. Ledger,
-deduplication authority and in-process artifacts remain RAM-only. Restart requires
+deduplication authority and in-process artifacts remained RAM-only in that pilot. Restart requires
 operator review: the client handle and archive cannot restore the authoritative
 ledger or make old-job continuation or funded-wallet reuse safe. No automatic
 refill or across-epoch dedup guarantee. Runtime reward/refund limits do not constrain

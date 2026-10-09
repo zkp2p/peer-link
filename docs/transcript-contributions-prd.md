@@ -7,6 +7,40 @@ holds unrecovered $50; the revised KMS candidate is a separate wallet and releas
 This document separates the built pilot, observed evidence and remaining roadmap.
 Infrastructure, a verified candidate quote or a synthetic job does not activate a bank.
 
+## Public launch candidate — in progress
+
+The next release is preparing [Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239)
+only: up to two distinct contributors at **$5 USDC per accepted transcript**,
+with a planned $10 budget reserved before admission. Other bank
+pages remain planned. No public job is available until the approved measured
+release, funded campaign and remaining capacity are independently verified.
+
+The v3 design encrypts canonical SQLite state snapshots under AES-GCM, with an
+immutable AWS Lambda/DynamoDB compare-and-swap authority. Descriptor v3 binds
+`ledgerPersistence: aws_dynamodb_encrypted_snapshot`, `stateNamespace`,
+`stateAuthorityArn` and `stateWrappingKeyId` alongside the payout fields. KMS
+Recipient decryption checks the approved PCR0/host-role PCR3 bindings; AWS HTTPS
+terminates inside the enclave. Atomic revision/writer-generation checks fence
+stale workers. Accepted grade/artifact metadata commits atomically, and exact
+signed transaction bytes/nonce persist before broadcast.
+
+Restore preserves the same epoch and encrypted durable receipt-signing key only for the exact
+policy digest, campaigns, wallet, namespace and immutable authority. It starts
+paused until signed operator resume and chain reconciliation; changed policy cannot
+silently restore or initialize previously funded state. Interrupted submitted or
+verifying work fails as `interrupted_execution` without rerunning bank or model
+calls. A reserved job retains its expiry and needs a fresh challenge, explicit owner
+consent and new secrets before any submission.
+
+Bank sessions, inference keys, raw reads and submission envelopes never enter the
+snapshot. Ingress RSA private keys are fresh per boot and never persisted; only the
+separate receipt signer is encrypted in durable state. Later snapshot recovery
+cannot recover old bank-upload decryption keys. KMS administrators remain trusted
+for encrypted metadata/deduplication secrecy, and cloud availability remains a
+trust boundary; missing, mismatched or unavailable state must
+stop admission. These protections are under implementation and verification, not
+approved public availability.
+
 ## Problem and outcome
 
 Provider-authoring contributions have lacked authenticated bank evidence. PeerLink
@@ -57,7 +91,7 @@ flowchart LR
     Runner[Bounded read-only recipe executor] -->|Fresh authenticated JSON| Redact[Deterministic schema extraction and validation]
     Redact --> Grade[Fixed rubric request]
     Grade --> Decide[Code checks eligibility and fixed payout]
-    Decide --> Epoch[RAM-only ledger epoch]
+    Decide --> Epoch[Campaign ledger and payout state]
   end
   Runner <-->|Approved GET reads over verified TLS| Bank[Bank API]
   Grade <-->|Redacted artifact only and contributor-funded inference| Model[Approved provider and exact model]
@@ -217,7 +251,8 @@ release status without collecting secrets. It does not reserve capacity or enabl
 an unreleased campaign.
 
 The `contribute` CLI command accepts `--state .local/job-state.json` and writes a
-non-overwriting recovery handle containing public reservation metadata, never keys.
+non-overwriting recovery handle containing public reservation metadata, never keys,
+before reading stdin or prompting. The CLI uses fixed default limits.
 Trusted local tooling can supply the secret payload through stdin. Alternatively,
 `--prompt-secrets` asks the owner on a controlling TTY after verified preflight,
 while stdin contains only the nonsecret recipe payload. Secrets never enter command
@@ -231,6 +266,16 @@ is uncertain, recover the **same job** instead of resubmitting:
 .local/transcript-venv/bin/python -m transcripts.cli receipt --state .local/job-state.json
 ```
 
+To continue only an unexpired reserved job, run `submit-reserved --state
+.local/job-state.json --consent --prompt-secrets` with the recipe on stdin. It
+verifies saved terms, fresh attestation and reserved status before keys, prints the
+original payout/route/limits, and creates no reservation or state overwrite. Payout,
+campaign, provider and model overrides are rejected. The SDK equivalent is explicit
+`Client.restore(state)` and `submit_reserved(payload, consent=True)`. Restart
+changes ingress keys, while the same durable receipt signer and epoch remain pinned.
+An independently reviewed expiry-only manifest renewal preserves that handle;
+changes to service, policy or measurement pins do not.
+
 The runtime `/v1/release` route is discovery-only and names the canonical release
 source. Approved final PCRs are published separately after the image is built;
 embedding its own final measurement manifest in the image would be circular.
@@ -241,6 +286,40 @@ and bindings; reported status alone is not authenticated payment evidence. Resto
 the client handle does not restore a lost enclave ledger or make funded-wallet reuse safe.
 
 ## Contracts
+
+### Planned v3 durable contract
+
+The v3 descriptor retains `epochId`, `payoutWallet`, `chainId`, `usdcContract`,
+`budgetMinor`, `maxGasFundingWei`, `payoutKeyCustody`, `payoutKeyId` and
+`operatorRecovery` from v2, with `version: 3`,
+`ledgerPersistence: aws_dynamodb_encrypted_snapshot`,
+`restartRequiresOperatorReview: true`, and exact `stateNamespace`,
+`stateAuthorityArn`, `stateWrappingKeyId`. The authority ARN identifies an immutable
+Lambda version. Clients must bind these fields to the approved measured policy;
+old v2 evidence cannot approve this new contract.
+
+A stable HKDF master derives integrity, deduplication and state-encryption keys.
+The durable RSA-3072 receipt signer is encrypted in the snapshot. A separate
+RSA-3072 ingress key is fresh per boot and never persisted; KMS uses another
+ephemeral RSA-2048 Recipient key. Canonical snapshot encryption
+and persistent signatures do not authenticate a mutable host's own claims: state
+load/commit responses use verified AWS HTTPS inside the TEE, with exact namespace,
+revision, writer generation and ciphertext digest checks. The authority stores only
+ciphertext and the wrapped master. Credentials, raw bank responses and submitted
+ciphertext envelopes are never included in durable state.
+
+Fresh preflight attestation context v2 includes `receiptPublicKey`; the AWS quote
+binds the hashed context and current ingress public key. Challenge v2 adds
+`receiptKeyDigest`. Public client state v2 pins the durable receipt public key and
+stable job epoch. Restore discards the old ingress key and validates a fresh quote
+before trusting a new one, requiring unchanged receipt signer, epoch and policy.
+Receipts use the durable signer. This is a changed protocol needing its own
+measured-build/hardware/restart evidence before public approval.
+
+### Completed one-slot pilot contract
+
+The exact v2 descriptor below belongs to the completed RAM-only pilot. The durable
+release must publish and verify its own measured state contract before activation.
 
 ### Campaign and submission
 
@@ -329,7 +408,8 @@ client restored the same signed receipt without a new reservation or submission.
 This proves assisted same-job reconciliation, not uninterrupted instant payout or
 ledger recovery after restart. No funded capacity remains.
 
-Integrity/dedup keys, ledger, nonce state and in-process receipts remain RAM-only.
+In the completed pilot, integrity/dedup keys, ledger, nonce state and in-process
+receipts remained RAM-only.
 Restart loses authoritative history while KMS custody survives. Operator review
 is mandatory before reactivation. Recovering signing access does **not** recover
 deduplication, reservations or reconciliation authority, and does not make reusing
@@ -383,6 +463,7 @@ acceptance remains closed until the measured-release and remaining evidence gate
 | Inference | One dollar of merchant credit was verified. Paid NEAR tool-call and strict-JSON probes passed schema validation on canonical `z-ai/glm-5.3-flash`, with approved serving-provider and TLS checks. The strict-JSON retry completed at 2048 output tokens / low reasoning effort and billed 271,250 nano-USD; the supervised enclave Wise job also completed paid NEAR grading. | Gateway TCB remains OutOfDate despite an UpToDate model quote. No verified confidential/E2EE route is demonstrated; this remains provider-visible evidence. |
 | Rewards and custody | New-host KMS signing and independent signature verification passed. A separately funded $1 external operator recovery confirmed its exact USDC return to the fixed deployer and zero remaining balance with the relay stopped. The Wise job separately confirmed its $5 reward after one signed operator reconciliation. The earlier enclave-only wallet still holds unrecovered $50. | Operator recovery does not prove enclave retirement. The one-slot test leaves zero funded capacity. KMS recovery is not ledger persistence or safe cross-epoch wallet reuse. |
 | Contributor-agent trials | Claude Opus 5.5 high and Codex high reviewed the local contributor flow. Their findings drove safe secret prompts, clear release gates, recovery commands, receipt checks and Wise relationship fixes. Claude's final follow-up found the practical fixes intact and passed 33 targeted client/artifact tests. A fresh live client restored the paid Wise job and identical signed receipt with zero new reservations/submissions. | This is same-epoch client recovery, not enclave-ledger recovery after restart. |
+| Durable contributor smoke | An independent local agent exercised the actual CLI/Client/Runtime and encrypted state using synthetic external dependencies: reservation/save before input, full capacity without keys, fresh-ingress restart and identical signed paid receipt, expiry-only renewal, changed-pin refusal and explicit reserved submission. Interrupted submitted work failed without rerunning bank/model calls. | No live AWS, bank, provider or transfer evidence; the changed durable image still needs its own rebuild/hardware/restore proof before public approval. |
 | Public availability | Landing/docs/catalog describe the new contribution program with readiness gates. | No claim that all banks are ready, funded or supported in Peer. |
 
 Evidence must remain scoped to its actual source/image version and observation date.

@@ -208,7 +208,9 @@ def validate_epoch_descriptor(epoch, policy, *, code="epoch_mismatch"):
     from .common import address
     from .epoch import CHAIN_ID, USDC_ADDRESS, MAX_GAS_FUNDING_WEI
     from .policy import MAX_BUDGET
-    fields(epoch, {"version", "epochId", "payoutWallet", "chainId", "usdcContract", "budgetMinor",
+    durable = "stateAuthority" in policy
+    expected_extra = {"stateNamespace","stateAuthorityArn","stateWrappingKeyId"} if durable else set()
+    fields(epoch, expected_extra | {"version", "epochId", "payoutWallet", "chainId", "usdcContract", "budgetMinor",
                    "maxGasFundingWei", "payoutKeyCustody", "payoutKeyId", "operatorRecovery",
                    "ledgerPersistence", "restartRequiresOperatorReview"})
     require(isinstance(policy, dict), code)
@@ -220,7 +222,7 @@ def validate_epoch_descriptor(epoch, policy, *, code="epoch_mismatch"):
             and re.fullmatch(r"arn:aws(?:-cn|-us-gov)?:kms:[a-z0-9-]+:[0-9]{12}:key/"
                              r"(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|mrk-[0-9a-f]{32})",
                              authority["keyId"]), code)
-    require(type(epoch["version"]) is int and epoch["version"] == 2
+    require(type(epoch["version"]) is int and epoch["version"] == (3 if durable else 2)
             and isinstance(epoch["epochId"], str) and re.fullmatch(r"[0-9a-f]{32}", epoch["epochId"]), code)
     require(epoch["payoutWallet"] == address(authority["wallet"])
             and address(epoch["payoutWallet"]) == epoch["payoutWallet"]
@@ -229,8 +231,13 @@ def validate_epoch_descriptor(epoch, policy, *, code="epoch_mismatch"):
             and epoch["usdcContract"] == USDC_ADDRESS and type(epoch["budgetMinor"]) is int
             and epoch["budgetMinor"] == budget and type(epoch["maxGasFundingWei"]) is int
             and epoch["maxGasFundingWei"] == MAX_GAS_FUNDING_WEI
-            and epoch["operatorRecovery"] is True and epoch["ledgerPersistence"] == "enclave_ram_only"
+            and epoch["operatorRecovery"] is True and epoch["ledgerPersistence"] == ("aws_dynamodb_encrypted_snapshot" if durable else "enclave_ram_only")
             and epoch["restartRequiresOperatorReview"] is True, code)
+    if durable:
+        from .aws_state import authority_config
+        state=authority_config(policy["stateAuthority"])
+        require(epoch["stateNamespace"]==state["namespace"] and epoch["stateAuthorityArn"]==state["functionArn"]
+                and epoch["stateWrappingKeyId"]==state["wrappingKeyId"],code)
     return epoch
 
 

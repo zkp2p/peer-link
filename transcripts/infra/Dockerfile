@@ -4,6 +4,8 @@ ARG BASE_IMAGE=python@sha256:4b4c524dc3dce996864e030c7bd9c6b0e517597189fee48f48e
 FROM ${BASE_IMAGE}
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /opt/peer-link
+# KMS Recipient responses are CMS envelopes; use the immutable base OpenSSL.
+RUN test -x /usr/bin/openssl && /usr/bin/openssl version
 COPY verification/requirements.lock /tmp/verification-requirements.lock
 COPY transcripts/requirements.lock /tmp/transcript-requirements.lock
 RUN pip install --no-cache-dir --no-compile --require-hashes --only-binary=:all: -r /tmp/verification-requirements.lock \
@@ -14,7 +16,7 @@ COPY verification/trust/aws-nitro-root.pem /opt/peer-link/verification/trust/aws
 # Exact enclave import closure. Never copy release.json: its PCR manifest is
 # independently pinned discovery metadata and cannot recursively measure itself.
 # Host relay/client/CLI, tests, infrastructure configs and local caches stay out.
-COPY transcripts/__init__.py transcripts/artifacts.py transcripts/channel.py \
+COPY transcripts/__init__.py transcripts/artifacts.py transcripts/aws_state.py transcripts/channel.py \
     transcripts/common.py transcripts/epoch.py transcripts/eth_payout.py \
     transcripts/ledger.py transcripts/kms_signer.py transcripts/payout.py transcripts/policy.py \
     transcripts/providers.py transcripts/recipe.py transcripts/runtime.py \

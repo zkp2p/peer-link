@@ -198,5 +198,15 @@
     "url": "https://github.com/zkp2p/peer-link/issues/24",
     "logo": "/logos/24.png",
     "adapter": "es/bbva-spain"
+  },
+  {
+    "issue": 239,
+    "name": "Wise",
+    "country": "GB",
+    "currency": "GBP, EUR, USD",
+    "amount": 5,
+    "url": "https://github.com/zkp2p/peer-link/issues/239",
+    "logo": "/logos/wise.png",
+    "adapter": "gb/wise"
   }
 ]

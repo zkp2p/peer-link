@@ -27,7 +27,9 @@ The ordinary NEAR route is implemented for canonical `z-ai/glm-5.3-flash`,
 with explicit consent to NEAR and its approved Chutes upstream. It requests no
 aliasing, rejects alias/model mismatches and unapproved serving-provider headers,
 and makes at most one grading call. Those gateway assertions over TLS are not
-independent model attestation. Live funded inference remains unverified.
+independent model attestation. Paid ordinary schema probes and the supervised
+Wise pilot exercised this route; confidential inference and the changed durable
+release still require separate verification.
 
 NEAR confidential inference is unavailable until its exact attestation and encrypted
 request/response adapter have been verified. Failed confidential verification must
@@ -75,11 +77,31 @@ control over every possible signature. Runtime payout limits do not constrain an
 operator signing independently through IAM.
 
 Bank and inference credentials remain transient inside the enclave after encrypted
-submission; the signing broker does not receive them. Restart still loses the
-RAM-only ledger, deduplication authority and in-process artifacts. KMS custody
+submission; the signing broker does not receive them. The completed pilot lost its
+RAM-only ledger, deduplication authority and in-process artifacts on restart. KMS custody
 recovery does not restore that state or make reusing a funded wallet safe. Operator
 review is required before restarting a campaign. This is not durable production
 storage or payment reconciliation.
+
+## Durable-state release under development
+
+The v3 release is preparing AES-GCM snapshots containing authoritative job,
+deduplication, durable receipt keys and payout state. Attested KMS Recipient
+decryption binds approved PCR0 and host-role PCR3; an immutable Lambda/DynamoDB
+revision and writer-generation authority rejects stale writes. Bank sessions,
+inference keys, raw bank reads and submission envelopes are never persisted.
+Snapshots bind exact policy/campaigns/wallet/namespace/authority; absent, mismatched
+or stale state must stop admission. Restore starts paused for signed operator
+resume and chain reconciliation. These protections require separate live
+verification before public collection.
+
+The bank-upload ingress private key is fresh per boot and never persisted. A
+separate durable receipt signer is encrypted in the snapshot; it cannot decrypt
+old uploads. Later snapshot recovery or state-key policy changes therefore cannot
+recover an earlier boot's ingress key. KMS administrators remain trusted for the
+secrecy of encrypted metadata and deduplication state. Cloud state availability
+and operator custody remain explicit trust boundaries; do not describe them as
+exclusive enclave authority.
 
 ## Local handling and publication
 

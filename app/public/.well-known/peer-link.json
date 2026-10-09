@@ -76,6 +76,31 @@
     "payoutRequiredOperatorReconciliation": true,
     "clientRestoreWithoutResubmissionVerified": true,
     "emptyEpochRetirementVerified": true,
-    "remainingUsdcMinor": 0
+    "remainingUsdcMinor": 0,
+    "scope": "completed_supervised_one_slot_pilot"
+  },
+  "discovery": {
+    "meritProjectProfile": "https://terminal.merit.systems/zkp2p/peer-link",
+    "individualMeritBounties": false
+  },
+  "launchCandidate": {
+    "status": "in_progress_not_public_approved",
+    "bank": "wise",
+    "maximumContributors": 2,
+    "rewardUSDC": 5,
+    "otherBanks": "planned",
+    "durableState": "encrypted_snapshot_immutable_lambda_cas_under_verification",
+    "publicAcceptanceEnabled": false,
+    "campaign": "https://github.com/zkp2p/peer-link/issues/239",
+    "plannedBudgetUSDC": 10,
+    "remainingFundedCapacity": 0,
+    "descriptorVersion": 3,
+    "plannedLedgerPersistence": "aws_dynamodb_encrypted_snapshot",
+    "restartRequiresOperatorReview": true,
+    "credentialsPersisted": false,
+    "ingressKeyPersisted": false,
+    "receiptSignerPersistedEncrypted": true,
+    "submissionEnvelopesPersisted": false,
+    "historicalIngressKeysRecoverableFromSnapshot": false
   }
 }

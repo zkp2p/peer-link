@@ -3,6 +3,7 @@
 > Peer Link is Peer's open bank-integration library. Account owners use a local coding agent to contribute a read-only banking transcript: a navigation recipe, an encrypted bank session and the observed transaction-history structure, submitted to an attested Peer Link enclave. Peer engineers build the bank integration from the redacted result. Contributors do not write provider code or open pull requests. The website is an introduction; the repository contains the technical rules.
 
 - Website: https://link.peer.xyz/
+- Merit project profile (project discovery, not individual bank bounties): https://terminal.merit.systems/zkp2p/peer-link
 - Repository: https://github.com/zkp2p/peer-link
 - Agent contribution skill: https://github.com/zkp2p/peer-link/blob/main/skills/contribute-transcript/SKILL.md
 - Agent instructions: https://github.com/zkp2p/peer-link/blob/main/AGENTS.md
@@ -15,7 +16,7 @@
 
 ## Status
 
-Transcript submission is in development. No endpoint accepts bank sessions or credentials yet, and no campaign is open or funded. Rewards shown on the website are planned rates. A bank is open only when its own issue says so; the issue and the machine discovery file override this page.
+Public transcript submission is in development; no public campaign is open or funded. The next verified durable-state release is preparing Wise only, up to two $5 contributions. All other banks remain planned. Rewards shown on the website are planned rates. A bank is open only when its own issue says so; the issue and the machine discovery file override this page.
 
 ## Rewards
 
@@ -23,8 +24,8 @@ Each bank campaign sets a fixed $5 or $10 in USDC per accepted transcript ($10 f
 
 ## Inference and consent
 
-The contributor pays for model inference with their own API key, including for failed or rejected jobs. Peer provides no inference credential or fallback billing. Routes are either attested confidential inference or an approved ordinary provider such as OpenAI or OpenRouter, which receives the banking content it needs. The skill lists the routes currently approved. Show the provider, model, privacy mode, job limits and reward, and get the account owner's explicit consent, before releasing any credential. Never downgrade from confidential to ordinary inference.
+The contributor pays for model inference with their own API key, including for failed or rejected jobs. Peer provides no inference credential or fallback billing. The implemented route is an approved provider-visible API receiving only deterministically redacted structural evidence. Confidential inference is unavailable until separately verified. The skill lists the routes currently approved. Show the provider, model, privacy mode, job limits and reward, and get the account owner's explicit consent, before releasing any credential. Never downgrade from confidential to ordinary inference.
 
 ## Boundaries
 
-Use only bank accounts you are authorized to inspect. Account owners handle authentication and MFA. Never share passwords or MFA codes, initiate payments or change account settings. Verify the enclave attestation against the published release before encrypting anything; stop if it fails. Keep credentials, cookies, API keys, raw records and transcripts out of Git, issues, pull requests and logs. A transcript describes how a bank presents payments; it does not establish bank-origin authenticity, final settlement or a signed payment attestation. Awards accepted, and attempts assigned, under the earlier $50-per-adapter program remain governed by their original issue terms. Peer Link is independent and is not affiliated with Plaid Inc. or named banks.
+Use only bank accounts you are authorized to inspect. Account owners handle authentication and MFA. Never share passwords or MFA codes, initiate payments or change account settings. Verify the enclave attestation against the published release before encrypting anything; stop if it fails. Keep credentials, cookies, API keys, raw records and transcripts out of Git, issues, pull requests and logs. Fresh bank acquisition is authenticated inside the enclave. Its redacted artifact describes how the bank presents payments; it does not establish final settlement or a signed payment attestation. Awards accepted, and attempts assigned, under the earlier $50-per-adapter program remain governed by their original issue terms. Peer Link is independent and is not affiliated with Plaid Inc. or named banks.

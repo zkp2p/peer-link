@@ -10,6 +10,12 @@ contributions.** Check the [release manifest](transcripts/release.json),
 A campaign is usable only with an approved independently verified release, active
 source policy, available slots and reserved rewards.
 
+The single [Merit project profile](https://terminal.merit.systems/zkp2p/peer-link) points to PeerLink
+for discovery. Bank-specific rewards and enrollment remain in PeerLink campaign
+issues; contributors do not claim separate Merit bounties. The next launch candidate
+is Wise only, up to two $5 contributions, conditional on approved release and
+reserved funds. Other banks remain planned.
+
 ## Entry point
 
 Give your local agent the prompt in [README.md](README.md), then follow

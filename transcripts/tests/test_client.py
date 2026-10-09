@@ -76,7 +76,7 @@ class ClientTests(unittest.TestCase):
                 return value
             return self.status_record('submitted')
         if path.endswith('/receipt'):return self.channel.sign(copy.deepcopy(self.receipt_record))
-        if path.startswith('/v1/jobs/'):return self.status_record('paid')
+        if path.startswith('/v1/jobs/'):return self.status_record('paid' if '/v1/submissions' in self.sent else 'reserved')
         raise AssertionError(path)
 
     def status_record(self,state):
@@ -232,7 +232,7 @@ class ClientTests(unittest.TestCase):
 
     def test_offline_terms_work_unreleased_without_key_or_network(self):
         output=io.StringIO()
-        with patch('sys.argv',['transcripts.cli','terms','--campaign','wise-api-pilot-v1',
+        with patch('sys.argv',['transcripts.cli','terms','--campaign','wise-api-public-v1',
                               '--provider','openrouter','--model','openai/gpt-4o-mini-2024-07-18']),\
                 patch('transcripts.cli.Client') as client,patch('transcripts.cli.getpass.getpass') as secret,redirect_stdout(output):
             main()

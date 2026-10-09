@@ -2,7 +2,7 @@
 import re
 import threading
 from urllib.parse import urlsplit
-from .common import Rejected, address, integer, opaque_id, require
+from .common import Rejected, address, integer, opaque_id, require, fields
 from .epoch import CHAIN_ID, USDC_ADDRESS, DEPLOYER_REFUND_ADDRESS
 from .policy import REWARDS, MAX_BUDGET
 
@@ -62,6 +62,75 @@ class BaseUSDCPayoutTransport:
         self.epoch, self.rpc = epoch, rpc
         self._lock, self._signed_jobs, self._next_nonce, self._known = threading.RLock(), {}, None, {}
         self._refund = None
+        self.durable=getattr(epoch,'durable',False)
+        if self.durable:self._restore_payments()
+
+    def _restore_payments(self):
+        for row in self.epoch.ledger.payment_rows():
+            if row['signed_tx'] is not None:
+                signed=bytes.fromhex(row['signed_tx']);tx_id=row['tx_id']
+                require(self.validate(signed,tx_id,row['recipient'],row['reward']),'state_integrity')
+                self._known[tx_id]=(signed,row['recipient'],row['reward'])
+                self._signed_jobs[row['id']]=(signed,tx_id,row['recipient'],row['reward'])
+        state=self.epoch.ledger.retirement_status()
+        if state['state'] in {'refund_pending','refunded'} and state['transactionId'] is not None:
+            signed,tx_id,amount=self.epoch.ledger.refund_identity()
+            require(self.validate_refund(signed,tx_id,amount),'state_integrity')
+            self._refund=(signed,tx_id,amount);self._known[tx_id]=(signed,DEPLOYER_REFUND_ADDRESS,amount)
+
+    def check_continuity(self,*,bootstrap=False):
+        self._chain()
+        latest=_quantity(self._call('eth_getTransactionCount',[self.epoch.wallet,'latest']))
+        pending=_quantity(self._call('eth_getTransactionCount',[self.epoch.wallet,'pending']))
+        if not self.durable:return
+        state=self.epoch.ledger.runtime_state()
+        initial=self.epoch._anchor.config['initialWalletNonce']
+        witness=state.get('nonceWitness',initial)
+        require(initial<=latest<=pending<=witness,'payout_nonce_conflict')
+        if bootstrap:require(latest==pending==initial and self.funding_balances()[0]==0,'state_bootstrap_wallet_used')
+        # Every consumed/reserved nonce must have a known matching transaction.
+        intents=[]
+        for row in self.epoch.ledger.payment_rows():
+            if row['payout_intent'] is not None:
+                import json
+                intent=json.loads(row['payout_intent']);nonce=intent['nonce']
+                if row['state']=='paid':require(nonce<latest,'payout_nonce_conflict')
+                if nonce<pending:
+                    require(row['signed_tx'] is not None,'payout_nonce_conflict')
+                if nonce<latest:
+                    require(row['tx_id'] is not None and self.confirmed(row['tx_id'],row['recipient'],row['reward']),'payout_nonce_conflict')
+                intents.append(nonce)
+        refund=state.get('refundIntent')
+        if refund is not None:
+            if refund['nonce']<pending:require(self._refund is not None,'payout_nonce_conflict')
+            if refund['nonce']<latest:require(self._refund is not None and self.confirmed_refund(self._refund[1],self._refund[2]),'payout_nonce_conflict')
+            intents.append(refund['nonce'])
+        require(sorted(intents)==list(range(initial,witness)),'payout_nonce_conflict')
+
+    def preflight_recipient(self,recipient,amount):
+        self._chain()
+        calldata=transfer_data(recipient,amount)
+        # No nonce reservation or KMS signing. Reject deterministic transfer/gas
+        # failures before a paid grade creates an entitlement.
+        self._build_transaction(calldata,0)
+
+    def _intent(self,calldata,job_id=None):
+        self.check_continuity()
+        state=self.epoch.ledger.runtime_state()
+        old=self.epoch.ledger.payout_intent(job_id) if job_id is not None else state.get('refundIntent')
+        if old is not None:
+            require(old['data']=='0x'+calldata.hex(),'payout_identity_mismatch')
+            return {**old,'data':bytes.fromhex(old['data'][2:])}
+        nonce=state.get('nonceWitness',self.epoch._anchor.config['initialWalletNonce'])
+        # An unsigned prior intent must finish before allocating another nonce.
+        for row in self.epoch.ledger.payment_rows():
+            require(row['payout_intent'] is None or row['signed_tx'] is not None,'payout_intent_pending')
+        require(state.get('refundIntent') is None,'payout_intent_pending')
+        transaction=self._build_transaction(calldata,nonce)
+        encoded={**transaction,'data':'0x'+calldata.hex()}
+        if job_id is not None:self.epoch.ledger.prepare_intent(job_id,encoded)
+        else:self.epoch.ledger.update_runtime({'refundIntent':encoded,'nonceWitness':nonce+1})
+        return transaction
 
     def _call(self, method, params):
         try:
@@ -92,36 +161,39 @@ class BaseUSDCPayoutTransport:
                 signed,tx_id,old_recipient,old_amount = self._signed_jobs[job_id]
                 require(old_recipient == recipient and old_amount == reward_minor,"payout_identity_mismatch")
                 return signed,tx_id
-            signed,tx_id = self._sign_calldata(calldata)
+            signed,tx_id = self._sign_calldata(calldata,job_id=job_id)
             require(self.validate(signed,tx_id,recipient,reward_minor),"invalid_transaction")
             self._signed_jobs[job_id]=(signed,tx_id,recipient,reward_minor)
             self._known[tx_id]=(signed,recipient,reward_minor)
             return signed,tx_id
 
-    def _sign_calldata(self,calldata,*,retirement=False):
-        self._chain()
-        pending_nonce = _quantity(self._call("eth_getTransactionCount",[self.epoch.wallet,"pending"]))
-        nonce = pending_nonce if self._next_nonce is None else max(pending_nonce,self._next_nonce)
+    def _build_transaction(self,calldata,nonce):
         require(nonce < 2**64,"rpc_response_invalid")
-        latest = self._call("eth_getBlockByNumber",["latest",False])
+        latest=self._call("eth_getBlockByNumber",["latest",False])
         require(isinstance(latest,dict),"rpc_response_invalid")
-        base_fee = _quantity(latest.get("baseFeePerGas"))
-        priority = min(_quantity(self._call("eth_maxPriorityFeePerGas",[])),MAX_PRIORITY_FEE_WEI)
-        max_fee = base_fee*2+priority
-        require(0 < max_fee <= MAX_FEE_WEI,"payout_fee_limit")
+        base_fee=_quantity(latest.get("baseFeePerGas"))
+        priority=min(_quantity(self._call("eth_maxPriorityFeePerGas",[])),MAX_PRIORITY_FEE_WEI)
+        max_fee=base_fee*2+priority
+        require(0<max_fee<=MAX_FEE_WEI,"payout_fee_limit")
         from eth_utils import to_checksum_address
-        skeleton = {"from":self.epoch.wallet,"to":USDC_ADDRESS,"value":"0x0","data":"0x"+calldata.hex()}
-        estimated = _quantity(self._call("eth_estimateGas",[skeleton]))
-        require(21000 <= estimated <= MAX_GAS,"payout_gas_limit")
-        gas = min(MAX_GAS,(estimated*12+9)//10)
-        transaction = {"type":2,"chainId":CHAIN_ID,"nonce":nonce,"to":to_checksum_address(USDC_ADDRESS),
-                       "value":0,"data":calldata,"gas":gas,"maxFeePerGas":max_fee,
-                       "maxPriorityFeePerGas":priority,"accessList":[]}
-        signed_result = (self.epoch.sign_retirement_transaction(transaction) if retirement
-                         else self.epoch.sign_transaction(transaction))
-        signed = bytes(signed_result.raw_transaction)
-        tx_id = "0x"+bytes(signed_result.hash).hex()
-        self._next_nonce=nonce+1
+        estimated=_quantity(self._call("eth_estimateGas",[{"from":self.epoch.wallet,"to":USDC_ADDRESS,
+                            "value":"0x0","data":"0x"+calldata.hex()}]))
+        require(21000<=estimated<=MAX_GAS,"payout_gas_limit")
+        return {"type":2,"chainId":CHAIN_ID,"nonce":nonce,"to":to_checksum_address(USDC_ADDRESS),
+                "value":0,"data":calldata,"gas":min(MAX_GAS,(estimated*12+9)//10),
+                "maxFeePerGas":max_fee,"maxPriorityFeePerGas":priority,"accessList":[]}
+
+    def _sign_calldata(self,calldata,*,retirement=False,job_id=None):
+        self._chain()
+        if self.durable:transaction=self._intent(calldata,None if retirement else job_id)
+        else:
+            pending_nonce=_quantity(self._call("eth_getTransactionCount",[self.epoch.wallet,"pending"]))
+            nonce=pending_nonce if self._next_nonce is None else max(pending_nonce,self._next_nonce)
+            transaction=self._build_transaction(calldata,nonce)
+        signed_result=(self.epoch.sign_retirement_transaction(transaction) if retirement
+                       else self.epoch.sign_transaction(transaction))
+        signed=bytes(signed_result.raw_transaction);tx_id="0x"+bytes(signed_result.hash).hex()
+        self._next_nonce=transaction['nonce']+1
         return signed,tx_id
 
     def sign_refund(self,amount):
@@ -170,6 +242,8 @@ class BaseUSDCPayoutTransport:
         with self._lock, self.epoch.payment_guard():
             self.epoch.require_active()
             self._chain()
+            if self.durable:
+                self.epoch.ledger.assert_signed_payment(signed,tx_id)
             require(tx_id in self._known and self._known[tx_id][0] == signed,"payout_identity_mismatch")
             _,recipient,amount = self._known[tx_id]
             require(self.validate(signed,tx_id,recipient,amount),"invalid_transaction")
@@ -179,6 +253,8 @@ class BaseUSDCPayoutTransport:
     def broadcast_refund(self,signed,tx_id):
         with self._lock,self.epoch.retirement_guard():
             self._chain()
+            if self.durable:
+                require(self.epoch.ledger.refund_identity()[:2]==(signed,tx_id),'refund_identity_mismatch')
             require(self._refund is not None and self._refund[:2] == (signed,tx_id),"refund_identity_mismatch")
             require(self.validate_refund(signed,tx_id,self._refund[2]),"invalid_refund")
             result=self._call("eth_sendRawTransaction",["0x"+signed.hex()])
