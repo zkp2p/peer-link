@@ -8,12 +8,14 @@
   "contributionSkill": "https://github.com/zkp2p/peer-link/blob/main/skills/contribute-transcript/SKILL.md",
   "campaigns": "https://github.com/zkp2p/peer-link/issues",
   "verification": {
-    "status": "unreleased",
+    "status": "no_public_paid_campaign",
     "endpoint": null,
-    "acceptsSecrets": false,
     "scheduledJudgment": false,
     "automaticPayout": false,
-    "release": "https://github.com/zkp2p/peer-link/blob/main/transcripts/release.json"
+    "release": "https://github.com/zkp2p/peer-link/blob/main/transcripts/release.json",
+    "secretSubmissionRequirement": "future_approved_campaign_fresh_attestation_and_successful_reservation",
+    "payoutScope": "accepted_reserved_jobs",
+    "acceptsSecrets": false
   },
   "rewards": {
     "currency": "USDC",
@@ -24,7 +26,9 @@
     },
     "paidContributionsPerAccountPerCampaign": 1,
     "allCampaignsFunded": false,
-    "automaticRefill": false
+    "automaticRefill": false,
+    "publicCampaignsAvailable": false,
+    "wiseIncentivized": false
   },
   "inference": {
     "billing": "contributor",
@@ -76,6 +80,29 @@
     "payoutRequiredOperatorReconciliation": true,
     "clientRestoreWithoutResubmissionVerified": true,
     "emptyEpochRetirementVerified": true,
-    "remainingUsdcMinor": 0
+    "remainingUsdcMinor": 0,
+    "scope": "completed_supervised_one_slot_pilot"
+  },
+  "discovery": {
+    "meritProjectProfile": "https://terminal.merit.systems/zkp2p/peer-link",
+    "individualMeritBounties": false
+  },
+  "internalValidation": {
+    "status": "completed_internal_validation_not_public_enrollment",
+    "bank": "wise",
+    "otherBanks": "planned",
+    "durableState": "encrypted_snapshot_immutable_lambda_cas_verified_scope",
+    "descriptorVersion": 3,
+    "restartRequiresOperatorReview": true,
+    "credentialsPersisted": false,
+    "ingressKeyPersisted": false,
+    "receiptSignerPersistedEncrypted": true,
+    "submissionEnvelopesPersisted": false,
+    "historicalIngressKeysRecoverableFromSnapshot": false,
+    "measuredSource": "629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e",
+    "evidence": "https://github.com/zkp2p/peer-link/blob/main/transcripts/durable-pilot-evidence.json",
+    "ledgerPersistence": "aws_dynamodb_encrypted_snapshot",
+    "hardwarePaidRestartProof": "verified_scoped",
+    "excludedFromRewardRecruitment": true
   }
 }

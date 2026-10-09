@@ -4,11 +4,20 @@ The paid contribution is authenticated, redacted banking evidence from your own
 account. Peer engineers build the integration. You do not implement a provider,
 claim an issue by commenting, or open a provider PR.
 
-**The service is unreleased and currently accepts no bank credentials or paid
-contributions.** Check the [release manifest](transcripts/release.json),
-[verification guide](docs/verification.md), and bank campaign before continuing.
+**No public paid campaign is currently available. Stop before collecting secrets
+or spending on inference.** Check the [release manifest](transcripts/release.json),
+[verification and recovery guide](docs/transcript-operations.md), and bank campaign before continuing.
 A campaign is usable only with an approved independently verified release, active
-source policy, available slots and reserved rewards.
+source policy and a successful funded reservation before secret collection.
+Approval does not guarantee remaining capacity.
+
+The single [Merit project profile](https://terminal.merit.systems/zkp2p/peer-link) points to PeerLink
+for discovery. Bank-specific rewards and enrollment remain in PeerLink campaign
+issues; contributors do not claim separate Merit bounties. Bank rewards remain
+planned at the published fixed $5/$10 rates, collecting 1–5 distinct contributors
+when enabled. Wise is an existing integration/reference, excluded from reward
+recruitment. Its paid tests are [internal validation](transcripts/durable-pilot-evidence.json),
+not public enrollment.
 
 ## Entry point
 
@@ -17,7 +26,8 @@ Give your local agent the prompt in [README.md](README.md), then follow
 Read [privacy](docs/privacy.md) and [reward terms](docs/incentives.md) first.
 
 1. Find your bank's existing campaign issue. It publishes a fixed $5 or $10 USDC
-   reward, scope, access status, limits and remaining capacity. One issue covers
+   reward, scope, access status and limits. A successful live reservation determines
+   admission; static issue text cannot guarantee remaining capacity. One issue covers
    the bank; an issue listing alone does not promise funding or readiness.
 2. Confirm your own account access and choose the approved model/provider,
    privacy consent and payout address. You fund inference, even when rejected.

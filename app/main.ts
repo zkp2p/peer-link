@@ -111,13 +111,16 @@ function render(providers: Provider[], catalogUnavailable = false) {
     card.className = "integration-tile";
     card.href = integration.href;
     const place = countryNames.of(integration.country) ?? integration.country;
+    const rewardDescription = `Planned $${integration.bounty} per accepted transcript. No public paid campaign is currently available.`;
     card.setAttribute(
       "aria-label",
       integration.hasAdapter
         ? `${integration.name}, ${place}. View experimental adapter.`
-        : integration.bounty
-          ? `${integration.name}, ${place}. Planned $${integration.bounty} per accepted transcript. View the campaign issue for availability.`
-          : `${integration.name}, ${place}. View bank integration discussion.`,
+        : integration.name === "Wise"
+          ? `${integration.name}, ${place}. View the existing Wise reference; no transcript reward recruitment.`
+          : integration.bounty
+            ? `${integration.name}, ${place}. ${rewardDescription}`
+            : `${integration.name}, ${place}. View bank integration discussion.`,
     );
     const logo = document.createElement("span");
     logo.className = "integration-logo";
@@ -147,7 +150,7 @@ function render(providers: Provider[], catalogUnavailable = false) {
       tag.className = "bounty-tag";
       tag.setAttribute("aria-hidden", "true");
       tag.textContent = `$${integration.bounty}`;
-      card.title = `Planned $${integration.bounty} per accepted transcript. Availability is on the issue.`;
+      card.title = rewardDescription;
       card.append(tag);
     }
     list.append(card);

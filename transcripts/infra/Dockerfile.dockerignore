@@ -12,6 +12,7 @@
 !transcripts/
 !transcripts/__init__.py
 !transcripts/artifacts.py
+!transcripts/aws_state.py
 !transcripts/channel.py
 !transcripts/common.py
 !transcripts/epoch.py

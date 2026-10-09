@@ -7,11 +7,14 @@ bank campaign. The [PRD](docs/transcript-contributions-prd.md) describes the int
 product; the [release](transcripts/release.json) and actual verification evidence
 control availability.
 
-**Unreleased: no bank credentials or paid contributions are accepted yet.** An
+**No public paid campaign is currently available; stop before secret collection.** An
 infrastructure deployment, synthetic fixture, legacy adapter or open bank issue
 cannot enable live collection. Independently verify a reviewed measured Nitro release,
-fresh attestation, encryption-key/policy bindings and the active source campaign
-before any encrypted submission. Never replace missing evidence with invented PCRs,
+fresh attestation, encryption-key/policy bindings and a successful funded reservation
+in an enabled future campaign before secret collection or any encrypted submission.
+Bank rewards remain planned. Wise is excluded from reward recruitment; its
+completed tests are internal validation only. Approval is not a capacity guarantee. Never replace
+missing evidence with invented PCRs,
 mock quotes or a server's `verified` flag.
 
 ## Contributor workflow
@@ -67,11 +70,12 @@ The revised capped pilot uses a non-exportable AWS KMS payout key with operator 
 recovery and a host signing broker. Signing authority is not exclusive to the enclave
 or PCR restricted. Attestation binds the exact KMS ARN and wallet in measured policy;
 it does not prevent an authorized operator from signing outside runtime rules.
-Ledger, dedup/integrity keys and in-process artifacts remain RAM-only. Restart requires
+The completed pilot kept ledger, dedup/integrity keys and in-process artifacts RAM-only. Restart requires
 operator review; recoverable custody is not durable rollback-safe payment state or
 permission to reuse the funded wallet with a blank ledger.
 Keep admission disabled until measured-release, hardware, inference, bank, payout
-and funding gates pass. No automatic wallet refill or ledger recovery claim. Preserve
+and funding gates pass. No automatic wallet refill. The durable release has its own scoped recovery
+evidence below; the completed RAM-only pilot did not. Preserve
 the old funded enclave while its unrecovered $50 is reconciled; the new KMS key cannot
 recover the old enclave-only key.
 Before new funding, require the signed paused operator preflight to exercise real
@@ -81,7 +85,8 @@ sees the signature/digest and can reconstruct that fixed refund. A valid quote o
 The measured `pilotBudgetMinor` is the exact epoch budget, bounded from $5 to the
 $50 architecture maximum. The revised candidate used $5 after a separate confirmed
 $1 recovery test and capacity one for the Wise experiment. Its paid test consumed
-that slot/budget; no funded public capacity remains. Do not silently refill or
+that slot/budget; that completed test allocation has no remaining capacity.
+Do not silently refill or
 fund the architecture maximum.
 The signed operator retirement action irreversibly closes admission, cancels unused
 reservations, finishes existing obligations and archives them before the fixed
@@ -102,6 +107,49 @@ Regression tests must exercise source/host/TLS mismatch, unauthenticated identit
 expired/replayed jobs, privacy/model mismatch, malformed grading, private-data leaks,
 duplicate accounts, capacity/budget races and payout reconciliation. Distinguish
 synthetic tests from real hardware, inference, owner-authorized bank and payment evidence.
+
+## Internal Wise validation; public incentives planned
+
+**No public paid campaign is currently available.** Bank transcript rewards remain
+planned at the published fixed $5/$10 rates, with 1–5 distinct contributors per bank
+when enabled. Wise is an existing integration/reference, excluded from reward
+recruitment. Its completed paid tests are internal validation, not public enrollment.
+Do not collect credentials or spend on inference for a planned campaign.
+
+The internal validation service was `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
+with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
+Fresh Nitro verification, authenticated Wise reads, ordinary NEAR grading, an
+automatic confirmed $5 payout and paid-job recovery after an enclave restart passed.
+Recovery preserved the signed receipt without another reservation, submission or
+model call. See the separately scoped
+[durable evidence](transcripts/durable-pilot-evidence.json) for verified scope and remaining limitations.
+
+The v3 design encrypts canonical SQLite state snapshots under AES-GCM, with an
+immutable AWS Lambda/DynamoDB compare-and-swap authority. Descriptor v3 binds
+`ledgerPersistence: aws_dynamodb_encrypted_snapshot`, `stateNamespace`,
+`stateAuthorityArn` and `stateWrappingKeyId` alongside the payout fields. KMS
+Recipient decryption checks the approved PCR0/host-role PCR3 bindings; AWS HTTPS
+terminates inside the enclave. Atomic revision/writer-generation checks fence
+stale workers. Accepted grade/artifact metadata commits atomically, and exact
+signed transaction bytes/nonce persist before broadcast.
+
+Restore preserves the same epoch and encrypted durable receipt-signing key only for the exact
+policy digest, campaigns, wallet, namespace and immutable authority. It starts
+paused until signed operator resume and chain reconciliation; changed policy cannot
+silently restore or initialize previously funded state. Interrupted submitted or
+verifying work fails as `interrupted_execution` without rerunning bank or model
+calls. A reserved job retains its expiry and needs a fresh challenge, explicit owner
+consent and new secrets before any submission.
+
+Bank sessions, inference keys, raw reads and submission envelopes never enter the
+snapshot. Ingress RSA private keys are fresh per boot and never persisted; only the
+separate receipt signer is encrypted in durable state. Later snapshot recovery
+cannot recover old bank-upload decryption keys. KMS administrators remain trusted
+for encrypted metadata/deduplication secrecy, and cloud availability remains a
+trust boundary; missing, mismatched or unavailable state must
+stop admission. Hardware and paid-job/restart verification passed for the internal Wise test.
+Public incentives need a separately verified non-Wise source and release approval;
+confidential inference remains unavailable.
 
 ## Commands and layout
 

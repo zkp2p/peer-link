@@ -64,6 +64,28 @@ def account_fingerprint(key, campaign_id, live_account_id):
                     hashlib.sha256).hexdigest()
 
 
+def account_fingerprints(key,campaign,reads,account_id):
+    """Private overlap witnesses, never a proof of one human or exported count.
+
+    Wise's authenticated profile discovery proves the set reachable by this
+    credential. Selecting another profile cannot earn a second overlapping slot.
+    Other source adapters retain their independently authenticated account ID.
+    """
+    identities={account_id}
+    if any(source['origin']=='https://api.wise.com' for source in campaign['sources']):
+        discovery=[read for read in reads if read.url=='https://api.wise.com/v1/profiles' and read.method=='GET']
+        require(len(discovery)==1,'account_evidence_missing')
+        body=discovery[0].body
+        require(isinstance(body,list) and 1<=len(body)<=100,'account_evidence_missing')
+        identities=set()
+        for profile in body:
+            require(isinstance(profile,dict) and type(profile.get('id')) is int and 0<profile['id']<10**20,
+                    'account_evidence_missing')
+            identities.add('wise-profile:'+str(profile['id']))
+        require(len(identities)==len(body) and account_id in identities,'account_evidence_missing')
+    return sorted(account_fingerprint(key,campaign['id'],identity) for identity in identities)
+
+
 def _type(value):
     if value is None: return "null"
     if type(value) is bool: return "boolean"
@@ -208,7 +230,9 @@ def validate_epoch_descriptor(epoch, policy, *, code="epoch_mismatch"):
     from .common import address
     from .epoch import CHAIN_ID, USDC_ADDRESS, MAX_GAS_FUNDING_WEI
     from .policy import MAX_BUDGET
-    fields(epoch, {"version", "epochId", "payoutWallet", "chainId", "usdcContract", "budgetMinor",
+    durable = "stateAuthority" in policy
+    expected_extra = {"stateNamespace","stateAuthorityArn","stateWrappingKeyId"} if durable else set()
+    fields(epoch, expected_extra | {"version", "epochId", "payoutWallet", "chainId", "usdcContract", "budgetMinor",
                    "maxGasFundingWei", "payoutKeyCustody", "payoutKeyId", "operatorRecovery",
                    "ledgerPersistence", "restartRequiresOperatorReview"})
     require(isinstance(policy, dict), code)
@@ -220,7 +244,7 @@ def validate_epoch_descriptor(epoch, policy, *, code="epoch_mismatch"):
             and re.fullmatch(r"arn:aws(?:-cn|-us-gov)?:kms:[a-z0-9-]+:[0-9]{12}:key/"
                              r"(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|mrk-[0-9a-f]{32})",
                              authority["keyId"]), code)
-    require(type(epoch["version"]) is int and epoch["version"] == 2
+    require(type(epoch["version"]) is int and epoch["version"] == (3 if durable else 2)
             and isinstance(epoch["epochId"], str) and re.fullmatch(r"[0-9a-f]{32}", epoch["epochId"]), code)
     require(epoch["payoutWallet"] == address(authority["wallet"])
             and address(epoch["payoutWallet"]) == epoch["payoutWallet"]
@@ -229,8 +253,13 @@ def validate_epoch_descriptor(epoch, policy, *, code="epoch_mismatch"):
             and epoch["usdcContract"] == USDC_ADDRESS and type(epoch["budgetMinor"]) is int
             and epoch["budgetMinor"] == budget and type(epoch["maxGasFundingWei"]) is int
             and epoch["maxGasFundingWei"] == MAX_GAS_FUNDING_WEI
-            and epoch["operatorRecovery"] is True and epoch["ledgerPersistence"] == "enclave_ram_only"
+            and epoch["operatorRecovery"] is True and epoch["ledgerPersistence"] == ("aws_dynamodb_encrypted_snapshot" if durable else "enclave_ram_only")
             and epoch["restartRequiresOperatorReview"] is True, code)
+    if durable:
+        from .aws_state import authority_config
+        state=authority_config(policy["stateAuthority"])
+        require(epoch["stateNamespace"]==state["namespace"] and epoch["stateAuthorityArn"]==state["functionArn"]
+                and epoch["stateWrappingKeyId"]==state["wrappingKeyId"],code)
     return epoch
 
 

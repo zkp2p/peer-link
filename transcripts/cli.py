@@ -77,16 +77,16 @@ def save_state(path,state):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['status','terms','preflight','contribute','job','receipt'])
+    parser.add_argument('command',choices=['status','terms','preflight','contribute','submit-reserved','job','receipt'])
     parser.add_argument('--service');parser.add_argument('--release',type=Path,default=Path(__file__).with_name('release.json'))
     parser.add_argument('--policy',type=Path,default=Path(__file__).with_name('policy.json'))
     parser.add_argument('--campaign');parser.add_argument('--payout');parser.add_argument('--provider',choices=['openai','openrouter','near'])
-    parser.add_argument('--model');parser.add_argument('--privacy',choices=['provider_visible','confidential'],default='provider_visible')
+    parser.add_argument('--model');parser.add_argument('--privacy',choices=['provider_visible','confidential'],default=None)
     parser.add_argument('--consent',action='store_true')
-    parser.add_argument('--state',type=Path,help='Public local recovery handle; contribute creates it without overwriting an existing file')
+    parser.add_argument('--state',type=Path,help='Public local recovery handle; contribute creates it, submit-reserved continues its unexpired reserved job without overwriting it')
     parser.add_argument('--job-id',help='Must match the job in --state')
     parser.add_argument('--prompt-secrets',action='store_true',
-                        help='Owner enters bank/inference secrets on a controlling TTY after verified preflight; stdin contains only the nonsecret recipe payload')
+                        help='Owner enters bank/inference secrets on a controlling TTY after verified admission; contribute first saves the recovery handle, submit-reserved first verifies the existing job; stdin contains only the nonsecret recipe payload')
     args=parser.parse_args()
     client=None
     try:
@@ -97,7 +97,7 @@ def main():
                               'accepting':False,'releaseApproved':approved,
                               'reason':'preflight_and_service_admission_required' if approved else 'release_not_approved'}));return
         if args.command=='terms':
-            print(json.dumps(terms(release,policy,args.campaign,args.provider,args.model,args.privacy),sort_keys=True));return
+            print(json.dumps(terms(release,policy,args.campaign,args.provider,args.model,args.privacy or 'provider_visible'),sort_keys=True));return
         client=Client(args.service or release.get('serviceUrl'),release,policy)
         if args.command=='preflight':result=client.preflight()
         elif args.command in {'job','receipt'}:
@@ -109,7 +109,33 @@ def main():
             else:
                 client.preflight();signed=client.receipt(job_id)
                 result={'jobId':job_id,'verified':True,'state':signed['payload']['job']['state'],'receipt':signed}
+        elif args.command=='submit-reserved':
+            require(args.consent,'consent_required');require(args.state is not None,'state_required')
+            # The original saved terms are authoritative. This command cannot
+            # replace the beneficiary, campaign, provider, or model.
+            require(not any((args.campaign,args.payout,args.provider,args.model)),'unexpected_arguments')
+            client.restore(strict_json(args.state.read_bytes(),200_000))
+            job_id=args.job_id or client.job['jobId']
+            require(job_id==client.job['jobId'],'job_context_required')
+            require(time.time()<client.job['request']['expiresAt'],'job_expired')
+            status=client.status(job_id) # Current approved quote and bound status.
+            require(status.get('reportedState',status.get('state'))=='reserved','job_replayed')
+            request=client.job['request']
+            require(time.time()<request['expiresAt'],'job_expired')
+            require(args.privacy is None or args.privacy==request['privacyMode'],'unexpected_arguments')
+            campaign=next(item for item in policy['campaigns'] if item['id']==client.job['campaignId'])
+            print(json.dumps({'event':'continuing_reserved','jobId':job_id,'campaignId':client.job['campaignId'],
+                              'payoutAddress':request['payoutAddress'],'rewardMinor':campaign['rewardMinor'],
+                              'provider':request['provider'],'model':request['model'],'privacyMode':request['privacyMode'],
+                              'limits':request['limits'],'stateFile':str(args.state.resolve())}),flush=True)
+            payload=strict_json(sys.stdin.buffer.read(2_000_001),2_000_000)
+            require(isinstance(payload,dict),'invalid_submission')
+            try:
+                if args.prompt_secrets:prompt_secrets(payload)
+                result=client.submit_reserved(payload,consent=args.consent)
+            finally:payload.clear()
         else:
+            args.privacy=args.privacy or 'provider_visible'
             require(args.consent,'consent_required')
             require(all((args.campaign,args.payout,args.provider,args.model)),'missing_arguments')
             # Validate local terms before requesting or reading secret input.
@@ -121,26 +147,29 @@ def main():
                 'policyDigest':digest(campaign),'expiresAt':now+600,
                 'limits':DEFAULT_LIMITS.copy()},now)
             if args.state is not None:require(not args.state.exists(),'state_exists')
-            # Verify before reading secret input; no normal-host encryption bypass.
-            client.preflight()
-            payload=strict_json(sys.stdin.buffer.read(2_000_001),2_000_000)
-            require(isinstance(payload,dict),'invalid_submission')
             def reserved(state):
                 path=args.state or Path('.local')/('transcript-job-'+state['jobId']+'.json')
                 save_state(path,state)
                 print(json.dumps({'event':'reserved','jobId':state['jobId'],'stateFile':str(path.resolve()),
                                   'nextAction':'poll_same_job'}),flush=True)
+            # Reserve and durably save the public recovery handle before reading
+            # stdin or prompting the owner. A full campaign never needs secrets.
+            client.reserve(args.campaign,args.payout,args.provider,args.model,args.privacy,
+                           consent=args.consent,on_reserved=reserved)
+            payload=strict_json(sys.stdin.buffer.read(2_000_001),2_000_000)
+            require(isinstance(payload,dict),'invalid_submission')
             try:
                 if args.prompt_secrets:prompt_secrets(payload)
-                result=client.contribute(args.campaign,args.payout,args.provider,args.model,args.privacy,payload,
-                                         consent=args.consent,on_reserved=reserved)
+                result=client.submit_reserved(payload,consent=args.consent)
             finally:payload.clear()
         print(json.dumps(result,sort_keys=True))
     except Rejected as error:
         result={'error':str(error)}
         if client is not None and client.job is not None:
+            terminal=str(error)=='job_not_found' and time.time()>=client.job['request']['expiresAt']
             result.update({'jobId':client.job['jobId'],'bindingDigest':client.job['bindingDigest'],
-                           'nextAction':'poll_same_job_do_not_resubmit'})
+                           'nextAction':'terminal_record_unavailable' if terminal else
+                                        'check_existing_job_outcome' if str(error)=='job_expired' else 'poll_same_job_do_not_resubmit'})
         print(json.dumps(result));raise SystemExit(1)
     except Exception:
         result={'error':'client_failed'}

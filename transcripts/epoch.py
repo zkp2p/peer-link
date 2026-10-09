@@ -1,15 +1,17 @@
-"""RAM-only job epoch with an operator-recoverable AWS KMS payout authority.
+"""Paused Nitro epoch with recoverable KMS payout custody and optional durable state.
 
-Restart loses account dedup and pending-payment state, but not the payout key.
-Every boot starts paused. Operators must reconcile the previous epoch before
-funding or activating a new one; key recovery does not restore the job ledger.
-The public descriptor MUST be bound into independently verified Nitro attestation.
+Durable v3 encrypts the authoritative job/dedup/payment snapshot under a Recipient
+KMS key and uses fenced, capability-authenticated Lambda CAS. Restart restores
+that exact policy/namespace, keeps the receipt signer, creates fresh ingress keys,
+and requires signed operator review before new admissions or payment signing.
+Legacy v2 remains explicitly RAM-only. Every descriptor is attestation-bound.
 """
 import hashlib
 import os
 import platform
 import secrets
 import threading
+import time
 from contextlib import contextmanager
 from .common import address, digest, fields, hex_digest, integer, require
 from .ledger import Ledger
@@ -62,7 +64,7 @@ class BootEpoch:
     never a contributor API. Caller must verify operator authorization and fresh
     attestation for this descriptor, then independently inspect funding evidence.
     """
-    def __init__(self, payout_signer, *, budget_minor=MAX_BUDGET):
+    def __init__(self, payout_signer, *, budget_minor=MAX_BUDGET, state_anchor=None, initial_snapshot=None):
         _require_nsm()
         from .kms_signer import KmsSigner
         require(isinstance(payout_signer, KmsSigner), "kms_signer_required")
@@ -73,21 +75,38 @@ class BootEpoch:
         self._signer = payout_signer
         self.epoch_id = secrets.token_hex(16)
         self.wallet = self._signer.address.lower()
-        self._anchor = _EpochAnchor()
-        self.ledger = Ledger(":memory:", self._integrity_key, global_budget_minor=self.budget_minor, anchor=self._anchor)
+        self._anchor = state_anchor or _EpochAnchor()
+        self.durable=state_anchor is not None
+        if self.durable:
+            from .channel import ReceiptSigner
+            self._integrity_key=state_anchor.keys['integrity'];self._dedup_key=state_anchor.keys['dedup']
+            previous=initial_snapshot['runtime'] if initial_snapshot else None
+            self.receipt_signer=ReceiptSigner(bytes.fromhex(previous['receiptPrivateKey']) if previous else None)
+            if previous:self.epoch_id=previous['epochId'];self._funded_once=previous['fundedOnce']
+            runtime={'epochId':self.epoch_id,'receiptPrivateKey':self.receipt_signer.private_der().hex(),
+                     'fundedOnce':self._funded_once,'active':False,'operatorNonces':{},'bootId':secrets.token_hex(16)}
+            self.ledger=Ledger(':memory:',self._integrity_key,global_budget_minor=self.budget_minor,anchor=state_anchor,
+                               initial_snapshot=initial_snapshot,initial_runtime=runtime)
+            if previous:self.ledger.recover_restart(int(time.time()),runtime['bootId'])
+        else:self.ledger = Ledger(":memory:", self._integrity_key, global_budget_minor=self.budget_minor, anchor=self._anchor)
 
     @classmethod
-    def create(cls, payout_signer, *, budget_minor=MAX_BUDGET):
-        return cls(payout_signer, budget_minor=budget_minor)
+    def create(cls, payout_signer, *, budget_minor=MAX_BUDGET, state_anchor=None, initial_snapshot=None):
+        return cls(payout_signer, budget_minor=budget_minor,state_anchor=state_anchor,initial_snapshot=initial_snapshot)
 
     def public_descriptor(self):
         with self._lock:
             require(self._alive, "epoch_closed")
-            return {"version": 2, "epochId": self.epoch_id, "payoutWallet": self.wallet,
+            result={"version": 2, "epochId": self.epoch_id, "payoutWallet": self.wallet,
                     "chainId": CHAIN_ID, "usdcContract": USDC_ADDRESS, "budgetMinor": self.budget_minor,
                     "maxGasFundingWei": MAX_GAS_FUNDING_WEI, "payoutKeyCustody": "aws_kms",
                     "payoutKeyId": self._signer.key_id, "operatorRecovery": True,
                     "ledgerPersistence": "enclave_ram_only", "restartRequiresOperatorReview": True}
+            if self.durable:
+                result.update(version=3,ledgerPersistence='aws_dynamodb_encrypted_snapshot',
+                              stateNamespace=self._anchor.config['namespace'],stateAuthorityArn=self._anchor.config['functionArn'],
+                              stateWrappingKeyId=self._anchor.config['wrappingKeyId'])
+            return result
 
     def check_payout_signing(self, nonce):
         """Operator-only pre-funding probe. Sign a one-unit refund without broadcast.
@@ -119,16 +138,19 @@ class BootEpoch:
             require(not self._funded_once, "epoch_already_funded")
             require(usdc_balance_minor == self.budget_minor, "epoch_funding_mismatch")
             integer(gas_balance_wei, 1, MAX_GAS_FUNDING_WEI, "epoch_gas_funding_mismatch")
+            if self.durable:self.ledger.update_runtime({'fundedOnce':True,'active':True})
             self._funded_once, self._active = True, True
 
     def pause(self):
         with self._lock:
             self._active = False
+            if self.durable:self.ledger.update_runtime({'active':False})
 
     def resume_after_operator_verification(self, epoch_id):
         with self._lock:
             require(self._alive and self._funded_once and epoch_id == self.epoch_id, "epoch_binding_mismatch")
             require(self.ledger.retirement_status()["state"] in {"open","closing"},"epoch_retired")
+            if self.durable:self.ledger.update_runtime({'active':True})
             self._active = True
 
     def require_admission(self):
@@ -191,10 +213,10 @@ class BootEpoch:
             self.require_active()
             yield
 
-    def accept(self, job_id, reads, model_result, *, now):
+    def accept(self, job_id, reads, model_result, *, now, evidence=None, policy=None):
         with self._lock:
             self.require_active()
-            return self.ledger.accept(job_id, reads, model_result, dedup_key=self._dedup_key, now=now)
+            return self.ledger.accept(job_id, reads, model_result, dedup_key=self._dedup_key, now=now,evidence=evidence,policy=policy)
 
     def sign_transaction(self, transaction):
         with self._lock:
@@ -207,8 +229,8 @@ class BootEpoch:
                 self._active, self._alive = False, False
                 self.ledger.close()
                 self._anchor._close()
-                # Drop local references. The KMS key remains recoverable through
-                # operator IAM; only local job/dedup secrets die with this epoch.
+                # Drop local references. Payout custody remains in operator KMS;
+                # durable private state stays encrypted under Recipient-only KMS.
                 self._signer = self._integrity_key = self._dedup_key = None
 
     def __repr__(self):

@@ -32,6 +32,19 @@ def template():
         "AlarmTopicArn": {"Type": "String", "Default": "", "AllowedPattern": "(arn:[a-z-]+:sns:[a-z0-9-]+:[0-9]{12}:[A-Za-z0-9_-]{1,256})?", "Description": "Existing SNS topic with a confirmed and tested subscription; empty means operator-supervised alarms only"},
         "PayoutKmsKeyArn": {"Type": "String", "Default": "", "AllowedPattern": "(arn:(aws|aws-us-gov|aws-cn):kms:[a-z0-9-]+:[0-9]{12}:key/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|mrk-[0-9a-f]{32}))?", "Description": "Exact dedicated nonexportable ECC_SECG_P256K1 SIGN_VERIFY key; authorized host/operator custody, no native PCR authorization for KMS Sign"},
     }
+    params.update({
+        "StateAuthorityVersionArn": {"Type": "String", "Default": "", "AllowedPattern": "(arn:aws:lambda:[a-z0-9-]+:[0-9]{12}:function:[A-Za-z0-9_-]+:[1-9][0-9]*)?"},
+        "StateKeyArn": {"Type": "String", "Default": "", "AllowedPattern": "(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36})?"},
+        "StateNamespace": {"Type": "String", "Default": "", "AllowedPattern": "([a-z0-9][a-z0-9-]{0,63})?"},
+        "ContinuousServiceEnabled": {"Type": "String", "Default": "false", "AllowedValues": ["false", "true"], "Description": "NEW durable host only, after hardware restore and nonce/payout/release gates; disables finite expiry and enables health metrics"},
+    })
+    def allowed_actions(continuous, state, payout):
+        return ssm + (["kms:GetPublicKey", "kms:Sign"] if payout else []) + (["lambda:InvokeFunction", "kms:GenerateDataKey", "kms:Decrypt"] if state else []) + (["cloudwatch:PutMetricData"] if continuous else [])
+    def payout_actions(continuous, state):
+        return {"Fn::If": ["HasPayoutKmsKey", allowed_actions(continuous, state, True), allowed_actions(continuous, state, False)]}
+    def state_actions(continuous):
+        return {"Fn::If": ["HasStateAuthority", payout_actions(continuous, True), payout_actions(continuous, False)]}
+    allowed = {"Fn::If": ["IsContinuous", state_actions(True), state_actions(False)]}
     tags = [{"Key": "Project", "Value": "peer-link-transcripts"}, {"Key": "Environment", "Value": "pilot"}]
     action = {"Fn::If": ["HasAlarmTopic", [ref("AlarmTopicArn")], ref("AWS::NoValue")]}
     startup = """#!/bin/bash
@@ -53,10 +66,21 @@ install -d -m 700 /opt/peer-link-transcripts/releases /opt/peer-link-transcripts
         "Policies": [{"PolicyName": "SSMAndPayoutKmsOnly", "PolicyDocument": {"Version": "2012-10-17", "Statement": [
             {"Effect": "Allow", "Action": ssm, "Resource": "*"},
             {"Fn::If": ["HasPayoutKmsKey", {"Effect": "Allow", "Action": ["kms:GetPublicKey", "kms:Sign"], "Resource": ref("PayoutKmsKeyArn")}, ref("AWS::NoValue")]},
-            {"Effect": "Deny", "NotAction": {"Fn::If": ["HasPayoutKmsKey", ssm + ["kms:GetPublicKey", "kms:Sign"], ssm]}, "Resource": "*"},
+            {"Effect": "Deny", "NotAction": allowed, "Resource": "*"},
             {"Fn::If": ["HasPayoutKmsKey", {"Effect": "Deny", "Action": ["kms:GetPublicKey", "kms:Sign"], "NotResource": ref("PayoutKmsKeyArn")}, ref("AWS::NoValue")]},
         ]}}],
     }}
+    statements = r["HostRole"]["Properties"]["Policies"][0]["PolicyDocument"]["Statement"]
+    for statement in [
+        {"Sid": "InvokeOnlyPinnedStateAuthority", "Effect": "Allow", "Action": "lambda:InvokeFunction", "Resource": ref("StateAuthorityVersionArn")},
+        {"Sid": "DenyOtherStateAuthority", "Effect": "Deny", "Action": "lambda:InvokeFunction", "NotResource": ref("StateAuthorityVersionArn")},
+        {"Sid": "OnlyRecipientStateKey", "Effect": "Allow", "Action": ["kms:GenerateDataKey", "kms:Decrypt"], "Resource": ref("StateKeyArn"), "Condition": {"StringEquals": {"kms:EncryptionContext:Namespace": ref("StateNamespace")}}},
+        {"Sid": "DenyOtherStateKeys", "Effect": "Deny", "Action": ["kms:GenerateDataKey", "kms:Decrypt"], "NotResource": ref("StateKeyArn")},
+        {"Sid": "DenyNonRecipientStateKey", "Effect": "Deny", "Action": ["kms:GenerateDataKey", "kms:Decrypt"], "Resource": ref("StateKeyArn"), "Condition": {"Null": {"kms:RecipientAttestation:ImageSha384": "true"}}},
+    ]:
+        statements.append({"Fn::If": ["HasStateAuthority", statement, ref("AWS::NoValue")]})
+    for effect, operator in [("Allow", "StringEquals"), ("Deny", "StringNotEquals")]:
+        statements.append({"Fn::If": ["IsContinuous", {"Effect": effect, "Action": "cloudwatch:PutMetricData", "Resource": "*", "Condition": {operator: {"cloudwatch:namespace": "PeerLink/Transcripts"}}}, ref("AWS::NoValue")]})
     r["HostProfile"] = {"Type": "AWS::IAM::InstanceProfile", "Properties": {"Roles": [ref("HostRole")]}}
     r["HostGroup"] = {"Type": "AWS::EC2::SecurityGroup", "Properties": {
         "VpcId": ref("VpcId"), "GroupDescription": "Ciphertext HTTP relay only; SSM administration, no SSH",
@@ -101,7 +125,7 @@ def handler(event, context):
     return {'stopped':len(expired)}
 """
     r["Expiry"] = {"Type": "AWS::Lambda::Function", "Properties": {"Runtime": "python3.12", "Handler": "index.handler", "Role": arn("ExpiryRole"), "Timeout": 30, "MemorySize": 128, "Environment": {"Variables": {"STACK_ID": ref("AWS::StackId"), "LIFETIME_HOURS": ref("LifetimeHours")}}, "Code": {"ZipFile": expiry}}}
-    r["ExpirySchedule"] = {"Type": "AWS::Events::Rule", "Properties": {"ScheduleExpression": "rate(5 minutes)", "State": "ENABLED", "Targets": [{"Arn": arn("Expiry"), "Id": "StopExpiredPilot", "RetryPolicy": {"MaximumRetryAttempts": 2, "MaximumEventAgeInSeconds": 300}}]}}
+    r["ExpirySchedule"] = {"Type": "AWS::Events::Rule", "Properties": {"ScheduleExpression": "rate(5 minutes)", "State": {"Fn::If": ["IsContinuous", "DISABLED", "ENABLED"]}, "Targets": [{"Arn": arn("Expiry"), "Id": "StopExpiredPilot", "RetryPolicy": {"MaximumRetryAttempts": 2, "MaximumEventAgeInSeconds": 300}}]}}
     r["ExpiryPermission"] = {"Type": "AWS::Lambda::Permission", "Properties": {"FunctionName": ref("Expiry"), "Action": "lambda:InvokeFunction", "Principal": "events.amazonaws.com", "SourceArn": arn("ExpirySchedule"), "SourceAccount": ref("AWS::AccountId")}}
     for name, namespace, metric, dimensions in [
         ("HostHealth", "AWS/EC2", "StatusCheckFailed", [{"Name": "InstanceId", "Value": ref("Host")}]),
@@ -109,11 +133,24 @@ def handler(event, context):
         ("ExpiryErrors", "AWS/Lambda", "Errors", [{"Name": "FunctionName", "Value": ref("Expiry")}]),
     ]:
         r[name] = {"Type": "AWS::CloudWatch::Alarm", "Properties": {"AlarmDescription": "Inspect only this transcript stack. No automatic reboot or live-wallet restore.", "Namespace": namespace, "MetricName": metric, "Dimensions": dimensions, "Statistic": "Sum", "Period": 300, "EvaluationPeriods": 1, "Threshold": 1, "ComparisonOperator": "GreaterThanOrEqualToThreshold", "TreatMissingData": "notBreaching", "AlarmActions": action}}
-    r["ExpiryNotRunning"] = {"Type": "AWS::CloudWatch::Alarm", "Properties": {
+    r["ExpiryNotRunning"] = {"Condition": "IsFinitePilot", "Type": "AWS::CloudWatch::Alarm", "Properties": {
         "Metrics": [{"Id": "calls", "MetricStat": {"Metric": {"Namespace": "AWS/Lambda", "MetricName": "Invocations", "Dimensions": [{"Name": "FunctionName", "Value": ref("Expiry")}]}, "Period": 300, "Stat": "Sum"}, "ReturnData": False}, {"Id": "heartbeat", "Expression": "FILL(calls, 0)", "ReturnData": True}],
         "EvaluationPeriods": 3, "DatapointsToAlarm": 3, "Threshold": 1, "ComparisonOperator": "LessThanThreshold", "TreatMissingData": "breaching", "AlarmActions": action,
     }}
-    return {"AWSTemplateFormatVersion": "2010-09-09", "Description": "Dedicated PeerLink Nitro transcript pilot, SSM administration, encrypted-envelope HTTPS ingress; optional exact-key KMS operator custody", "Parameters": params, "Conditions": {"HasAlarmTopic": {"Fn::Not": [{"Fn::Equals": [ref("AlarmTopicArn"), ""]}]}, "HasPayoutKmsKey": {"Fn::Not": [{"Fn::Equals": [ref("PayoutKmsKeyArn"), ""]}]}}, "Resources": r,
+    for metric in ["RuntimeHealth", "AdmissionsOpen"]:
+        r[metric + "Alarm"] = {"Condition": "IsContinuous", "Type": "AWS::CloudWatch::Alarm", "Properties": {
+            "AlarmDescription": "Single-host durable pilot unavailable or paused. Inspect and manually sign resume after recovery; no automated reboot or activation.",
+            "Namespace": "PeerLink/Transcripts", "MetricName": metric,
+            "Dimensions": [{"Name": "InstanceId", "Value": ref("Host")}], "Statistic": "Minimum", "Period": 60,
+            "EvaluationPeriods": 3, "DatapointsToAlarm": 3, "Threshold": 1,
+            "ComparisonOperator": "LessThanThreshold", "TreatMissingData": "breaching", "AlarmActions": action,
+        }}
+    return {"AWSTemplateFormatVersion": "2010-09-09", "Description": "Dedicated PeerLink Nitro transcript pilot, SSM administration, encrypted-envelope HTTPS ingress; optional exact-key KMS operator custody", "Parameters": params, "Conditions": {"HasAlarmTopic": {"Fn::Not": [{"Fn::Equals": [ref("AlarmTopicArn"), ""]}]}, "HasPayoutKmsKey": {"Fn::Not": [{"Fn::Equals": [ref("PayoutKmsKeyArn"), ""]}]},
+                "HasStateAuthority": {"Fn::And": [{"Fn::Not": [{"Fn::Equals": [ref(name), ""]}]} for name in ["StateAuthorityVersionArn", "StateKeyArn", "StateNamespace"]]},
+                "IsContinuous": {"Fn::Equals": [ref("ContinuousServiceEnabled"), "true"]},
+                "IsFinitePilot": {"Fn::Equals": [ref("ContinuousServiceEnabled"), "false"]}},
+            "Rules": {"ContinuousRequiresDurability": {"RuleCondition": {"Fn::Equals": [ref("ContinuousServiceEnabled"), "true"]},
+                "Assertions": [{"Assert": {"Fn::Not": [{"Fn::Equals": [ref(name), ""]}]}, "AssertDescription": "Continuous mode requires pinned durable state and KMS custody"} for name in ["StateAuthorityVersionArn", "StateKeyArn", "StateNamespace", "PayoutKmsKeyArn"]]}}, "Resources": r,
             "Outputs": {"InstanceId": {"Value": ref("Host")}, "ApiUrl": {"Value": {"Fn::GetAtt": ["Api", "ApiEndpoint"]}}, "RelayAddress": {"Value": sub("http://${HostAddress}:8080")}, "HostRoleArn": {"Value": arn("HostRole")}, "ExpiryFunction": {"Value": ref("Expiry")}}}
 
 

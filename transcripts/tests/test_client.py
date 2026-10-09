@@ -76,7 +76,7 @@ class ClientTests(unittest.TestCase):
                 return value
             return self.status_record('submitted')
         if path.endswith('/receipt'):return self.channel.sign(copy.deepcopy(self.receipt_record))
-        if path.startswith('/v1/jobs/'):return self.status_record('paid')
+        if path.startswith('/v1/jobs/'):return self.status_record('paid' if '/v1/submissions' in self.sent else 'reserved')
         raise AssertionError(path)
 
     def status_record(self,state):
@@ -232,10 +232,13 @@ class ClientTests(unittest.TestCase):
 
     def test_offline_terms_work_unreleased_without_key_or_network(self):
         output=io.StringIO()
-        with patch('sys.argv',['transcripts.cli','terms','--campaign','wise-api-pilot-v1',
-                              '--provider','openrouter','--model','openai/gpt-4o-mini-2024-07-18']),\
-                patch('transcripts.cli.Client') as client,patch('transcripts.cli.getpass.getpass') as secret,redirect_stdout(output):
-            main()
+        with tempfile.TemporaryDirectory() as directory:
+            release=Path(directory)/'release.json'
+            release.write_text(json.dumps({**self.release,'status':'unreleased'}))
+            with patch('sys.argv',['transcripts.cli','terms','--release',str(release),'--campaign','wise-api-public-v1',
+                                  '--provider','openrouter','--model','openai/gpt-4o-mini-2024-07-18']),\
+                    patch('transcripts.cli.Client') as client,patch('transcripts.cli.getpass.getpass') as secret,redirect_stdout(output):
+                main()
         result=json.loads(output.getvalue())
         self.assertFalse(result['accepting']);self.assertEqual(result['reason'],'release_not_approved')
         self.assertEqual(result['rewardUSDC'],5);self.assertEqual(result['provider'],'openrouter')
@@ -323,9 +326,12 @@ class ClientTests(unittest.TestCase):
 
     def test_unreleased_never_reads_recipe_or_prompts_owner(self):
         output=io.StringIO();stdin=unittest.mock.Mock()
-        with patch('sys.argv',['transcripts.cli','contribute','--prompt-secrets','--consent']),\
-                patch('sys.stdin',stdin),patch('transcripts.cli.getpass.getpass') as secret,redirect_stdout(output):
-            with self.assertRaises(SystemExit):main()
+        with tempfile.TemporaryDirectory() as directory:
+            release=Path(directory)/'release.json'
+            release.write_text(json.dumps({**self.release,'status':'unreleased'}))
+            with patch('sys.argv',['transcripts.cli','contribute','--release',str(release),'--prompt-secrets','--consent']),\
+                    patch('sys.stdin',stdin),patch('transcripts.cli.getpass.getpass') as secret,redirect_stdout(output):
+                with self.assertRaises(SystemExit):main()
         self.assertEqual(json.loads(output.getvalue())['error'],'release_not_approved')
         stdin.buffer.read.assert_not_called();secret.assert_not_called()
 
@@ -378,5 +384,24 @@ finally:
         self.assertEqual(completed.returncode,0,completed.stderr.decode())
         self.assertEqual(completed.stdout.strip(),b'tty-no-echo-ok')
 
+
+    def test_terminal_report_has_terminal_hint_but_is_not_verified_payment(self):
+        self.contribute()
+        for state in ('rejected','expired','cancelled'):
+            status=self.status_record(state);status['reason']='cancelled' if state=='cancelled' else 'job_expired'
+            result=self.client.provisional(status)
+            self.assertEqual(result['nextAction'],'terminal_outcome_reported')
+            self.assertEqual(result['state'],'unverified');self.assertFalse(result['verified'])
+    def test_missing_after_local_expiry_is_terminal_unknown_not_paid_claim(self):
+        self.contribute();original=self.call
+        def missing(path,body=None):
+            if path.startswith('/v1/jobs/'):raise Rejected('job_not_found')
+            return original(path,body)
+        with patch.object(self.client,'call',side_effect=missing):
+            with self.assertRaisesRegex(Rejected,'job_not_found'):self.client.status(self.client.job['jobId'])
+            with patch('transcripts.client.time.time',return_value=NOW+601):
+                result=self.client.status(self.client.job['jobId'])
+        self.assertEqual(result['nextAction'],'terminal_record_unavailable')
+        self.assertFalse(result['verified']);self.assertEqual(result['reportedState'],'unavailable_after_expiry')
 
 if __name__=='__main__':unittest.main()

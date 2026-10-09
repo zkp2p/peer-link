@@ -94,7 +94,15 @@ class HTTPTransport:
                     parsed.port is None and not parsed.fragment and parsed.path.startswith("/"),
                     "destination_forbidden")
             headers = dict(headers or {})
-            require(set(headers) <= {"Accept", "Content-Type", "Authorization", "Cookie", "x-no-aliasing"}, "unsafe_headers")
+            aws_host=parsed.hostname in {"kms.us-east-1.amazonaws.com","lambda.us-east-1.amazonaws.com"}
+            permitted={"Accept","Content-Type","Authorization","Cookie","x-no-aliasing"}
+            if aws_host:
+                require(method=="POST" and not parsed.query,"unsafe_headers")
+                permitted |= {"X-Amz-Date","X-Amz-Security-Token","X-Amz-Target"}
+                if "X-Amz-Target" in headers:
+                    require(parsed.hostname=="kms.us-east-1.amazonaws.com" and parsed.path=="/"
+                            and headers["X-Amz-Target"] in {"TrentService.GenerateDataKey","TrentService.Decrypt"},"unsafe_headers")
+            require(set(headers) <= permitted, "unsafe_headers")
             if "x-no-aliasing" in headers:
                 require(method == "POST" and parsed.hostname == "cloud-api.near.ai"
                         and parsed.path == "/v1/chat/completions" and not parsed.query
@@ -126,7 +134,8 @@ class HTTPTransport:
                         "response_headers_size")
                 content_types = [v for k, v in response_headers if k == "content-type"]
                 require(len(content_types) == 1 and (content_types[0].split(";")[0].strip().lower() == "application/json"
-                        or content_types[0].split(";")[0].strip().lower().endswith("+json")), "response_not_json")
+                        or content_types[0].split(";")[0].strip().lower().endswith("+json")
+                        or aws_host and content_types[0].split(";")[0].strip().lower()=="application/x-amz-json-1.1"), "response_not_json")
                 require(all(v.lower() == "identity" for k, v in response_headers if k == "content-encoding"),
                         "response_encoding")
                 chunks, count = [], 0

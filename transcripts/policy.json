@@ -9,19 +9,21 @@
     "api.openai.com",
     "openrouter.ai",
     "cloud-api.near.ai",
-    "mainnet.base.org"
+    "mainnet.base.org",
+    "kms.us-east-1.amazonaws.com",
+    "lambda.us-east-1.amazonaws.com"
   ],
   "campaigns": [
     {
       "version": 1,
-      "id": "wise-api-pilot-v1",
+      "id": "wise-api-public-v1",
       "bankId": "gb/wise",
       "bankName": "Wise",
       "country": "GB",
-      "issueUrl": "https://github.com/zkp2p/peer-link/issues/64",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/239",
       "status": "active",
       "rewardMinor": 5000000,
-      "maxContributors": 1,
+      "maxContributors": 2,
       "sources": [
         {
           "origin": "https://api.wise.com",
@@ -138,5 +140,15 @@
     "keyId": "arn:aws:kms:us-east-1:411399509833:key/5e49914d-80d9-4140-a4c2-4bf00e3ac7ea",
     "wallet": "0xd297f105b145cd1d4ddb1d31392300e934bc3559"
   },
-  "pilotBudgetMinor": 5000000
+  "pilotBudgetMinor": 10000000,
+  "stateAuthority": {
+    "kind": "aws_lambda_dynamodb",
+    "region": "us-east-1",
+    "functionArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-public-v1-Authority-gNMY9jM81tns:1",
+    "namespace": "wise-public-v1",
+    "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/d27eaa1f-6e81-4ff1-9391-e55dbcaec379",
+    "credentialRoleArn": "arn:aws:iam::411399509833:role/peerlink-transcript-kms-pilot-HostRole-CtMw2KLCWL9c",
+    "maxCiphertextBytes": 327680,
+    "initialWalletNonce": 2
+  }
 }

@@ -20,11 +20,16 @@ SAFE_ERRORS = {'campaign_capacity','budget_exhausted','duplicate_recipient','dup
                'bank_read_failed','insufficient_history','model_rejected','storage_unavailable',
                'insufficient_evidence','unauthenticated_source','source_not_allowed','model_result_invalid',
                'unsafe_artifact','cancelled','consent_required','account_evidence_missing','ambiguous_account',
-               'policy_mismatch','stale_evidence','limits_exceeded','invalid_envelope','expired_or_replayed_challenge'}
+               'policy_mismatch','stale_evidence','limits_exceeded','invalid_envelope','expired_or_replayed_challenge',
+               'interrupted_execution','state_capacity'}
 JOB_FIELDS = {'jobId','campaignId','state','bindingDigest','expiresAt','rewardMinor','payoutAddress',
               'reason','artifactDigest','transactionId'}
 STATE_FIELDS = {'version','jobId','campaignId','request','bindingDigest','epoch','publicKey','releaseDigest','policyDigest'}
 DEFAULT_LIMITS = {'maxCalls':1,'maxInputTokens':50000,'maxOutputTokens':2048,'maxBankReads':10,'deadlineSeconds':120}
+
+def release_identity(release):
+    # Routine renewal changes the expiry, never the measured/service/policy pins.
+    return digest({key:value for key,value in release.items() if key!='expiresAt'})
 
 def safe_failure(body):
     try:
@@ -42,6 +47,8 @@ class Client:
         require(isinstance(service,str) and service.startswith('https://') and release.get('serviceUrl')==service.rstrip('/'),'service_mismatch')
         require(release.get('policyDigest')==digest(policy),'policy_mismatch')
         self.service,self.release,self.policy=service.rstrip('/'),release,policy
+        self.durable='stateAuthority' in policy
+        self.receipt_key=None
         self.key=None;self.epoch=None;self.job=None;self.preflight_verified=False
     def call(self,path,body=None):
         request=urllib.request.Request(self.service+path,data=canonical(body) if body is not None else None,
@@ -60,13 +67,15 @@ class Client:
             raise Rejected(code) from None
         except Rejected:raise
         except Exception:raise Rejected('service_unavailable') from None
-    def verify(self,quote,context):
+    def verify(self,quote,context,*,fresh_ingress=False):
         fields(quote,{'context','publicKey','attestation'})
         require(quote['context']==context,'context_mismatch')
         key=unb64(quote['publicKey'],1024)
         verify_document(unb64(quote['attestation'],32768),nonce=hashlib.sha256(canonical(context)).digest(),
                         public_key_der=key,release=self.release)
-        if self.key is not None:require(self.key==key,'enclave_restarted')
+        if self.key is not None and not fresh_ingress:require(self.key==key,'enclave_restarted')
+        public=serialization.load_der_public_key(key)
+        require(isinstance(public,rsa.RSAPublicKey) and public.key_size==3072,'invalid_public_key')
         self.key=key
         return context
     def preflight(self):
@@ -74,16 +83,22 @@ class Client:
         nonce=secrets.token_hex(32)
         quote=self.call('/v1/attest',{'nonce':nonce})
         context=quote.get('context',{})
-        fields(context,{'protocol','nonce','policyDigest','epoch'})
-        require(context['protocol']=='peerlink-epoch-v1' and context['nonce']==nonce and context['policyDigest']==digest(self.policy),'context_mismatch')
-        self.verify(quote,context)
+        fields(context,{'protocol','nonce','policyDigest','epoch'} | ({'receiptPublicKey'} if self.durable else set()))
+        require(context['protocol']==('peerlink-epoch-v2' if self.durable else 'peerlink-epoch-v1') and context['nonce']==nonce and context['policyDigest']==digest(self.policy),'context_mismatch')
+        self.verify(quote,context,fresh_ingress=self.durable)
+        if self.durable:
+            receipt_key=unb64(context['receiptPublicKey'],1024)
+            public=serialization.load_der_public_key(receipt_key)
+            require(isinstance(public,rsa.RSAPublicKey) and public.key_size==3072,'invalid_public_key')
+            if self.receipt_key is not None:require(receipt_key==self.receipt_key,'receipt_signer_changed')
+            self.receipt_key=receipt_key
         validate_epoch_descriptor(context['epoch'],self.policy)
         if self.epoch is not None:require(context['epoch']==self.epoch,'enclave_restarted')
         self.epoch=context['epoch']
         self.preflight_verified=True
         return {'verified':True,'releaseDigest':digest(self.release),'measurements':copy.deepcopy(self.release.get('measurements',{})),
                 'policyDigest':digest(self.policy),'epoch':self.epoch}
-    def contribute(self,campaign_id,payout,provider,model,privacy,payload,*,consent,on_reserved=None):
+    def reserve(self,campaign_id,payout,provider,model,privacy,*,consent,on_reserved=None):
         require(consent is True,'consent_required');require(self.job is None,'job_context_exists');self.preflight()
         campaign=next((item for item in self.policy['campaigns'] if item['id']==campaign_id),None)
         require(campaign is not None,'campaign_unavailable')
@@ -97,24 +112,43 @@ class Client:
         require(isinstance(status['jobId'],str) and len(status['jobId'])==32 and all(c in '0123456789abcdef' for c in status['jobId']),'binding_mismatch')
         expected=digest({'jobId':status['jobId'],'campaign':campaign,'request':request})
         require(status['bindingDigest']==expected and status['payoutAddress']==payout.lower() and status['rewardMinor']==campaign['rewardMinor'],'binding_mismatch')
-        nonce=secrets.token_hex(32)
-        quote=self.call('/v1/challenges',{'jobId':status['jobId'],'nonce':nonce})
-        context=quote.get('context',{})
-        require(context.get('protocol')=='peerlink-transcript-v1' and context.get('jobId')==status['jobId'] and context.get('bindingDigest')==expected and context.get('clientNonce')==nonce
-                and context.get('policyDigest')==digest(self.policy) and context.get('epochId')==self.epoch['epochId']
-                and context.get('wallet')==self.epoch['payoutWallet'] and time.time()<context.get('expiresAt',0)<=request['expiresAt'],'context_mismatch')
-        self.verify(quote,context)
         from verification.common import b64
-        self.job={'version':1,'jobId':status['jobId'],'campaignId':campaign_id,'request':copy.deepcopy(request),
-                  'bindingDigest':expected,'epoch':copy.deepcopy(self.epoch),'publicKey':b64(self.key),
-                  'releaseDigest':digest(self.release),'policyDigest':digest(self.policy)}
+        self.job={'version':2 if self.durable else 1,'jobId':status['jobId'],'campaignId':campaign_id,
+                  'request':copy.deepcopy(request),'bindingDigest':expected,'epoch':copy.deepcopy(self.epoch),
+                  'releaseDigest':release_identity(self.release) if self.durable else digest(self.release),'policyDigest':digest(self.policy)}
+        if self.durable:self.job['receiptPublicKey']=b64(self.receipt_key)
+        else:self.job['publicKey']=b64(self.key)
         if on_reserved is not None:on_reserved(copy.deepcopy(self.job))
+        return self.provisional(status)
+
+    def submit_reserved(self,payload,*,consent):
+        require(consent is True,'consent_required');require(self.job is not None,'job_context_required')
+        self.preflight()
+        status=self.call('/v1/jobs/'+self.job['jobId']);self.provisional(status)
+        require(status['state']=='reserved','job_replayed')
+        nonce=secrets.token_hex(32)
+        quote=self.call('/v1/challenges',{'jobId':self.job['jobId'],'nonce':nonce})
+        context=quote.get('context',{})
+        from .channel import context_fields
+        context_fields(context)
+        require(context['protocol']==('peerlink-transcript-v2' if self.durable else 'peerlink-transcript-v1')
+                and context['jobId']==self.job['jobId'] and context['bindingDigest']==self.job['bindingDigest']
+                and context['clientNonce']==nonce and context['policyDigest']==digest(self.policy)
+                and context['epochId']==self.epoch['epochId'] and context['wallet']==self.epoch['payoutWallet']
+                and time.time()<context['expiresAt']<=self.job['request']['expiresAt'],'context_mismatch')
+        if self.durable:require(context['receiptKeyDigest']==hashlib.sha256(self.receipt_key).hexdigest(),'context_mismatch')
+        self.verify(quote,context)
         envelope=encrypt(self.key,context,payload,consent=True)
         return self.provisional(self.call('/v1/submissions',envelope))
+
+    def contribute(self,campaign_id,payout,provider,model,privacy,payload,*,consent,on_reserved=None):
+        self.reserve(campaign_id,payout,provider,model,privacy,consent=consent,on_reserved=on_reserved)
+        return self.submit_reserved(payload,consent=consent)
+
     def restore(self,state):
         # This is a local public recovery handle, never proof of a fresh quote.
-        fields(state,STATE_FIELDS)
-        require(state['version']==1 and state['releaseDigest']==digest(self.release)
+        fields(state,(STATE_FIELDS-{'publicKey'} | {'receiptPublicKey'}) if self.durable else STATE_FIELDS)
+        require(state['version']==(2 if self.durable else 1) and state['releaseDigest']==(release_identity(self.release) if self.durable else digest(self.release))
                 and state['policyDigest']==digest(self.policy),'state_mismatch')
         require(isinstance(state['jobId'],str) and len(state['jobId'])==32
                 and all(c in '0123456789abcdef' for c in state['jobId']),'state_mismatch')
@@ -127,7 +161,10 @@ class Client:
         validate_reservation(campaign,request,request['expiresAt']-600)
         require(state['bindingDigest']==digest({'jobId':state['jobId'],'campaign':campaign,'request':request}),'state_mismatch')
         validate_epoch_descriptor(state['epoch'],self.policy,code='state_mismatch')
-        self.key=unb64(state['publicKey'],1024);self.epoch=copy.deepcopy(state['epoch']);self.job=copy.deepcopy(state)
+        if self.durable:
+            self.key=None;self.receipt_key=unb64(state['receiptPublicKey'],1024)
+        else:self.key=unb64(state['publicKey'],1024)
+        self.epoch=copy.deepcopy(state['epoch']);self.job=copy.deepcopy(state)
         self.preflight_verified=False
     def provisional(self,status):
         require(self.job is not None,'job_context_required');fields(status,JOB_FIELDS)
@@ -140,11 +177,17 @@ class Client:
         require(status['reason'] is None or isinstance(status['reason'],str) and status['reason'] in SAFE_ERRORS,'service_unavailable')
         # Return no unsigned server free text or a misleading terminal paid state.
         return {'jobId':self.job['jobId'],'state':'unverified','reportedState':status['state'],
-                'verified':False,'reason':status['reason'],'nextAction':'verify_receipt' if status['state']=='paid' else 'poll_same_job'}
+                'verified':False,'reason':status['reason'],'nextAction':'verify_receipt' if status['state']=='paid' else
+                    'terminal_outcome_reported' if status['state'] in {'rejected','expired','cancelled'} else 'poll_same_job'}
     def status(self,job_id):
         require(self.job is not None and job_id==self.job['jobId'],'job_context_required')
         self.preflight()
-        result=self.provisional(self.call('/v1/jobs/'+job_id))
+        try:result=self.provisional(self.call('/v1/jobs/'+job_id))
+        except Rejected as error:
+            if str(error)=='job_not_found' and time.time()>=self.job['request']['expiresAt']:
+                return {'jobId':job_id,'state':'unverified','reportedState':'unavailable_after_expiry','verified':False,
+                        'reason':'job_not_found','nextAction':'terminal_record_unavailable'}
+            raise
         if result['reportedState']=='paid':
             signed=self.receipt(job_id)
             return {'jobId':job_id,'state':signed['payload']['job']['state'],'verified':True,'receipt':signed}
@@ -156,7 +199,7 @@ class Client:
         signed=self.call('/v1/jobs/'+job_id+'/receipt');fields(signed,{'payload','signature'})
         record=signed['payload']
         require(record['job']['jobId']==job_id and record['epoch']==self.epoch and record['policyDigest']==digest(self.policy),'receipt_mismatch')
-        key=serialization.load_der_public_key(self.key)
+        key=serialization.load_der_public_key(self.receipt_key if self.durable else self.key)
         require(isinstance(key,rsa.RSAPublicKey),'invalid_public_key')
         try:key.verify(unb64(signed['signature'],512),canonical(record),padding.PSS(mgf=padding.MGF1(hashes.SHA256()),salt_length=32),hashes.SHA256())
         except Exception:raise Rejected('receipt_signature_invalid') from None

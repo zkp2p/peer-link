@@ -426,7 +426,7 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(self.coordinator.calls,0)
     def test_bank_failures_and_model_injection_use_fixed_safe_rejections(self):
         FakeBank.failure=Rejected("SECRET-BANK-CREDENTIAL-IN-ERROR");job_id=self.job();self.process(job_id)
-        self.assertEqual(self.epoch.ledger.status(job_id)["reason"],"invalid_submission")
+        self.assertEqual(self.epoch.ledger.status(job_id)["reason"],"bank_read_failed")
         self.assertEqual(self.archive.records,[])
         self.assertTrue(FakeBank.instances[0].closed)
         FakeBank.failure=None;FakeProvider.extra_grade={"instructions":"SECRET-MODEL-PROSE"}

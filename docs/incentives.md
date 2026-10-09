@@ -1,8 +1,10 @@
 # Transcript contribution rewards
 
-**The service is unreleased: no new transcript jobs or rewards are available yet.**
+**No public paid campaign is currently available. Do not collect keys or spend on
+inference for planned contributions. Wise is excluded from reward recruitment.**
 The [release manifest](../transcripts/release.json), independently verified release
-and active bank campaign control availability. A bank issue, logo, host deployment
+and a successful live reservation control admission. Approval and static issue
+text cannot guarantee remaining capacity. A bank issue, logo, host deployment
 or synthetic test does not prove acceptance is open.
 
 ## Campaign terms
@@ -16,7 +18,9 @@ implementation or code PR requirement.
 GitHub bank issues remain public campaign and discovery pages. New transcript
 rewards are paid through PeerLink, not Merit; contributors do not need to claim
 a Merit bounty. The [campaign index](https://github.com/zkp2p/peer-link/issues/64)
-lists planned rates and availability. Keeping a page visible does not open a paid slot.
+lists planned rates and availability. The single [Merit project profile](https://terminal.merit.systems/zkp2p/peer-link)
+links to PeerLink for discovery; bank campaigns are not separate Merit bounties.
+Keeping either page visible does not open a paid slot.
 
 - Fixed **$5 or $10 USDC for each accepted contribution**. Initial US campaigns
   use $10; other rates are explicit campaign policy, not inferred from personal data.
@@ -60,15 +64,15 @@ recipient credit, final settlement or production approval.
 The architecture reward ceiling is **$50 USDC**, with separate bounded gas
 and no automatic refill. The completed supervised Wise experiment used a measured
 **$5 USDC budget** and one contributor slot after a confirmed $1 recovery test.
-That $5 reward was paid; **remaining funded public capacity is zero**. The current
-replacement enclave is paused and unfunded. Future campaigns must publish available
+That $5 reward was paid; **that completed test allocation has no remaining capacity**.
+The separate durable Wise tests provide internal validation, not public enrollment. Future campaigns must publish available
 capacity and reserve their reward funds before accepting contributions. A budget
 ceiling or a planned per-transcript rate is not a funded award.
 
 The revised payout authority is a non-exportable AWS KMS key, recoverable through
 authorized operator IAM; the host broker can also request signatures. Runtime
 payout rules apply to the measured service, not to independent operator signing.
-The ledger and deduplication state remain RAM-only. A restart requires operator
+The completed pilot kept ledger and deduplication state RAM-only. A restart requires operator
 review and does not safely restore old jobs or justify reusing the funded wallet.
 Operators must verify the new measured release, funding, bank access,
 inference and payout evidence before enabling any campaign. A signed retirement
@@ -79,12 +83,24 @@ restore. Operator KMS recovery is a separate trust boundary. The earlier
 enclave-only pilot's funded $50 remains unrecovered at this checkpoint; new custody
 does not restore its old signing key.
 
+## Internal Wise validation
+
+Wise is already an integration/reference and is excluded from new transcript
+incentivization. The completed operator-owned tests used bounded reward transfers
+to validate acquisition, grading, payout and restart recovery; they are not public
+campaigns or a promise of funded slots. See the separately scoped
+[durable evidence](../transcripts/durable-pilot-evidence.json). Other bank rewards
+remain planned and require their own verified source adapter, release approval and
+reserved funds before enrollment.
+
 ## Retired provider awards
 
-The only remaining Merit listing is the [legacy Bank of America award
-#74](https://github.com/zkp2p/peer-link/issues/74): **$50 total** for Primuez's
-existing provider assignment, due **October 16, 2026**, under its original terms.
-It is closed to new claims. Its amount is not reduced to the transcript rate.
+The [legacy Bank of America commitment record #74](https://github.com/zkp2p/peer-link/issues/74)
+was administratively closed and removed from award discovery. Its preserved
+**$50 original commitment**, Primuez assignment and **October 16, 2026** terms
+remain historical obligations for review. Closure neither accepts nor rejects the
+work or cancels a valid prior payment commitment; the amount is not reduced to
+the transcript rate. There are no active individual Merit award listings.
 The new Bank of America campaign is [#235](https://github.com/zkp2p/peer-link/issues/235),
 at **$10 per accepted transcript**, with 1–5 distinct contributors when enabled.
 No new transcript campaigns are enrolled as Merit bounties.

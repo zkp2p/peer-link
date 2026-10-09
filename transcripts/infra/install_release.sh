@@ -3,13 +3,28 @@
 # cryptographic checking is not campaign/release approval.
 set -euo pipefail
 umask 077
-if [[ $# != 3 ]]; then
-  echo 'usage: install_release.sh SOURCE_ROOT SIGNED_EIF MEASUREMENT_MANIFEST' >&2
+if [[ $# != 3 && $# != 4 ]]; then
+  echo 'usage: install_release.sh SOURCE_ROOT SIGNED_EIF MEASUREMENT_MANIFEST [HOST_INSTANCE_ID]' >&2
   exit 2
 fi
 source_root=$(realpath "$1")
 image=$(realpath "$2")
 manifest=$(realpath "$3")
+# Validate the durable invocation before any provisioning command, file copy,
+# virtualenv, symlink or systemd change. A corrected rerun must remain possible.
+durable_mode=$(python3.11 - "$source_root/transcripts/policy.json" <<'PYTHON'
+import json, sys
+print('durable' if json.load(open(sys.argv[1])).get('stateAuthority') is not None else 'ram')
+PYTHON
+)
+if [[ "$durable_mode" == durable && $# != 4 ]]; then
+  echo 'Durable installation requires a valid reviewed host instance ID.' >&2
+  exit 1
+fi
+if [[ $# == 4 && ! "$4" =~ ^i-[0-9a-f]{17}$ ]]; then
+  echo 'Installation requires a valid reviewed host instance ID.' >&2
+  exit 1
+fi
 base=/opt/peer-link-transcripts
 test "$(nitro-cli --version)" = 'Nitro CLI 1.5.0'
 test -f "$source_root/transcripts/runtime.py"
@@ -63,11 +78,24 @@ python3.11 -m venv "$base/venv"
 "$base/venv/bin/pip" install --disable-pip-version-check --no-cache-dir --only-binary=:all: \
   -r "$base/releases/candidate/transcripts/requirements.lock"
 ln -s "$base/releases/candidate" "$base/current"
+# Durable state calls use enclave TLS/SigV4. Start the memory-only credential
+# forwarder before enclave boot; exact instance identity comes from the reviewed
+# installation target, never a contributor or arbitrary runtime request.
+durable_dependencies=''
+if [[ "$durable_mode" == durable ]]; then
+  credential_role=$(python3.11 - "$source_root/transcripts/policy.json" <<'PY'
+import json, sys
+print(json.load(open(sys.argv[1]))['stateAuthority']['credentialRoleArn'])
+PY
+)
+  bash "$base/current/transcripts/infra/install_credentials.sh" "$credential_role" "$4"
+  durable_dependencies='peer-link-transcript-credentials.service'
+fi
 cat > /etc/systemd/system/peer-link-transcript-enclave.service <<'UNIT'
 [Unit]
 Description=Dedicated PeerLink transcript enclave candidate
-After=nitro-enclaves-allocator.service
-Requires=nitro-enclaves-allocator.service
+After=nitro-enclaves-allocator.service peer-link-transcript-relay.service
+Requires=nitro-enclaves-allocator.service peer-link-transcript-relay.service
 
 [Service]
 Type=oneshot
@@ -81,15 +109,36 @@ Restart=no
 StandardOutput=null
 StandardError=null
 UNIT
+if [[ -n "$durable_dependencies" ]]; then
+  install -d -m 700 /etc/systemd/system/peer-link-transcript-enclave.service.d
+  cat > /etc/systemd/system/peer-link-transcript-enclave.service.d/durable-state.conf <<UNIT
+[Unit]
+After=$durable_dependencies
+Requires=$durable_dependencies
+[Service]
+Type=notify
+NotifyAccess=main
+RemainAfterExit=no
+TimeoutStartSec=150
+TimeoutStopSec=75
+ExecStart=
+ExecStart=$base/venv/bin/python -m transcripts.infra.supervise_enclave --root $base/current --instance-id $4 --record /run/peer-link-transcripts/enclave.json
+ExecStop=
+UNIT
+else
+  # An explicitly reviewed non-durable install cannot inherit a stale drop-in.
+  rm -f /etc/systemd/system/peer-link-transcript-enclave.service.d/durable-state.conf
+fi
 cat > /etc/systemd/system/peer-link-transcript-relay.service <<'UNIT'
 [Unit]
 Description=Ciphertext ingress and TLS-byte egress for dedicated transcript enclave
-After=peer-link-transcript-enclave.service network-online.target
-Requires=peer-link-transcript-enclave.service
-BindsTo=peer-link-transcript-enclave.service
+After=network-online.target
+Wants=network-online.target
 
 [Service]
-Type=simple
+Type=notify
+NotifyAccess=main
+TimeoutStartSec=35
 WorkingDirectory=/opt/peer-link-transcripts/current
 ExecStart=/opt/peer-link-transcripts/venv/bin/python -m transcripts.server --port 8080 --enclave-cid 16 --vsock-port 5100 --egress-port 5101 --kms-port 5103
 Restart=no
@@ -103,16 +152,23 @@ RestrictAddressFamilies=AF_INET AF_INET6 AF_VSOCK AF_UNIX
 StandardOutput=null
 StandardError=null
 UNIT
+# Continuous service needs a separate hardware/nonce/release gate for this image.
+for unit in enclave relay credentials; do
+  rm -f "/etc/systemd/system/peer-link-transcript-$unit.service.d/continuous.conf"
+done
+systemctl disable peer-link-transcript-enclave.service peer-link-transcript-relay.service peer-link-transcript-credentials.service peer-link-transcript-health.service 2>/dev/null || true
 systemctl daemon-reload
 # Deliberately do not enable: a host reboot must not silently create a new RAM epoch.
-systemctl start peer-link-transcript-enclave.service
+# Type=notify waits for egress5101/archive5102/KMS5103 bind/listen. The separate
+# credential Type=notify service already confirmed5104 before this point.
 systemctl start peer-link-transcript-relay.service
+systemctl start peer-link-transcript-enclave.service
 "$base/venv/bin/python" - "$base/current" <<'PY'
 import signal, sys, time
 from pathlib import Path
 from urllib.request import build_opener, ProxyHandler
 
-deadline = time.monotonic() + 30
+deadline = time.monotonic() + 90
 
 def deadline_expired(*_):
     raise TimeoutError('candidate_health_failed')
@@ -128,7 +184,7 @@ def check_health():
     while time.monotonic() < deadline:
         try:
             with opener.open('http://127.0.0.1:8080/health',
-                             timeout=min(1, max(0.01, deadline-time.monotonic()))) as response:
+                             timeout=min(5, max(0.01, deadline-time.monotonic()))) as response:
                 require(response.status == 200, 'candidate_health_failed')
                 health = strict_json(response.read(16_385), 16_384)
             require(health.get('service') == 'peerlink-transcripts'
@@ -144,7 +200,7 @@ def check_health():
 
 try:
     signal.signal(signal.SIGALRM, deadline_expired)
-    signal.alarm(30)
+    signal.alarm(90)
     check_health()
 except Exception:
     print('Candidate health verification failed.', file=sys.stderr)

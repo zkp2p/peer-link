@@ -9,13 +9,15 @@ your inference API key to grade its usefulness. Peer engineers turn accepted evi
 into Curator metadata and attestation transformers. You do not write a provider or
 open a contribution PR.
 
-**Status: unreleased; not accepting bank credentials or paid contributions.** A bank
+**Status: no public paid campaign is currently available.** A bank
 listing, a deployed host, or synthetic tests do not establish live availability.
 Only use an independently verified approved [release](transcripts/release.json)
-and an active, funded bank campaign.
+and a successful reservation in an enabled campaign before any secret collection.
+Bank rewards remain planned; Wise is excluded from reward recruitment.
 
 [Website](https://link.peer.xyz) · [Contribution guide](CONTRIBUTING.md) ·
-[Campaign issues](https://github.com/zkp2p/peer-link/issues) · [Rewards](docs/incentives.md)
+[Campaign issues](https://github.com/zkp2p/peer-link/issues) · [Rewards](docs/incentives.md) ·
+[Merit project profile](https://terminal.merit.systems/zkp2p/peer-link)
 
 ## Start with your local agent
 
@@ -64,14 +66,14 @@ completed authenticated enclave reads, redaction and paid NEAR grading, followed
 by a [confirmed $5 payout](https://basescan.org/tx/0x88899fbe3b6036390f19207ec911493db6f1245ab1c50811c44ca2ee4752c677).
 The job first returned `payout_pending` and needed one signed operator reconciliation.
 A fresh client restored the same signed receipt without another reservation or
-submission. The one-slot experiment has no remaining funded capacity; public
-collection stays closed.
+submission. That completed one-slot test allocation has no remaining capacity;
+it does not establish public availability.
 The revised payout design uses a non-exportable AWS KMS signing key. Authorized
 operator IAM and the host signing broker can sign outside the enclave and recover
-funds; this is not exclusive enclave custody. The ledger and deduplication authority
-remain RAM-only. Restart requires operator review and does not make wallet reuse
-or old-job continuation safe. Live collection remains closed until the new measured
-release gates pass. The built
+funds; this is not exclusive enclave custody. The completed one-slot pilot
+kept ledger and deduplication authority RAM-only. Restart of that historical pilot
+requires operator review and does not make its wallet reuse or old-job continuation
+safe. The durable Wise tests below provide internal validation only. The built
 operator retirement flow permanently closes admission, finishes and archives
 existing obligations, and refunds remaining USDC only to the fixed deployer address.
 Its runtime accepts no arbitrary refund recipient or ETH sweep; its live refund
@@ -91,6 +93,32 @@ release approval remains a separate gate. The
 [$1 operator recovery receipt](https://basescan.org/tx/0xf1447663200c551dbe42d2d989982563209076b56f9d1f56f8175895eb39e5da)
 verified the fixed deployer return and zero remaining USDC with the relay stopped;
 it does not prove the enclave retirement flow.
+
+## Internal Wise validation; public incentives planned
+
+**No public paid campaign is currently available.** Bank transcript rewards remain
+planned at the published fixed $5/$10 rates, with 1–5 distinct contributors per bank
+when enabled. Wise is an existing integration/reference, excluded from reward
+recruitment. Its completed paid tests are internal validation, not public enrollment.
+Do not collect credentials or spend on inference for a planned campaign.
+
+The internal validation service was `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
+with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
+Fresh Nitro verification, authenticated Wise reads, ordinary NEAR grading, an
+automatic confirmed $5 payout and paid-job recovery after an enclave restart passed.
+Recovery preserved the signed receipt without another reservation, submission or
+model call. See the separately scoped
+[durable evidence](transcripts/durable-pilot-evidence.json) for verified scope and remaining limitations.
+
+The v3 release uses encrypted job/deduplication/payout snapshots and a
+version-fenced state authority. Restore stays paused for operator review and
+chain reconciliation; interrupted bank/model calls fail without a paid retry.
+Bank sessions and inference keys remain transient. Bank-upload ingress keys are
+fresh per boot and never persisted; only the separate receipt signer is encrypted
+in durable state. Later snapshot recovery cannot recover prior upload decryption
+keys. KMS administrators remain trusted for metadata/deduplication secrecy.
+The Wise hardware and paid-job/restart scope was verified; see the
+[durable contract and release gates](docs/transcript-contributions-prd.md).
 
 ## Develop and inspect
 
@@ -112,7 +140,7 @@ Existing `banks/` adapters, fixtures and reports remain reference assets under
 MIT; their presence does not make them the paid contribution workflow.
 
 [PRD](docs/transcript-contributions-prd.md) · [Evidence](docs/evidence.md) ·
-[Verification](docs/verification.md) · [Operations](docs/transcript-operations.md) ·
+[Legacy verifier](docs/verification.md) · [Operations](docs/transcript-operations.md) ·
 [Developer docs](https://docs.peer.xyz/developer/peer-link) · [Security](SECURITY.md)
 
 ## Retired provider program

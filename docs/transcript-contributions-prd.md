@@ -1,11 +1,55 @@
 # PeerLink transcript contributions
 
-Product decision: 2026-10-09. Status: implemented pilot candidate, **unreleased**.
-The [release manifest](../transcripts/release.json) remains unreleased and no public
-bank submissions or paid contributions are enabled. The earlier enclave-only wallet
+Product decision: 2026-10-09. Status: **internal Wise validation completed; public incentives planned**.
+No public paid campaign is currently available. Wise is an existing integration
+and is excluded from reward recruitment; the [release](../transcripts/release.json)
+and future campaign funding/verification gates must permit any public collection. The earlier enclave-only wallet
 holds unrecovered $50; the revised KMS candidate is a separate wallet and release.
 This document separates the built pilot, observed evidence and remaining roadmap.
 Infrastructure, a verified candidate quote or a synthetic job does not activate a bank.
+
+## Internal Wise validation; public incentives planned
+
+**No public paid campaign is currently available.** Bank transcript rewards remain
+planned at the published fixed $5/$10 rates, with 1–5 distinct contributors per bank
+when enabled. Wise is an existing integration/reference, excluded from reward
+recruitment. Its completed paid tests are internal validation, not public enrollment.
+Do not collect credentials or spend on inference for a planned campaign.
+
+The internal validation service was `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
+with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
+Fresh Nitro verification, authenticated Wise reads, ordinary NEAR grading, an
+automatic confirmed $5 payout and paid-job recovery after an enclave restart passed.
+Recovery preserved the signed receipt without another reservation, submission or
+model call. See the separately scoped
+[durable evidence](../transcripts/durable-pilot-evidence.json) for verified scope and remaining limitations.
+
+The v3 design encrypts canonical SQLite state snapshots under AES-GCM, with an
+immutable AWS Lambda/DynamoDB compare-and-swap authority. Descriptor v3 binds
+`ledgerPersistence: aws_dynamodb_encrypted_snapshot`, `stateNamespace`,
+`stateAuthorityArn` and `stateWrappingKeyId` alongside the payout fields. KMS
+Recipient decryption checks the approved PCR0/host-role PCR3 bindings; AWS HTTPS
+terminates inside the enclave. Atomic revision/writer-generation checks fence
+stale workers. Accepted grade/artifact metadata commits atomically, and exact
+signed transaction bytes/nonce persist before broadcast.
+
+Restore preserves the same epoch and encrypted durable receipt-signing key only for the exact
+policy digest, campaigns, wallet, namespace and immutable authority. It starts
+paused until signed operator resume and chain reconciliation; changed policy cannot
+silently restore or initialize previously funded state. Interrupted submitted or
+verifying work fails as `interrupted_execution` without rerunning bank or model
+calls. A reserved job retains its expiry and needs a fresh challenge, explicit owner
+consent and new secrets before any submission.
+
+Bank sessions, inference keys, raw reads and submission envelopes never enter the
+snapshot. Ingress RSA private keys are fresh per boot and never persisted; only the
+separate receipt signer is encrypted in durable state. Later snapshot recovery
+cannot recover old bank-upload decryption keys. KMS administrators remain trusted
+for encrypted metadata/deduplication secrecy, and cloud availability remains a
+trust boundary; missing, mismatched or unavailable state must
+stop admission. Hardware and paid-job/restart verification passed for the internal Wise test.
+Public incentives need a separately verified non-Wise source and release approval;
+confidential inference remains unavailable.
 
 ## Problem and outcome
 
@@ -29,7 +73,8 @@ The model does not choose bank reads, change policy or sign payments in this pil
 - Architecture supports **1–5 distinct contributors per bank**, stopping when
   evidence is sufficient. The supervised Wise experiment has a **one-slot limit**
   and measured $5 budget. Its test consumed that slot/budget; remaining funded
-  capacity is zero and public collection stays closed.
+  capacity in that completed test allocation is zero; the durable Wise tests
+  provide separate internal validation only.
 - Fixed **$5 or $10 USDC per accepted contribution**. Initial US campaigns use
   $10; other rates are explicit campaign policy, not inferred from personal data.
 - At most one paid contribution per contributor/account per bank campaign.
@@ -57,7 +102,7 @@ flowchart LR
     Runner[Bounded read-only recipe executor] -->|Fresh authenticated JSON| Redact[Deterministic schema extraction and validation]
     Redact --> Grade[Fixed rubric request]
     Grade --> Decide[Code checks eligibility and fixed payout]
-    Decide --> Epoch[RAM-only ledger epoch]
+    Decide --> Epoch[Campaign ledger and payout state]
   end
   Runner <-->|Approved GET reads over verified TLS| Bank[Bank API]
   Grade <-->|Redacted artifact only and contributor-funded inference| Model[Approved provider and exact model]
@@ -217,7 +262,8 @@ release status without collecting secrets. It does not reserve capacity or enabl
 an unreleased campaign.
 
 The `contribute` CLI command accepts `--state .local/job-state.json` and writes a
-non-overwriting recovery handle containing public reservation metadata, never keys.
+non-overwriting recovery handle containing public reservation metadata, never keys,
+before reading stdin or prompting. The CLI uses fixed default limits.
 Trusted local tooling can supply the secret payload through stdin. Alternatively,
 `--prompt-secrets` asks the owner on a controlling TTY after verified preflight,
 while stdin contains only the nonsecret recipe payload. Secrets never enter command
@@ -231,6 +277,16 @@ is uncertain, recover the **same job** instead of resubmitting:
 .local/transcript-venv/bin/python -m transcripts.cli receipt --state .local/job-state.json
 ```
 
+To continue only an unexpired reserved job, run `submit-reserved --state
+.local/job-state.json --consent --prompt-secrets` with the recipe on stdin. It
+verifies saved terms, fresh attestation and reserved status before keys, prints the
+original payout/route/limits, and creates no reservation or state overwrite. Payout,
+campaign, provider and model overrides are rejected. The SDK equivalent is explicit
+`Client.restore(state)` and `submit_reserved(payload, consent=True)`. Restart
+changes ingress keys, while the same durable receipt signer and epoch remain pinned.
+An independently reviewed expiry-only manifest renewal preserves that handle;
+changes to service, policy or measurement pins do not.
+
 The runtime `/v1/release` route is discovery-only and names the canonical release
 source. Approved final PCRs are published separately after the image is built;
 embedding its own final measurement manifest in the image would be circular.
@@ -242,12 +298,52 @@ the client handle does not restore a lost enclave ledger or make funded-wallet r
 
 ## Contracts
 
+### Planned v3 durable contract
+
+The v3 descriptor retains `epochId`, `payoutWallet`, `chainId`, `usdcContract`,
+`budgetMinor`, `maxGasFundingWei`, `payoutKeyCustody`, `payoutKeyId` and
+`operatorRecovery` from v2, with `version: 3`,
+`ledgerPersistence: aws_dynamodb_encrypted_snapshot`,
+`restartRequiresOperatorReview: true`, and exact `stateNamespace`,
+`stateAuthorityArn`, `stateWrappingKeyId`. The authority ARN identifies an immutable
+Lambda version. Clients must bind these fields to the approved measured policy;
+old v2 evidence cannot approve this new contract.
+
+A stable HKDF master derives integrity, deduplication, state-encryption and
+write-authorization keys.
+The durable RSA-3072 receipt signer is encrypted in the snapshot. A separate
+RSA-3072 ingress key is fresh per boot and never persisted; KMS uses another
+ephemeral RSA-2048 Recipient key. Canonical snapshot encryption
+and persistent signatures do not authenticate a mutable host's own claims: state
+load/commit responses use verified AWS HTTPS inside the TEE, with exact namespace,
+revision, writer generation and ciphertext digest checks. The authority stores only
+ciphertext and the wrapped master. Credentials, raw bank responses and submitted
+ciphertext envelopes are never included in durable state.
+
+Fresh preflight attestation context v2 includes `receiptPublicKey`; the AWS quote
+binds the hashed context and current ingress public key. Challenge v2 adds
+`receiptKeyDigest`. Public client state v2 pins the durable receipt public key and
+stable job epoch. Restore discards the old ingress key and validates a fresh quote
+before trusting a new one, requiring unchanged receipt signer, epoch and policy.
+Receipts use the durable signer. This is a changed protocol needing its own
+measured-build/hardware/restart evidence before public approval.
+
+### Completed one-slot pilot contract
+
+The exact v2 descriptor below belongs to the completed RAM-only pilot. The durable
+release must publish and verify its own measured state contract before activation.
+
 ### Campaign and submission
 
 A campaign specifies version, bank/country/issue, integer USDC reward minor units,
 1–5 contributor capacity, approved origins/paths/methods, provider/model/privacy
 routes, rubric and structural evidence requirements. Bound reservation terms do
 not change retroactively when the catalog changes. USDC has 6 decimals.
+
+Wise duplicate checks compare private keyed hashes of every profile ID returned by
+the authenticated profile endpoint. An overlapping profile set cannot earn another
+slot by selecting a different personal or business profile. These hashes remain
+inside encrypted state. This identifies overlapping bank access, not unique people.
 
 The encrypted payload contains bank credential, selected profile, recipe,
 contributor inference key and bounded unused local notes/transcript fields. Its
@@ -305,9 +401,9 @@ The revised pilot uses a non-exportable AWS KMS payout key. Authorized operator
 IAM and the host broker can request signatures and recover funds outside the
 enclave. Its ARN and wallet are policy/attestation bound; exclusive enclave signing
 authority is not claimed. The `c2bc4b0` candidate passed independent rebuild and
-live Nitro source/image, policy/key/wallet checks. Public release remains unapproved;
-the supervised bank job passed, but public admission stays closed pending approval
-and remaining persistence/reconciliation gates.
+live Nitro source/image, policy/key/wallet checks. That historical one-slot pilot
+did not approve public admission or demonstrate persistence. The later durable
+Wise tests have separate internal hardware, paid-job and restart proof linked above.
 
 Before allocating funds, the signed operator preflight must query real Base RPC
 balances/nonce and exercise KMS signing for a one-minor-unit USDC refund while
@@ -329,7 +425,8 @@ client restored the same signed receipt without a new reservation or submission.
 This proves assisted same-job reconciliation, not uninterrupted instant payout or
 ledger recovery after restart. No funded capacity remains.
 
-Integrity/dedup keys, ledger, nonce state and in-process receipts remain RAM-only.
+In the completed pilot, integrity/dedup keys, ledger, nonce state and in-process
+receipts remained RAM-only.
 Restart loses authoritative history while KMS custody survives. Operator review
 is mandatory before reactivation. Recovering signing access does **not** recover
 deduplication, reservations or reconciliation authority, and does not make reusing
@@ -379,10 +476,12 @@ acceptance remains closed until the measured-release and remaining evidence gate
 | --- | --- | --- |
 | Synthetic transcript suite | At the KMS checkpoint, 165 credential-free tests passed across policy, transports, redaction, ledger/payout, encrypted runtime, client recovery/receipt, KMS signing and operator recovery. Client/artifact checks reject wrong custody, key/wallet, descriptor version and measured budget. | Prior image evidence does not approve the changed KMS release; fixtures/mocks do not prove live hardware, banking, inference or money movement. |
 | Wise acquisition | Earlier owner-authorized local reads established profile/balance/history structure. The supervised KMS pilot then acquired authenticated Wise responses inside the enclave and produced a signed redacted artifact from one encrypted submission. | One owner-authorized Wise test does not validate every bank or enable public collection. No personal identifiers or history counts are published. |
-| Nitro candidate hardware | KMS candidate `c2bc4b02e533bc82cfaf349a771d2b616f9981ee` passed [CI 37874831981](https://github.com/zkp2p/peer-link/actions/runs/37874831981): two independent builds matched PCR0/1/2, normalized unsigned EIF hashes and all measured inputs. Fresh live Nitro certificate/COSE, nonce/key/policy/epoch, PCR and KMS descriptor/wallet bindings verified. See [KMS pilot evidence](../transcripts/kms-pilot-evidence.json). | Candidate integrity is not public release approval. The release remains unreleased and public admission paused. |
+| Nitro candidate hardware | KMS candidate `c2bc4b02e533bc82cfaf349a771d2b616f9981ee` passed [CI 37874831981](https://github.com/zkp2p/peer-link/actions/runs/37874831981): two independent builds matched PCR0/1/2, normalized unsigned EIF hashes and all measured inputs. Fresh live Nitro certificate/COSE, nonce/key/policy/epoch, PCR and KMS descriptor/wallet bindings verified. See [KMS pilot evidence](../transcripts/kms-pilot-evidence.json). | This historical candidate is not approval for the later durable image; see its separately scoped evidence. |
 | Inference | One dollar of merchant credit was verified. Paid NEAR tool-call and strict-JSON probes passed schema validation on canonical `z-ai/glm-5.3-flash`, with approved serving-provider and TLS checks. The strict-JSON retry completed at 2048 output tokens / low reasoning effort and billed 271,250 nano-USD; the supervised enclave Wise job also completed paid NEAR grading. | Gateway TCB remains OutOfDate despite an UpToDate model quote. No verified confidential/E2EE route is demonstrated; this remains provider-visible evidence. |
 | Rewards and custody | New-host KMS signing and independent signature verification passed. A separately funded $1 external operator recovery confirmed its exact USDC return to the fixed deployer and zero remaining balance with the relay stopped. The Wise job separately confirmed its $5 reward after one signed operator reconciliation. The earlier enclave-only wallet still holds unrecovered $50. | Operator recovery does not prove enclave retirement. The one-slot test leaves zero funded capacity. KMS recovery is not ledger persistence or safe cross-epoch wallet reuse. |
 | Contributor-agent trials | Claude Opus 5.5 high and Codex high reviewed the local contributor flow. Their findings drove safe secret prompts, clear release gates, recovery commands, receipt checks and Wise relationship fixes. Claude's final follow-up found the practical fixes intact and passed 33 targeted client/artifact tests. A fresh live client restored the paid Wise job and identical signed receipt with zero new reservations/submissions. | This is same-epoch client recovery, not enclave-ledger recovery after restart. |
+| Durable contributor smoke | An independent local agent exercised the actual CLI/Client/Runtime and encrypted state using synthetic external dependencies: reservation/save before input, full capacity without keys, fresh-ingress restart and identical signed paid receipt, expiry-only renewal, changed-pin refusal and explicit reserved submission. Interrupted submitted work failed without rerunning bank/model calls. | No live AWS, bank, provider or transfer evidence; the changed durable image still needs its own rebuild/hardware/restore proof before public approval. |
+| Durable hardware and paid restart | Source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e` passed fresh Nitro/KMS bootstrap and zero-fund restart. One encrypted Wise submission acquired authenticated reads and used contributor-funded ordinary NEAR grading, followed by an automatic confirmed $5 payout. After signed pause and enclave restart, the client recovered the same signed paid receipt with no new reservation, submission or model call; the inference key was disabled before recovery. See [durable evidence](../transcripts/durable-pilot-evidence.json). | Internal Wise validation only; Wise is excluded from reward recruitment. No public paid campaign is available. Static evidence does not guarantee confidential inference, other bank support or cloud availability. |
 | Public availability | Landing/docs/catalog describe the new contribution program with readiness gates. | No claim that all banks are ready, funded or supported in Peer. |
 
 Evidence must remain scoped to its actual source/image version and observation date.

@@ -24,6 +24,14 @@
     "mark": "W"
   },
   {
+    "name": "Wise",
+    "country": "GB",
+    "currency": "GBP, EUR, USD",
+    "issue": "https://wise.com/",
+    "logo": "/logos/wise.png",
+    "mark": "W"
+  },
+  {
     "name": "Monobank",
     "country": "UA",
     "currency": "UAH",

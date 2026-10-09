@@ -3,7 +3,9 @@
 A submitted recipe or local capture is a navigation hint. Only fresh reads made by
 the enclave's authenticated bank transport establish source acquisition. Synthetic
 fixtures, browser self-reports, model inference and bank listings do not prove live
-acceptance. The [current release](../transcripts/release.json) is unreleased.
+acceptance. No public paid campaign is currently available; the
+[release](../transcripts/release.json) and a future successful reservation must
+permit collection before any secret input. Wise tests are internal validation only.
 
 ## Source and account identity
 
@@ -35,8 +37,10 @@ usage information fail closed. The result cannot choose a wallet, amount, source
 or trust rule. Provider-visible inference requires explicit consent; confidential
 NEAR is not an available verified capability. Ordinary NEAR is implemented for
 canonical `z-ai/glm-5.3-flash`, with aliases rejected, one call, and consent naming
-NEAR/Chutes. No funded live inference has demonstrated this route yet; returned
-routing headers are gateway assertions, not independent model proof.
+NEAR/Chutes. Paid provider-visible schema probes and the supervised one-slot
+Wise pilot exercised this route; that evidence does not approve the changed
+durable release. Returned routing headers are gateway assertions, not independent
+model proof.
 
 ## Receipts and interpretation
 
@@ -50,7 +54,7 @@ Code checks authenticated source acquisition, job binding/expiry, useful history
 redaction, duplicates and reserved budget independently of the model score. It
 reserves one fixed payout and reconciles uncertain chain submission using the same
 transaction identity. A model score alone is not acceptance or payment evidence.
-The revised v2 epoch descriptor binds non-exportable AWS KMS payout custody, the
+The completed pilot's v2 epoch descriptor binds non-exportable AWS KMS payout custody, the
 exact key ARN and wallet, operator recovery, RAM-only ledger persistence and
 mandatory restart review to measured policy. Authorized operator IAM and the host
 broker can sign outside the enclave; attestation is not proof of exclusive custody
@@ -71,6 +75,39 @@ No category substitutes for another. Report scope, exact source/image revision,
 date and remaining limitations accurately. A paid transcript does not prove final
 bank settlement, recipient credit, support for every payment type, or readiness in
 Peer production. Peer engineers separately review metadata and transformers.
+
+## Internal durable Wise evidence
+
+A separate credential-free contributor smoke exercised the actual CLI, client,
+runtime, encryption and durable-state path with synthetic external dependencies.
+It checked reservation/state save before input, full-capacity refusal without
+secrets, fresh-ingress restart with the same signed paid receipt, expiry-only
+renewal and interrupted work without another bank/model call. This is local
+synthetic evidence, not a live bank, AWS, model or payment test.
+
+The snapshot/CAS release has separately scoped measured-policy, descriptor,
+fresh Nitro and paid-job/restart evidence. Continue to require the same
+accepted job, account deduplication and transaction identity; stale-writer fencing,
+state deletion/mismatch failures and interrupted bank/inference handling must fail
+closed. Do not reuse the completed RAM-only pilot evidence as approval for that
+changed release. Bank/API credentials must stay transient; persist no raw bank
+values or envelopes. Fresh per-boot ingress keys must never appear in snapshots;
+the separate durable receipt signer must remain encrypted. Verify fresh attestation
+binds the current ingress key and persistent receipt identity. KMS administrators
+remain trusted for encrypted metadata/deduplication secrecy; storage does not
+guarantee cloud availability.
+
+Wise is excluded from reward recruitment. The operator-owned paid validation
+provides measured-runtime evidence, not an available public campaign. Source
+`629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e` and service API
+`https://9lb70whku9.execute-api.us-east-1.amazonaws.com` have separate
+[durable evidence](../transcripts/durable-pilot-evidence.json). Fresh Nitro/KMS
+bootstrap, zero-fund restart, authenticated Wise acquisition, paid ordinary NEAR
+grading, automatic confirmed $5 payout and paid-job recovery after restart passed.
+Recovery preserved the same signed receipt with no new reservation/submission or
+model call, after the inference key was disabled. Historical pilot proof does not
+approve the changed image. Static evidence never guarantees a current slot;
+only a successful service reservation establishes admission.
 
 ## Legacy reports
 

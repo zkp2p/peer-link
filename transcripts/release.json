@@ -1,14 +1,20 @@
 {
   "version": 1,
   "status": "unreleased",
-  "serviceUrl": null,
-  "policyDigest": "d3eda4dcbe1cbf717a4cddd732ae10f05cf0b5e2c5384e326bd5644d106f03cb",
-  "measurements": {},
+  "serviceUrl": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
+  "policyDigest": "9354bf3e0d73617496a89e25f5c68f9325fbc4f98870bc0f91afa5f04082a3b3",
+  "measurements": {
+    "0": "ef593a4ad2f0c26511a9cf9d8c0b231aaf644f91e33b7aaf2cd7cd695733b1be11a7a484773863b276ed395a94d4b37d",
+    "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
+    "2": "9f9fed04780ccce313e4e0b07d4e0867e9c9eafa0b997ac3e5fc2c31fb0a4afa42434748834ef0e658a222e394f24796",
+    "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
+  },
   "expiresAt": 0,
   "limitations": [
-    "No public secret submissions until an independently pinned approved release is published.",
-    "Only Wise has a reviewed authenticated account identity adapter.",
-    "Confidential NEAR inference is unavailable pending verified E2EE integration.",
-    "Payout signing uses operator-recoverable AWS KMS; the job ledger and dedup state remain RAM-only and restart requires operator review."
+    "Wise is already integrated and is excluded from public transcript incentives. This measured image is an internal validation reference only; no public paid campaign is approved.",
+    "Wise API campaign wise-api-public-v1 only; at most two accepted contributions at five Base USDC each. Other banks remain planned. A successful live reservation is required.",
+    "Contributor-funded approved inference receives redacted structural evidence with consent and may charge for rejected jobs. Confidential NEAR inference remains unavailable.",
+    "Payout custody is operator-recoverable AWS KMS. AWS and account administrators remain trusted for infrastructure and key-policy control; this is not escrow.",
+    "The single-host service restores encrypted state and receipts with fresh ingress keys and paused admissions after restart. Operator resume is required; there is no automatic wallet refill."
   ]
 }

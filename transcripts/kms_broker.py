@@ -143,9 +143,11 @@ def connection(conn, peer_cid, allowed_cid, broker):
         conn.close()
 
 
-def serve(port, cid, broker):
+def serve(port, cid, broker, *, ready=None):
     with socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM) as listener:
         listener.bind((socket.VMADDR_CID_ANY, port)); listener.listen(4)
+        if ready is not None:
+            ready.set()
         slots = threading.BoundedSemaphore(4)
         while True:
             conn, peer = listener.accept()
