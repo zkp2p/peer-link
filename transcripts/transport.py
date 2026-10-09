@@ -113,7 +113,7 @@ class HTTPTransport:
         require(body is None or open_headers and isinstance(body,str) and isinstance(content_type,str),"unsafe_method")
         if body is not None:headers={**headers,"Content-Type":content_type}
         return self._request("GET" if body is None else "POST",url,headers=headers,timeout=timeout,max_bytes=max_bytes,
-                             body=None if body is None else body.encode("utf-8"),bank_status_codes=True,open_headers=open_headers)
+                             body=None if body is None else body.encode("utf-8","replace"),bank_status_codes=True,open_headers=open_headers)
 
     def request_provider(self,url,*,headers,body,timeout=15,max_bytes=65536):
         return self._request("POST",url,headers=headers,body=body,timeout=timeout,max_bytes=max_bytes,
@@ -125,7 +125,7 @@ class HTTPTransport:
         headers=dict(headers or {"Accept":"application/json"})
         if body is not None:headers["Content-Type"]=content_type
         return self._request("GET" if body is None else "POST",url,headers=headers,timeout=timeout,
-                             body=None if body is None else body.encode("utf-8"),anonymous_probe=True,open_headers=True)
+                             body=None if body is None else body.encode("utf-8","replace"),anonymous_probe=True,open_headers=True)
 
     def probe_authentication(self,url,*,timeout=15,invalid_credential=False):
         """Status-only anonymous GET: never read, retain or return an error body."""
@@ -185,16 +185,21 @@ class HTTPTransport:
             def expire():
                 expired.set()
                 for stream in live:
-                    try:stream.shutdown(socket.SHUT_RDWR)
-                    except OSError:pass
+                    # The base-class call closes the TCP stream without clearing
+                    # the TLS object, so nothing can later be written in the clear.
+                    try:socket.socket.shutdown(stream, socket.SHUT_RDWR)
+                    except (OSError, TypeError):pass
             watchdog = threading.Timer(max(0.001, end - time.monotonic()), expire)
             watchdog.daemon = True
             watchdog.start()
             try:
                 context = ssl.create_default_context()
                 context.minimum_version = ssl.TLSVersion.TLSv1_2
+                # The handshake shares the call's deadline instead of a fresh timeout.
+                raw.settimeout(max(0.001, end - time.monotonic()))
                 secure = context.wrap_socket(raw, server_hostname=parsed.hostname)
                 live.append(secure)
+                require(not expired.is_set(), "request_timeout")
             except BaseException:
                 watchdog.cancel()
                 raw.close()
@@ -220,6 +225,7 @@ class HTTPTransport:
                     plain = all(v.lower() == "identity" for k, v in response_headers if k == "content-encoding")
                     if not (200 <= response.status < 300 and served and plain):
                         # Not JSON to an anonymous caller: nothing is read or returned.
+                        require(not expired.is_set(), "request_timeout")
                         return HTTPResponse(response.status,b"",())
                     probing = True
                 require(200 <= response.status < 300, bank_status_error(response.status) if bank_status_codes else
@@ -245,6 +251,8 @@ class HTTPTransport:
                     require(count <= max_bytes, "response_size")
                     chunks.append(chunk)
                 require(response.length in (None, 0), "response_incomplete")
+                # A body cut short by the deadline is a timeout, never a result.
+                require(not expired.is_set(), "request_timeout")
                 if probing:
                     return HTTPResponse(response.status, b"".join(chunks), (("content-type", "json"),))
                 return HTTPResponse(response.status, b"".join(chunks), response_headers)

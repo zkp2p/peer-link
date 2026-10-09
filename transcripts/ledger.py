@@ -347,10 +347,11 @@ class Ledger:
             aliases=account_fingerprints(dedup_key,campaign,reads,account_id)
             if "openSource" in campaign:
                 # The identity is contributor-declared; the same history resubmitted
-                # under another identity still collides on its payment ids.
-                from .open_source import payment_aliases
-                aliases=sorted(set(aliases) | {account_fingerprint(dedup_key, campaign["id"], item)
-                                               for item in payment_aliases(campaign, reads, context, artifact, model_result)})
+                # under another identity still collides on its rows. "r:" marks a row
+                # witness, which only counts when two or more overlap.
+                from .open_source import row_witnesses
+                aliases=sorted(set(aliases) | {"r:"+account_fingerprint(dedup_key, campaign["id"], "row:"+item[:280]+digest(item))
+                                               for item in row_witnesses(reads, context)})
             self._check_aliases(campaign['id'],aliases)
             require(self.db.execute("SELECT 1 FROM jobs WHERE campaign_id=? AND account_hmac=? AND state IN "
                                     "('accepted','payout_pending','paid')", (campaign["id"],fingerprint)).fetchone() is None,
@@ -389,7 +390,9 @@ class Ledger:
         fingerprints=set(aliases)
         for row in self.db.execute("SELECT account_hmac,account_aliases FROM jobs WHERE campaign_id=? AND state IN ('accepted','payout_pending','paid')",(campaign_id,)):
             old=json.loads(row['account_aliases']) if row['account_aliases'] is not None else [row['account_hmac']]
-            require(not fingerprints.intersection(old),'duplicate_account')
+            shared=fingerprints.intersection(old)
+            # An account identity match is a duplicate; row witnesses need two.
+            require(not any(not item.startswith('r:') for item in shared) and len(shared)<2,'duplicate_account')
 
     @_locked
     def runtime_state(self):

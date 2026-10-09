@@ -87,7 +87,8 @@ def recipe():
 
 def payload(**changes):
     value = {"credential": {"origin": ORIGIN, "kind": "headers",
-                            "value": {COOKIE: SESSION, "X-CSRF-Token": CSRF, "X-Client-Version": "web"}},
+                            "value": {COOKIE: SESSION, "X-CSRF-Token": CSRF, "X-Client-Version": "web",
+                                      "User-Agent": "Mozilla/5.0"}},
              "profileId": None, "recipe": recipe(), "inferenceKey": INFERENCE, "transcript": [],
              "notes": "Activity list is newest first. The handle under counterparty is what a payer types to send."}
     value.update(changes)
@@ -225,6 +226,15 @@ class RecipeTests(unittest.TestCase):
             (graphql, json.dumps({"operationName": "TransferFunds", "extensions": {"persistedQuery": {"version": 1}}})),
             (graphql, json.dumps({"id": "a1b2", "operationName": "ApprovePayment"})),
             (ORIGIN + "/rpc", json.dumps({"jsonrpc": "2.0", "method": "transfer.create", "params": {}})),
+            (ORIGIN + "/rpc", json.dumps({"method": "moveFunds"})),
+            (ORIGIN + "/pisp/domestic-payments", "{}"), (ORIGIN + "/bill-payments", "{}"),
+            (ORIGIN + "/wire-transfers", "{}"), (ORIGIN + "/standing-orders", "{}"), (ORIGIN + "/moneyTransfer", "{}"),
+            (ORIGIN + "/p2pSend", "{}"), (ORIGIN + "/transfer/4821", "{}"), (ORIGIN + "/payment/4821/capture", "{}"),
+            (ORIGIN + "/beneficiaries", "{}"), (ORIGIN + "/cards/4821/freeze", "{}"), (ORIGIN + "/refund", "{}"),
+            (ORIGIN + "/moveMoney", "{}"),
+            (graphql, json.dumps({"query": "query A { a } mutation B { pay }", "operationName": "B"})),
+            (graphql, json.dumps({"id": "a1b2"})), (graphql, json.dumps({"doc_id": "77"})),
+            (graphql, json.dumps({"sha256Hash": "ab", "operationName": "MoveMoney"})),
         ]
         for url, body in refused:
             with self.assertRaisesRegex(Rejected, "write_request_refused", msg=url + " " + body):
@@ -246,6 +256,14 @@ class RecipeTests(unittest.TestCase):
             (graphql, json.dumps({"operationName": "SettingsQuery", "query": "query Q { a }"})),
             (graphql, json.dumps({"operationName": "AddressBookQuery", "query": "# list\nquery Q {\n  a\n}"}, indent=2)),
             (graphql, json.dumps({"operationName": "ActivityQuery", "extensions": {"persistedQuery": {"version": 1}}})),
+            (graphql, json.dumps({"operationName": "PaymentHistory", "query": "query Q { a }"})),
+            (graphql, json.dumps({"operationName": "TransferDetails", "query": "query Q { a }"})),
+            (graphql, json.dumps({"query": "fragment F on T { a } query Q { ...F }"})),
+            (ORIGIN + "/paymentHistory", "{}"), (ORIGIN + "/payment-history", "{}"),
+            (ORIGIN + "/transferActivity", "{}"), (ORIGIN + "/order-history", "{}"),
+            (ORIGIN + "/newTransactions", "{}"), (ORIGIN + "/pay/activity/v2", "{}"),
+            (ORIGIN + "/deposit/accounts/4821/postedTransactions", "{}"), (ORIGIN + "/register/entries", "{}"),
+            (ORIGIN + "/rpc", json.dumps({"method": "payment.list"})),
         ]
         for url, body in allowed:
             validate_open_recipe(policy, self.post(url, body), 4)
@@ -256,7 +274,7 @@ class RecipeTests(unittest.TestCase):
         with self.assertRaisesRegex(Rejected, "source_not_allowed"):
             validate_open_recipe(get_only, self.post(ORIGIN + "/activity/list", "{}"), 4)
         for change in ({"method": "PUT"}, {"contentType": ["application/json"]}, {"contentType": "text/plain"},
-                       {"body": "\x00"}, {"body": 5}):
+                       {"body": "\x00"}, {"body": 5}, {"body": "a=" + chr(0xD800)}):
             bad = self.post(ORIGIN + "/activity/list", "{}")
             bad["reads"][1].update(change)
             with self.assertRaisesRegex(Rejected, "recipe_invalid"):
@@ -297,7 +315,8 @@ class AcquisitionTests(unittest.TestCase):
             if call[0] == "bank":
                 self.assertEqual((call[2][COOKIE], call[2]["X-CSRF-Token"]), (SESSION, CSRF))
             else:
-                self.assertEqual(call[2], {"X-Client-Version": "web", "Accept": "application/json"})
+                # Only what any browser sends; every custom header is treated as part of the session.
+                self.assertEqual(call[2], {"User-Agent": "Mozilla/5.0", "Accept": "application/json"})
         self.assertEqual({read.account_id for read in reads}, {"open:" + ORIGIN + ":user-48213377"})
         self.assertNotIn("user-48213377", repr(reads))
         self.assertEqual([request["gated"] for request in artifact["requests"]], [True, True])
@@ -311,12 +330,19 @@ class AcquisitionTests(unittest.TestCase):
         acquired(bank=Bank(anonymous=(302, None)))
     def test_a_credential_with_no_secret_bearing_header_is_not_a_session(self):
         body = payload()
-        body["credential"]["value"] = {"User-Agent": "Mozilla/5.0", "X-Client-Version": "web"}
+        body["credential"]["value"] = {"User-Agent": "Mozilla/5.0", "Accept-Language": "en", "Referer": ORIGIN + "/"}
         with self.assertRaisesRegex(Rejected, "credential_not_secret"):
             acquired(body=body)
+        # A session header the service has never heard of still counts and is kept out of the probe.
+        body["credential"]["value"] = {"User-Agent": "Mozilla/5.0", "X-Passcode": "SYNTHETIC"}
+        bank = Bank()
+        acquired(bank=bank, body=body)
+        self.assertNotIn("X-Passcode", bank.calls[0][2])
     def test_sandbox_and_malformed_hosts_are_not_the_bank(self):
         policy = campaign()
         for host in ("sandbox.bank.example", "api-test.bank.example", "developer.bank.example",
+                     "apisandbox.bank.example", "sandbox2.bank.example", "devportal.bank.example", "stg.bank.example",
+                     "beta.bank.example", "uat1.bank.example", "nonprod.bank.example", "playground.bank.example",
                      "evil.com%2f.bank.example", "evil.com\\.bank.example"):
             bad = recipe()
             bad["reads"] = [{"url": "https://" + host + "/v1/me"}, {"url": "https://" + host + "/v1/activity"}]
@@ -392,7 +418,7 @@ class TranscriptTests(unittest.TestCase):
         encoded = canonical(artifact).decode()
         for secret in PRIVATE + ("Illinois", "Bob Example", "carol77", "12.50", "2026-09-30", "SYNTHETIC-CSRF"):
             self.assertNotIn(secret, encoded)
-        self.assertEqual(artifact["credentialHeaders"], ["cookie", "x-client-version", "x-csrf-token"])
+        self.assertEqual(artifact["credentialHeaders"], ["cookie", "user-agent", "x-client-version", "x-csrf-token"])
         history = artifact["requests"][1]
         self.assertEqual(history["path"], "/api/v2/users/{id}/activity")
         self.assertEqual(history["query"], [{"name": "limit", "value": "20"}, {"name": "cursor", "value": "{digits:10}"}])
@@ -471,17 +497,22 @@ class TranscriptTests(unittest.TestCase):
                           billing={"state": "Illinois"}, defaultPaymentMethod="Visa-4242")
         history = copy.deepcopy(HISTORY)
         for row in history["activity"]["items"]:
-            row.update(merchantState="Nevada", addressState="Oregon", holderType="Widow", type="card-4242")
+            row.update(merchantState="Nevada", addressState="Oregon", holderType="Widow", type="card-4242",
+                       state="Texas", toState="Ohio", paymentMethod="alicesavings")
         artifact = self.leak_check(me=me, history=history, secrets=("Married", "Kansas", "Premier", "Illinois",
-                                   "Visa-4242", "Nevada", "Oregon", "Widow", "card-4242"))
+                                   "Visa-4242", "Nevada", "Oregon", "Widow", "card-4242", "Texas", "Ohio",
+                                   "alicesavings"))
         self.assertTrue(all("values" not in entry for entry in artifact["requests"][0]["fields"].values()))
     def test_url_identifiers_and_tokens_are_templated(self):
         for url, secrets, path in (
                 (ORIGIN + "/orgs/acme-plumbing-llc/activity?limit=20", ("acme-plumbing-llc",), "/orgs/{id}/activity"),
                 (ORIGIN + "/accounts/kQzmW7pLxa/history", ("kQzmW7pLxa",), "/accounts/{id}/history"),
                 (ORIGIN + "/u/alice.smith/activity", ("alice.smith",), "/u/{id}/activity"),
-                (ORIGIN + "/api/activity?state=Zx81TokenValue&type=CHK-0048213377&acct_4821337711=1",
-                 ("Zx81TokenValue", "CHK-0048213377", "acct_4821337711"), "/api/activity")):
+                (ORIGIN + "/workspaces/acme-plumbing/activity", ("acme-plumbing",), "/workspaces/{id}/activity"),
+                (ORIGIN + "/2026Q4/alicesmith/feed", ("alicesmith",), "/2026Q4/{id}/feed"),
+                (ORIGIN + "/api/2026-10-01/svc/quickpay/activity", (), "/api/2026-10-01/svc/quickpay/activity"),
+                (ORIGIN + "/api/activity?state=Zx81TokenValue&type=CHK-0048213377&acct_4821337711=1&view=alicesmith",
+                 ("Zx81TokenValue", "CHK-0048213377", "acct_4821337711", "alicesmith"), "/api/activity")):
             artifact = self.leak_check(url=url, secrets=secrets)
             self.assertEqual(artifact["requests"][1]["path"], path)
     def test_tenant_host_labels_are_not_recorded(self):
@@ -496,6 +527,11 @@ class TranscriptTests(unittest.TestCase):
         for read in body["recipe"]["reads"]:
             read["url"] = read["url"].replace("acme-plumbing", "api2")
         self.assertEqual(acquired(policy=policy, body=body)[3]["sourceOrigins"], ["https://api2.bank.example"])
+        from transcripts.open_source import INFRA_LABEL
+        for label in ("mjones", "mysmith", "ibrahim", "webster", "paybob"):
+            self.assertIsNone(INFRA_LABEL.fullmatch(label), label)
+        for label in ("api", "secure05ea", "web3", "online"):
+            self.assertIsNotNone(INFRA_LABEL.fullmatch(label), label)
     def test_post_body_values_and_notes_with_personal_text_are_not_kept(self):
         body = payload()
         document = json.dumps({"operationName": "GetActivityQuery", "query": "query Q { a }",
@@ -505,7 +541,8 @@ class TranscriptTests(unittest.TestCase):
         _, _, _, artifact = acquired(bank=Bank(bodies={"/api/v2/me": ME, "/api/graphql": HISTORY}), body=body)
         for secret in ("SAV-0048213377", "AAEBAgMEBQYH"):
             self.assertNotIn(secret, canonical(artifact).decode())
-        for notes in ("Paid Bob Example last week", "call 415-555-0101", "ssn 123-45-6789",
+        for notes in ("Paid Bob Example last week", "call 415-555-0101", "ssn 123-45-6789", "lives in Springfield",
+                      "phone (415) 555 0101",
                       "card 4111 1111 1111 1111", "id is user 4821 3377"):
             with self.assertRaisesRegex(Rejected, "unsafe_notes"):
                 acquired(body=payload(notes=notes))
@@ -514,6 +551,7 @@ class TranscriptTests(unittest.TestCase):
                    "123e4567-e89b-42d3-a456-426614174000": "uuid", "0012345": "digits:7", "-45": "digits:neg:2",
                    "19.99": "decimal:pos:2", "EUR": "currency_code", "a@b.co": "email", "https://x.example/y": "url",
                    "1,000 USD": "money_text", "deadbeefdeadbeefdeadbeef": "hex:short", "Hello": "text:short:alpha",
+                   "+14155550101": "phone", "+44 20 7946 0958": "phone", "user-48213377": "text:medium:mixed",
                    12: "int:pos:2", -3.5: "float:neg:1", 0: "int:zero:1"}
         for value, expected in samples.items():
             self.assertEqual(value_format(value), expected)
@@ -589,23 +627,71 @@ class AssessmentTests(unittest.TestCase):
         body["recipe"]["history"]["path"] = ["buckets", "usd", "items"]
         policy, context, reads, artifact = acquired(
             bank=Bank(bodies={"/api/v2/me": ME, "/api/v2/users/user-48213377/activity": nested}), body=body)
-        self.assertEqual(artifact["history"]["path"], "$.buckets.{key}.items")
-        mapping = {role: path.replace("$.activity.items", "$.buckets.{key}.items") for role, path in MAPPING.items()}
+        prefix = artifact["history"]["path"]
+        self.assertTrue(prefix.endswith(".{key}.items"))  # the currency bucket is data, not a field name
+        mapping = {role: path.replace("$.activity.items", prefix) for role, path in MAPPING.items()}
         result = assess(policy, reads, context, artifact, {"mapping": mapping, "completedStatus": []})
         self.assertEqual((result["score"], result["unverified"]), (100, []))
         # A response value naming a schema field under a sort key does not hide that field.
-        self.assertIn("$.buckets.{key}.items[].createdAt", artifact["requests"][1]["fields"])
-    def test_resubmitting_the_same_history_under_another_identity_collides(self):
-        from transcripts.open_source import payment_aliases
-        policy, context, reads, artifact = acquired()
-        result = assess(policy, reads, context, artifact, {"mapping": MAPPING, "completedStatus": []})
-        first = payment_aliases(policy, reads, context, artifact, result)
+        self.assertIn(prefix + "[].createdAt", artifact["requests"][1]["fields"])
+    def bank_rows(self, rows, mapping, path=("rows",)):
+        body = payload()
+        body["recipe"]["history"]["path"] = list(path)
+        policy, context, reads, artifact = acquired(
+            bank=Bank(bodies={"/api/v2/me": ME, "/api/v2/users/user-48213377/activity": {"rows": rows}}), body=body)
+        prefix = artifact["history"]["path"] + "[]"
+        proposal = {role: prefix + suffix for role, suffix in mapping.items()}
+        return artifact, assess(policy, reads, context, artifact, {"mapping": proposal, "completedStatus": []})
+    def test_common_bank_row_shapes_keep_their_field_names(self):
+        # Flat rows whose values are all strings, in a non-English schema.
+        flat = [{"TransactionID": "QX1A%d" % index, "CompletedTime": "2026-10-0%d 08:00:00" % index,
+                 "Jumlah": "1,250.00", "Penerima": name, "TransactionStatus": "Completed", "Keterangan": "x%d" % index}
+                for index, name in ((1, "ana"), (2, "budi"), (3, "citra"))]
+        artifact, result = self.bank_rows(flat, {"paymentId": ".TransactionID", "amount": ".Jumlah",
+                                                 "timestamp": ".CompletedTime", "counterparty": ".Penerima",
+                                                 "status": ".TransactionStatus"})
+        self.assertEqual((result["score"], result["unverified"]), (95, []))
+        # Nested amount and counterparty objects with three same-typed members each.
+        nested = [{"id": 9000 + index, "amount": {"value": "12.50", "currency": "EUR", "formatted": "12,50 EUR"},
+                   "counterparty": {"name": name, "handle": name + "x", "account": "ACC" + name},
+                   "bookedAt": 1759300000 + index, "endToEndId": "E2E-%d" % index, "memo": "Amount"}
+                  for index, name in ((1, "ana"), (2, "budi"), (3, "citra"))]
+        artifact, result = self.bank_rows(nested, {"paymentId": ".id", "amount": ".amount.value",
+                                                   "timestamp": ".bookedAt", "counterparty": ".counterparty.handle",
+                                                   "currency": ".amount.currency"})
+        self.assertEqual((result["score"], result["unverified"]), (90, []))
+        self.assertIn("$.rows[].endToEndId", artifact["requests"][1]["fields"])
+    def test_names_seen_once_are_kept_only_when_made_of_common_words(self):
+        me = copy.deepcopy(ME)
+        me["user"].update(sharedWith={"alicesmith": True, "bobjones": True}, vault={"mainchecking": {"balance": 1.0}},
+                          limits={"daily": 5, "monthlyTotal": 9}, contacts={"gracehall": [1], "heidi": []})
+        body = payload()
+        policy, _, _, artifact = acquired(bank=Bank(bodies={"/api/v2/me": me,
+                                                            "/api/v2/users/user-48213377/activity": HISTORY}), body=body)
+        encoded = canonical(artifact).decode()
+        for secret in ("alicesmith", "bobjones", "mainchecking", "gracehall", "heidi"):
+            self.assertNotIn(secret, encoded)
+        self.assertIn("$.user.limits.monthlyTotal", artifact["requests"][0]["fields"])
+        self.assertEqual(artifact["identity"]["path"], "$.user.id")
+    def test_status_codes_with_digits_are_withheld_without_failing_the_role(self):
+        rows = copy.deepcopy(HISTORY["activity"]["items"])
+        for row, code in zip(rows, ("MT103", "pacs.008", "SETTLED")):
+            row["status"] = code
+        artifact, result = self.bank_rows(rows, {"paymentId": ".id", "amount": ".amount", "timestamp": ".createdAt",
+                                                 "counterparty": ".counterparty.handle", "status": ".status"})
+        self.assertIn("status", result["mapping"])
+        status = artifact["requests"][1]["fields"]["$.rows[].status"]
+        self.assertEqual((status["values"], status["valuesIncomplete"]), (["SETTLED"], True))
+    def test_row_witnesses_follow_the_history_not_the_declared_identity(self):
+        from transcripts.open_source import row_witnesses
+        _, context, reads, _ = acquired()
+        first = row_witnesses(reads, context)
         other = payload()
         other["recipe"]["identity"]["path"] = ["user", "email"]
-        policy, context, reads, artifact = acquired(body=other)
+        _, context, reads, _ = acquired(body=other)
         self.assertNotEqual(reads[0].account_id, "open:" + ORIGIN + ":user-48213377")
-        self.assertEqual(payment_aliases(policy, reads, context, artifact, result), first)
-        self.assertEqual(first, ["open-payment:" + ORIGIN + ":txn-0001" + digit for digit in "789"])
+        self.assertEqual(row_witnesses(reads, context), first)
+        self.assertEqual(len(first), 3)
 
 
 class ProviderTests(unittest.TestCase):
@@ -824,6 +910,36 @@ class HostAndCliTests(unittest.TestCase):
         self.assertIn("$.activity.items[].counterparty.handle", result["historyFieldPaths"])
         for secret in PRIVATE:
             self.assertNotIn(secret, json.dumps(result))
+        # Local, value-free facts for the notes; the model picks the completed tokens.
+        self.assertNotIn("completedStatus", result["assessment"])
+        self.assertEqual({key: result["observations"][key] for key in
+                          ("records", "timestampOrder", "amountForm", "amountSign", "statusUsage")},
+                         {"records": 3, "timestampOrder": "oldest_first", "amountForm": "text", "amountSign": "mixed",
+                          "statusUsage": {"completed": 2, "pending": 1}})
+    def test_lookup_returns_one_value_from_one_read(self):
+        from transcripts.cli import lookup
+        policy = {"campaigns": [campaign()]}
+        bank = Bank()
+        with patch("transcripts.transport.HTTPTransport", return_value=bank):
+            found = lookup(policy, "synthetic-open-v1", payload(), 0, ["user", "id"])
+            self.assertEqual((found["read"], found["value"]), (0, "user-48213377"))
+            # Only the chosen read is sent, with the session, and never a probe or model call.
+            self.assertEqual([call[0] for call in bank.calls], ["bank"])
+            self.assertTrue(bank.calls[0][1].endswith("/api/v2/me"))
+            for path in (["user"], ["user", "missing"], ["user", "address", "city", 0]):
+                with self.assertRaisesRegex(Rejected, "lookup_not_scalar"):
+                    lookup(policy, "synthetic-open-v1", payload(), 0, path)
+            with self.assertRaisesRegex(Rejected, "recipe_invalid"):
+                lookup(policy, "synthetic-open-v1", payload(), 2, ["user", "id"])
+            outside = payload()
+            outside["recipe"]["reads"][0]["url"] = "https://elsewhere.example/api/v2/me"
+            with self.assertRaisesRegex(Rejected, "source_not_allowed"):
+                lookup(policy, "synthetic-open-v1", outside, 0, ["user", "id"])
+            write = payload()
+            write["recipe"]["reads"][0] = {"url": ORIGIN + "/api/payments/send", "method": "POST",
+                                           "contentType": "application/json", "body": "{}"}
+            with self.assertRaisesRegex(Rejected, "write_request_refused"):
+                lookup(policy, "synthetic-open-v1", write, 0, ["id"])
     def test_secrets_from_env_fill_the_payload_after_admission(self):
         from transcripts.cli import secrets_from_env
         body = {key: value for key, value in payload().items() if key != "inferenceKey"}

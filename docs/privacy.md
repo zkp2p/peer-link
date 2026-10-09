@@ -54,12 +54,14 @@ Bank and provider TLS end inside the enclave. The host relay sees destination
 hostnames and ciphertext. The enclave sends the bank credential only to the
 `https://host` the contributor declared, which must be the campaign's bank
 domain or a subdomain, and the inference key only to the reserved endpoint.
-The credential must include at least one header that carries a session (a
-cookie, an authorization or token header, a CSRF header). Before the
-authenticated reads, the enclave replays the identity and history requests with
-only the other headers and stops if that answer contains the selected identity
-or history rows, so a public endpoint cannot stand in for an account. Hosts
-named like a sandbox, test or developer environment are refused. No payment initiation or account change is part
+The credential must include at least one header beyond those every browser
+sends (`User-Agent`, `Accept`, `Referer` and similar). Before the authenticated
+reads, the enclave replays the identity and history requests with only those
+browser headers and stops if the answer still contains the selected identity or
+history rows, so an endpoint that serves the data without a session cannot stand
+in for an account. This shows the data needs something the contributor supplied;
+it cannot show that the something is a customer login. Hosts named like a
+sandbox, test or developer environment are refused. No payment initiation or account change is part
 of a contribution; for POST reads the enclave refuses requests that are
 obviously named as state changes, and the contributor remains responsible for
 replaying only requests the bank's site issues while viewing history.
@@ -99,8 +101,10 @@ For open campaigns the transcript contains, and the validator admits, only:
 - the selectors for identity and history, a coverage flag, and fixed limitation
   labels.
 
-Object keys that look like identifiers, and objects whose keys are data (maps
-of handles, ids, currencies or dates), collapse to `{key}`. The count of transactions is not kept. **These rules for names and
+A field name is kept when it recurs across the rows of a list, in any
+language, or when it is made of common field-name words; any other object key,
+such as a handle, an account nickname or an id used as a key, is shown as
+`{key}`. The same word list screens URL path segments. The count of transactions is not kept. **These rules for names and
 tokens are heuristic.** A field name or a status-like token that is itself
 personal could be retained, which is why `preview` exists and why the owner
 should read its output before contributing.

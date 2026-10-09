@@ -117,11 +117,89 @@ def preview(policy,campaign_id,payload,mapping=None):
             if mapping is not None:
                 require(isinstance(mapping,dict) and set(mapping)<=set(ROLES),'model_result_invalid')
                 assessment=assess(campaign,reads,context,artifact,{'mapping':mapping,'completedStatus':[]})
+                # The model, not this preview, chooses which status tokens mean "completed".
+                del assessment['completedStatus']
                 result['assessment']={**assessment,'required':campaign['evidenceRequirements']['requiredFields'],
                                       'minScore':campaign['evidenceRequirements']['minScore']}
+                result['observations']=observations(reads,context,artifact,assessment['mapping'])
         return result
     finally:
         bank.close();reads=None
+
+
+def observations(reads,context,artifact,mapping):
+    """Value-free facts about the verified fields, computed on this machine only, so
+    notes can state ordering, sign and status usage without anyone reading the rows."""
+    from collections import Counter
+    from .open_source import _history_rows,select,value_format
+    rows=_history_rows(reads,context);history=artifact['history'];prefix=history['path']+'[]'
+    shapes=artifact['requests'][history['step']-1]['fields']
+
+    def column(role):
+        keys=mapping[role][len(prefix)+1:].split('.')
+        return [value for value in (select(row,keys) for row in rows) if value is not None and value!='']
+
+    def number(value):
+        if type(value) in (int,float):return value
+        try:return float(value.strip().replace(',',''))
+        except (AttributeError,ValueError):return None
+
+    result={'records':len(rows),'local':'Computed here from the live rows; never uploaded. Use it to write accurate notes.'}
+    if 'timestamp' in mapping:
+        values=column('timestamp');order='unknown'
+        sortable=all(type(value) in (int,float) for value in values) or all(
+            isinstance(value,str) and (value_format(value,'date') or '').split(':')[0]=='datetime' for value in values)
+        # Text times compare correctly only when every row uses one layout and zone.
+        zones={('Z' if value.endswith('Z') else value[-6:] if value[-6:-5] in ('+','-') else '')
+               if isinstance(value,str) else '' for value in values}
+        if sortable and len(zones)==1 and len(set(map(len,map(str,values))))==1 and len(values)>1:
+            pairs=list(zip(values,values[1:]))
+            order=('single_value' if len(set(values))==1 else 'newest_first' if all(a>=b for a,b in pairs)
+                   else 'oldest_first' if all(a<=b for a,b in pairs) else 'unordered')
+        result['timestampOrder']=order
+    if 'amount' in mapping:
+        values=column('amount');numbers=[number(value) for value in values]
+        result['amountForm']=('integer' if all(type(value) is int for value in values) else
+                              'decimal' if all(type(value) in (int,float) for value in values) else 'text')
+        result['amountSign']=('unknown' if not numbers or None in numbers else 'all_positive' if all(n>0 for n in numbers)
+                              else 'all_negative' if all(n<0 for n in numbers) else 'mixed')
+    if 'status' in mapping:
+        kept=set(shapes[mapping['status']].get('values',[]));counts=Counter(column('status'))
+        # Only tokens the transcript already keeps are named; anything else is pooled.
+        usage={token:count for token,count in sorted(counts.items()) if token in kept}
+        other=sum(count for token,count in counts.items() if token not in kept)
+        result['statusUsage']={**usage,**({'(withheld)':other} if other else {})}
+    return result
+
+
+def lookup(policy,campaign_id,payload,index,path):
+    """Run one read of the recipe from this machine and return a single value from its
+    JSON, for an id that a later URL needs. Nothing is reserved, uploaded or kept."""
+    from .open_source import credential_headers,origin_in_domain,select,validate_open_recipe
+    from .transport import HTTPResponse,HTTPTransport,json_response
+    campaign=next((item for item in policy['campaigns'] if item['id']==campaign_id),None)
+    require(campaign is not None and 'openSource' in campaign,'campaign_unavailable');validate_campaign(campaign)
+    credential=payload.get('credential');recipe=payload.get('recipe')
+    require(isinstance(credential,dict) and any(origin_in_domain(credential.get('origin'),source['origin'])
+                                                for source in campaign['sources']),'invalid_credential')
+    require(isinstance(recipe,dict) and isinstance(recipe.get('reads'),list) and type(index) is int
+            and 0<=index<len(recipe['reads']),'recipe_invalid')
+    read=recipe['reads'][index];selector={'read':0,'path':path}
+    # The same URL, method and write rules the enclave applies to that read.
+    validate_open_recipe(campaign,{'version':3,'reads':[read],'identity':selector,'history':selector})
+    require(read['url'].startswith(credential['origin']+'/'),'source_not_allowed')
+    headers=credential_headers(credential,credential['origin'])
+    if not any(name.lower()=='accept' for name in headers):headers['Accept']='application/json'
+    try:
+        response=HTTPTransport('direct').request_bank(read['url'],headers=headers,timeout=45,max_bytes=2_000_000,
+                                                      open_headers=True,body=read.get('body'),content_type=read.get('contentType'))
+        require(type(response) is HTTPResponse and response.status==200,'bank_http_unexpected_status')
+        try:value=select(json_response(response),path)
+        except Rejected:raise Rejected('bank_response_non_json') from None
+    finally:headers.clear()
+    require(type(value) is int or isinstance(value,str) and 0<len(value)<=200,'lookup_not_scalar')
+    return {'campaignId':campaign_id,'read':index,'value':value,
+            'local':'A raw value from the account, shown only on this machine. Put it in the later read URL; do not paste it into notes.'}
 
 
 def prompt_secrets(payload):
@@ -162,7 +240,7 @@ def save_state(path,state):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command',choices=['status','campaigns','terms','preflight','preview','contribute','submit-reserved','job','receipt'])
+    parser.add_argument('command',choices=['status','campaigns','terms','preflight','preview','lookup','contribute','submit-reserved','job','receipt'])
     parser.add_argument('--service');parser.add_argument('--release',type=Path,default=Path(__file__).with_name('release.json'))
     parser.add_argument('--policy',type=Path,default=Path(__file__).with_name('policy.json'))
     parser.add_argument('--campaign');parser.add_argument('--payout');parser.add_argument('--provider',choices=['openai','openrouter','near',CUSTOM_PROVIDER])
@@ -172,6 +250,8 @@ def main():
     parser.add_argument('--secrets-from-env',action='store_true',
                         help='Read PEERLINK_BANK_CREDENTIAL and PEERLINK_INFERENCE_KEY after admission; stdin holds only the nonsecret payload')
     parser.add_argument('--mapping',type=Path,help='preview only: JSON object of role to history field path to verify locally')
+    parser.add_argument('--read',type=int,default=0,help='lookup only: index of the recipe read to run (default 0)')
+    parser.add_argument('--path',help='lookup only: JSON array of keys and indexes selecting one value, for example \'[0,"id"]\'')
     parser.add_argument('--live',action='store_true',help='campaigns only: add the unsigned live capacity hint')
     parser.add_argument('--model');parser.add_argument('--privacy',choices=['provider_visible','confidential'],default=None)
     parser.add_argument('--consent',action='store_true')
@@ -207,6 +287,17 @@ def main():
                 try:mapping=strict_json(args.mapping.read_bytes(),65536) if args.mapping is not None else None
                 except OSError:raise Rejected('mapping_file_unreadable') from None
                 result=preview(policy,args.campaign,payload,mapping)
+            finally:payload.clear()
+            print(json.dumps(result,sort_keys=True));return
+        if args.command=='lookup':
+            require(args.campaign is not None and args.path is not None,'missing_arguments')
+            try:path=strict_json(args.path.encode(),4096)
+            except Rejected:raise Rejected('identity_path_invalid') from None
+            payload=strict_json(sys.stdin.buffer.read(2_000_001),2_000_000)
+            require(isinstance(payload,dict),'invalid_submission')
+            try:
+                if args.secrets_from_env:secrets_from_env(payload,inference=False)
+                result=lookup(policy,args.campaign,payload,args.read,path)
             finally:payload.clear()
             print(json.dumps(result,sort_keys=True));return
         client=Client(args.service or release.get('serviceUrl'),release,policy)
