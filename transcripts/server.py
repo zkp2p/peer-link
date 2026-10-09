@@ -1,7 +1,9 @@
 """Untrusted host relay: public metadata, ciphertext ingress and opaque TLS egress."""
 import argparse
+import functools
 import ipaddress
 import json
+import re
 import select
 import socket
 import threading
@@ -39,14 +41,23 @@ def connect_public(host):
     raise Rejected('egress_unavailable')
 
 
-def egress_connection(conn,allowed):
+HOSTNAME=re.compile(r'(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}')
+
+
+def egress_permitted(host,allowed,public):
+    # public: any DNS name on 443 whose every answer is a global address. The
+    # relay only moves TLS bytes; the enclave decides what it sends and to whom.
+    return isinstance(host,str) and (host in allowed or public and HOSTNAME.fullmatch(host) is not None)
+
+
+def egress_connection(conn,allowed,public=False):
     try:
         conn.settimeout(10);line=bytearray()
         while not line.endswith(b'\n'):
             require(len(line)<512,'egress_denied')
             byte=conn.recv(1);require(bool(byte),'connection_closed');line.extend(byte)
         request=strict_json(bytes(line),512)
-        require(set(request)=={'host','port'} and request['host'] in allowed and request['port']==443,'egress_denied')
+        require(set(request)=={'host','port'} and egress_permitted(request['host'],allowed,public) and request['port']==443,'egress_denied')
         with connect_public(request['host']) as upstream:
             conn.sendall(b'OK\n');conn.settimeout(30)
             count=0
@@ -62,7 +73,7 @@ def egress_connection(conn,allowed):
     finally:conn.close()
 
 
-def egress_server(port,cid,allowed,*,ready=None):
+def egress_server(port,cid,allowed,*,ready=None,public=False):
     with socket.socket(socket.AF_VSOCK,socket.SOCK_STREAM) as listener:
         listener.bind((socket.VMADDR_CID_ANY,port));listener.listen(16)
         if ready is not None:ready.set()
@@ -71,7 +82,7 @@ def egress_server(port,cid,allowed,*,ready=None):
             conn,peer=listener.accept()
             if peer[0]!=cid or not slots.acquire(blocking=False):conn.close();continue
             def run(connection=conn):
-                try:egress_connection(connection,allowed)
+                try:egress_connection(connection,allowed,public)
                 finally:slots.release()
             threading.Thread(target=run,daemon=True).start()
 
@@ -91,7 +102,8 @@ def main():
         broker=KmsBroker(authority['keyId'],authority['wallet'])
         broker.public_key()  # Fail startup on a wrong key, wallet, or inaccessible role.
         listeners.append((serve,(args.kms_port,args.enclave_cid,broker)))
-    listeners.append((egress_server,(args.egress_port,args.enclave_cid,set(policy['egressHosts']))))
+    listeners.append((functools.partial(egress_server,public=policy.get('egressPolicy')=='public_https'),
+                      (args.egress_port,args.enclave_cid,set(policy['egressHosts']))))
     start_listeners(listeners)
     slots=threading.BoundedSemaphore(20)
     class Handler(BaseHTTPRequestHandler):

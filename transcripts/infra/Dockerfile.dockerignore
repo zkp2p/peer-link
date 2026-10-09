@@ -20,6 +20,7 @@
 !transcripts/eth_payout.py
 !transcripts/ledger.py
 !transcripts/kms_signer.py
+!transcripts/open_source.py
 !transcripts/payout.py
 !transcripts/policy.py
 !transcripts/providers.py

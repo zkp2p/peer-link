@@ -19,7 +19,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/6",
     "logo": "/logos/monobank.png",
-    "adapter": "ua/monobank"
+    "adapter": "ua/monobank",
+    "status": "open",
+    "campaign": "monobank-open-v1"
   },
   {
     "issue": 8,
@@ -29,7 +31,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/8",
     "logo": "/logos/vietcombank.png",
-    "adapter": "vn/vietcombank"
+    "adapter": "vn/vietcombank",
+    "status": "open",
+    "campaign": "vietcombank-open-v1"
   },
   {
     "issue": 73,
@@ -39,7 +43,9 @@
     "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/73",
     "logo": "/logos/chase.jpg",
-    "adapter": "us/chase"
+    "adapter": "us/chase",
+    "status": "open",
+    "campaign": "chase-open-v1"
   },
   {
     "issue": 235,
@@ -49,7 +55,9 @@
     "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/235",
     "logo": "/logos/bank-of-america.png",
-    "adapter": "us/bank-of-america"
+    "adapter": "us/bank-of-america",
+    "status": "open",
+    "campaign": "bank-of-america-open-v1"
   },
   {
     "issue": 75,
@@ -59,7 +67,9 @@
     "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/75",
     "logo": "/logos/wells-fargo.png",
-    "adapter": "us/wells-fargo"
+    "adapter": "us/wells-fargo",
+    "status": "open",
+    "campaign": "wells-fargo-open-v1"
   },
   {
     "issue": 4,
@@ -69,7 +79,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/4",
     "logo": "/logos/opay.png",
-    "adapter": "ng/opay"
+    "adapter": "ng/opay",
+    "status": "open",
+    "campaign": "opay-open-v1"
   },
   {
     "issue": 86,
@@ -79,7 +91,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/86",
     "logo": "/logos/easypaisa.png",
-    "adapter": "pk/easypaisa"
+    "adapter": "pk/easypaisa",
+    "status": "open",
+    "campaign": "easypaisa-open-v1"
   },
   {
     "issue": 7,
@@ -89,7 +103,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/7",
     "logo": "/logos/bca.png",
-    "adapter": "id/bca"
+    "adapter": "id/bca",
+    "status": "open",
+    "campaign": "bca-open-v1"
   },
   {
     "issue": 9,
@@ -99,7 +115,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/9",
     "logo": "/logos/bancolombia.png",
-    "adapter": "co/bancolombia"
+    "adapter": "co/bancolombia",
+    "status": "open",
+    "campaign": "bancolombia-open-v1"
   },
   {
     "issue": 10,
@@ -109,7 +127,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/10",
     "logo": "/logos/gcash.png",
-    "adapter": "ph/gcash"
+    "adapter": "ph/gcash",
+    "status": "open",
+    "campaign": "gcash-open-v1"
   },
   {
     "issue": 13,
@@ -119,7 +139,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/13",
     "logo": "/logos/bkash.png",
-    "adapter": "bd/bkash"
+    "adapter": "bd/bkash",
+    "status": "open",
+    "campaign": "bkash-open-v1"
   },
   {
     "issue": 14,
@@ -129,7 +151,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/14",
     "logo": "/logos/14.png",
-    "adapter": "ke/mpesa"
+    "adapter": "ke/mpesa",
+    "status": "open",
+    "campaign": "mpesa-open-v1"
   },
   {
     "issue": 15,
@@ -139,7 +163,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/15",
     "logo": "/logos/kaspi.png",
-    "adapter": "kz/kaspi"
+    "adapter": "kz/kaspi",
+    "status": "open",
+    "campaign": "kaspi-open-v1"
   },
   {
     "issue": 16,
@@ -149,7 +175,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/16",
     "logo": "/logos/16.png",
-    "adapter": "mx/bbva-mexico"
+    "adapter": "mx/bbva-mexico",
+    "status": "open",
+    "campaign": "bbva-mexico-open-v1"
   },
   {
     "issue": 17,
@@ -159,7 +187,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/17",
     "logo": "/logos/bcp.png",
-    "adapter": "pe/bcp"
+    "adapter": "pe/bcp",
+    "status": "open",
+    "campaign": "bcp-open-v1"
   },
   {
     "issue": 18,
@@ -169,7 +199,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/18",
     "logo": "/logos/ziraat.png",
-    "adapter": "tr/ziraat"
+    "adapter": "tr/ziraat",
+    "status": "open",
+    "campaign": "ziraat-open-v1"
   },
   {
     "issue": 20,
@@ -179,7 +211,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/20",
     "logo": "/logos/uala.png",
-    "adapter": "ar/uala"
+    "adapter": "ar/uala",
+    "status": "open",
+    "campaign": "uala-open-v1"
   },
   {
     "issue": 21,
@@ -189,7 +223,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/21",
     "logo": "/logos/itau.png",
-    "adapter": "br/itau"
+    "adapter": "br/itau",
+    "status": "open",
+    "campaign": "itau-open-v1"
   },
   {
     "issue": 32,
@@ -199,7 +235,9 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/32",
     "logo": "/logos/mtn-momo.png",
-    "adapter": "gh/mtn-momo"
+    "adapter": "gh/mtn-momo",
+    "status": "open",
+    "campaign": "mtn-momo-open-v1"
   },
   {
     "issue": 24,
@@ -209,6 +247,8 @@
     "amount": 5,
     "url": "https://github.com/zkp2p/peer-link/issues/24",
     "logo": "/logos/24.png",
-    "adapter": "es/bbva-spain"
+    "adapter": "es/bbva-spain",
+    "status": "open",
+    "campaign": "bbva-spain-open-v1"
   }
 ]

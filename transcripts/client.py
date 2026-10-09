@@ -24,6 +24,9 @@ SAFE_ERRORS = {'campaign_capacity','budget_exhausted','duplicate_recipient','dup
                'interrupted_execution','state_capacity'}
 from .acquisition import SOURCE_FAILURES
 SAFE_ERRORS.update(SOURCE_FAILURES)
+# Every terminal reason the ledger can record is a fixed, data-free code.
+from .ledger import REASONS
+SAFE_ERRORS.update(REASONS)
 JOB_FIELDS = {'jobId','campaignId','state','bindingDigest','expiresAt','rewardMinor','payoutAddress',
               'reason','artifactDigest','transactionId'}
 STATE_FIELDS = {'version','jobId','campaignId','request','bindingDigest','epoch','publicKey','releaseDigest','policyDigest'}
@@ -43,9 +46,13 @@ def safe_failure(body):
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args,**kwargs):return None
 
-def campaign_limits(campaign):
+def campaign_limits(campaign,overrides=None):
     limits=DEFAULT_LIMITS.copy()
     if 'sourceDescriptor' in campaign:limits['maxBankReads']=campaign['sourceDescriptor']['maxReads']
+    if 'openSource' in campaign:limits['maxBankReads']=campaign['openSource']['maxReads']
+    for name,value in (overrides or {}).items():
+        require(name in {'maxOutputTokens','maxInputTokens','deadlineSeconds'} and type(value) is int,'invalid_limits')
+        limits[name]=value
     return limits
 
 
@@ -106,14 +113,29 @@ class Client:
         self.preflight_verified=True
         return {'verified':True,'releaseDigest':digest(self.release),'measurements':copy.deepcopy(self.release.get('measurements',{})),
                 'policyDigest':digest(self.policy),'epoch':self.epoch}
-    def reserve(self,campaign_id,payout,provider,model,privacy,*,consent,on_reserved=None):
+    def availability(self):
+        """Unsigned capacity hint from the service; only a reservation admits a job."""
+        result=self.call('/v1/campaigns')
+        require(result.get('policyDigest')==digest(self.policy),'policy_mismatch')
+        value=result.get('availability')
+        require(isinstance(value,dict) and type(value.get('budgetRemainingMinor')) is int
+                and isinstance(value.get('campaigns'),list),'service_unavailable')
+        known={item['id'] for item in self.policy['campaigns']}
+        slots={}
+        for item in value['campaigns']:
+            require(isinstance(item,dict) and item.get('campaignId') in known
+                    and type(item.get('slotsRemaining')) is int,'service_unavailable')
+            slots[item['campaignId']]=item['slotsRemaining']
+        return {'budgetRemainingMinor':value['budgetRemainingMinor'],'slotsRemaining':slots,'verified':False}
+    def reserve(self,campaign_id,payout,provider,model,privacy,*,consent,on_reserved=None,base_url=None,limits=None):
         require(consent is True,'consent_required');require(self.job is None,'job_context_exists');self.preflight()
         campaign=next((item for item in self.policy['campaigns'] if item['id']==campaign_id),None)
         require(campaign is not None,'campaign_unavailable')
         now=int(time.time())
         request={'version':1,'campaignId':campaign_id,'payoutAddress':payout,'provider':provider,'model':model,
                  'privacyMode':privacy,'consent':True,'policyDigest':digest(campaign),'expiresAt':now+600,
-                 'limits':campaign_limits(campaign)}
+                 'limits':campaign_limits(campaign,limits)}
+        if base_url is not None:request['inferenceBaseUrl']=base_url
         validate_reservation(campaign,request,now)
         status=self.call('/v1/reservations',request)
         fields(status,JOB_FIELDS)
@@ -149,8 +171,9 @@ class Client:
         envelope=encrypt(self.key,context,payload,consent=True)
         return self.provisional(self.call('/v1/submissions',envelope))
 
-    def contribute(self,campaign_id,payout,provider,model,privacy,payload,*,consent,on_reserved=None):
-        self.reserve(campaign_id,payout,provider,model,privacy,consent=consent,on_reserved=on_reserved)
+    def contribute(self,campaign_id,payout,provider,model,privacy,payload,*,consent,on_reserved=None,base_url=None,limits=None):
+        self.reserve(campaign_id,payout,provider,model,privacy,consent=consent,on_reserved=on_reserved,
+                     base_url=base_url,limits=limits)
         return self.submit_reserved(payload,consent=consent)
 
     def restore(self,state):
@@ -217,6 +240,7 @@ class Client:
         require(record['job']['bindingDigest']==self.job['bindingDigest']
                 and record['job']['payoutAddress']==request['payoutAddress'].lower()
                 and record['job']['expiresAt']==request['expiresAt'],'receipt_mismatch')
+        require(record['inference'].get('baseUrl')==request.get('inferenceBaseUrl'),'receipt_mismatch')
         require(all(record['inference'][name]==request[name] for name in ('provider','model','privacyMode'))
                 and record['inference']['inputTokens']<=request['limits']['maxInputTokens']
                 and record['inference']['outputTokens']<=request['limits']['maxOutputTokens'],'receipt_mismatch')

@@ -3,16 +3,17 @@
 This is a dedicated PeerLink deployment. It does not change a production attestor,
 reuse its signing key, or inherit its approval. The deployment may expose public
 campaign/status/attestation metadata. Mercury is first-contributor source validation;
-its positive live API acquisition is pending. Other bank rewards remain planned and
-Wise tests are internal validation only. Infrastructure creation, a signed EIF and
-a synthetic job do not establish actual bank acquisition or guarantee admission.
+its positive live API acquisition is pending. The other listed banks use open-recipe
+campaigns and Wise tests are internal validation only. Infrastructure creation, a
+signed EIF and a synthetic job do not establish actual bank acquisition or guarantee
+admission.
 
 ## Internal Wise validation; Mercury source-validation campaign
 
 **Mercury first-contributor source validation:** [$10 USDC for one accepted
 organization](https://github.com/zkp2p/peer-link/issues/1). Its first positive live
 API acquisition is pending and would come from the contributor; this is not a
-completed Peer integration. Other bank rewards remain planned. Wise is an existing
+completed Peer integration. The other listed banks are open-recipe campaigns in the current release, sharing its funded budget. Wise is an existing
 integration/reference and is excluded from rewards; its paid tests are internal
 validation only. Independently verify the approved release and obtain a funded
 reservation before keys or inference. Static copy cannot guarantee capacity.
@@ -108,19 +109,81 @@ and load balancer can narrow network exposure at additional fixed cost.
 
 Egress uses enclave-to-parent vsock CID 3, port 5101. The enclave sends a bounded
 newline-terminated JSON connection request `{"host":"approved.example","port":443}`.
-The parent checks enclave CID, configured hostname allowlist, public resolved IP
-and port, replies exactly `OK\n`, then forwards opaque bytes. Bank/provider TLS,
-certificate verification, HTTP paths/methods and tool rules live inside the enclave.
-The parent cannot substitute a TLS certificate or read cookies/model content.
+The parent checks enclave CID, the hostname, public resolved IP and port, replies
+exactly `OK\n`, then forwards opaque bytes. With `"egressPolicy": "public_https"`
+in the measured policy, which the open-recipe release sets, the parent accepts any
+lower-case DNS name whose every resolved address is global, because contributors
+choose the bank host under a campaign domain and the inference endpoint; without
+it, only names in `egressHosts` are accepted. IP literals, single-label names and
+ports other than 443 are always refused. Bank/provider TLS, certificate
+verification, origin pinning, HTTP paths/methods and credential routing live inside
+the enclave. The parent cannot substitute a TLS certificate or read cookies/model
+content.
 
 The revised host IAM role allows SSM transport and explicitly scoped
-`kms:GetPublicKey`/`kms:Sign` for the one policy-bound payout key. Production
-secrets, S3, other KMS keys, role assumption and Parameter Store remain outside
-that role. Native KMS signing is not restricted to enclave PCRs; authorized host
+`kms:GetPublicKey`/`kms:Sign` for the one policy-bound payout key. It may also
+`s3:PutObject` to two prefixes of the private transcript archive bucket, write-only,
+so signed records are mirrored off the host; see [transcript archive](transcript-archive.md).
+Production secrets, other S3 access, other KMS keys, role assumption and Parameter
+Store remain outside that role. Native KMS signing is not restricted to enclave PCRs; authorized host
 and operator IAM are part of the custody trust boundary.
 There is no SSH key or port 22. Operators transfer reviewed source/EIF files through
 SSM or a short-lived presigned URL; the URL is access-bearing and must stay out of
 public docs and durable command-output captures.
+
+### Open-recipe campaigns in the measured policy
+
+A campaign with an `openSource` block (`kind: open-json-read-v1`, `maxReads`)
+takes its reads from the contributor's recipe. Its `sources[].origin` is the
+bank's registrable domain written as `https://domain`; any https host equal to
+or under that domain is accepted, with `paths: ["/"]` and `methods` of `["GET"]`
+or `["GET","POST"]`. Its `inferenceRoutes` may list `"*"` as the model and may
+include the `openai_compatible` provider. `rubricVersion` is
+`transcript-mapping-v1`, `safeSchemaFields` is empty, and
+`evidenceRequirements.requiredFields` names the required roles. The policy also
+carries `openPromptDigest`, which the runtime checks against the built-in prefix
+and output contract at boot, and `egressPolicy`. Adding a bank, changing a
+reward or slot count, or changing a domain edits the measured policy and so
+needs a new signed image, a new state namespace and a newly published release
+manifest. `GET /v1/campaigns` additionally returns `availability`: remaining
+slots per campaign and remaining epoch budget.
+
+### Rolling a release epoch
+
+The open-recipe release of 2026-10-09 (`open-public-v1`) and its two validation
+epochs were rolled on the existing host in this order. Each step gates the next.
+
+1. Close the running epoch first: signed `pause`, confirm no obligations, return
+   any unspent USDC through operator custody, then signed `retire`. Retirement
+   reports `refunded` with amount 0 when the wallet holds no USDC.
+2. Create a new state stack for the new namespace and add its authority version
+   and state key to the host role with an additive change set. A namespace holds
+   one epoch: genesis is refused when the namespace already has a head.
+3. Set `stateAuthority` (function ARN, namespace, wrapping key) and
+   `initialWalletNonce` (the payout wallet's current on-chain nonce) in the
+   measured policy, and `pilotBudgetMinor` to the amount that will actually be
+   funded. Commit, and let CI build the image on its two independent builders.
+4. Build the same commit on the host from a `git archive` extracted under
+   `umask 022`; a stricter umask changes file modes inside the image and so
+   PCR0 and PCR2. Proceed only when the host measurements equal both CI builders.
+5. Approve that PCR0 on the new state key, install the signed image, and verify
+   with the contributor client's `preflight` against the release manifest.
+6. Signed operator `preflight` (only valid while unfunded), then
+   `install_continuous.sh` while paused, then fund exactly the budget, then
+   signed `activate`.
+7. Publish `transcripts/release.json` on `main`. Until it merges, contributors
+   on `main` are pinned to the retired release and cannot contribute.
+
+A code fix that leaves the measured policy unchanged does not need a new
+namespace. Pause, build and approve the new PCR0 on the same state key, install,
+and the enclave restores the same epoch, ledger and budget from durable state;
+operator `preflight` is refused for a funded epoch, so go straight to signed
+`resume`. This was exercised on the second validation epoch.
+
+Run the Python tests under 3.11, the enclave's runtime, as well as the local
+default. Validate any change to the acceptance path against a real account on a
+validation epoch before the public roll: synthetic rows are shorter than a real
+bank's, and one defect in the release candidate was visible only with real rows.
 
 ## Provision
 

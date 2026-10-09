@@ -12,6 +12,11 @@ The experimental campaign is `mercury-api-source-v1`, linked to
 from one authorized organization, for **10 USDC on Base**. Wise is already an
 existing integration and is excluded from incentives.
 
+This page covers the reviewed Mercury campaign only. The other banks use
+`open_recipe` campaigns, where the contributor's recipe supplies the requests
+and selectors and any model may be used; see the
+[recipe guide](transcript-recipes.md).
+
 ```mermaid
 sequenceDiagram
     participant A as Contributor's agent
@@ -79,7 +84,7 @@ write permissions.
 If the account UUID is not already known, first obtain admission with
 `Client.reserve(..., on_reserved=...)` and save its public recovery handle before
 collecting keys. The CLI has no standalone reserve command; see the
-[SDK reservation example](../skills/contribute-transcript/SKILL.md#verify-reserve-and-encrypt).
+[SDK reservation example](../skills/contribute-transcript/SKILL.md#mercury).
 Only then use the owner's trusted local memory-only tool to GET the same approved
 accounts endpoint and privately choose an observed active Mercury `account.id`.
 That local discovery is separate from the enclave's four reads. Do not send token
@@ -109,11 +114,14 @@ bodies do not. Model scoring cannot change the recipient, fixed award, budget,
 source checks or payment authorization. Confidential NEAR inference remains
 unavailable; ordinary provider-visible inference requires explicit consent.
 
-The new `mercury-public-v1` state is independent of the permanently retired Wise
-epoch. The same operator-recoverable KMS payout wallet may be reused only after
-zero-balance/nonce checks, a new measured policy and hardware approval. This is
-not escrow or an enclave-exclusive signing key. The measured campaign budget is 10 USDC, capped at one organization with no
-automatic refill; successful reservation determines admission.
+The campaign first ran under its own `mercury-public-v1` state, independent of
+the permanently retired Wise epoch. In the open-recipe release it is carried
+unchanged in the same measured policy as the open campaigns: state namespace
+`open-public-v1`, one shared epoch budget of at most 50 USDC with no automatic
+refill, and Mercury still capped at one organization and 10 USDC. The same
+operator-recoverable KMS payout wallet is reused only after zero-balance/nonce
+checks, a new measured policy and hardware approval. This is not escrow or an
+enclave-exclusive signing key. A successful reservation determines admission.
 
 The separately scoped [Mercury release evidence](../transcripts/mercury-source-evidence.json)
 records measured-source, hardware and funding checks; positive live bank acquisition

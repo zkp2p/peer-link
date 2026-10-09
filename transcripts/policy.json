@@ -3,7 +3,9 @@
   "mode": "nitro-pilot",
   "operatorPublicKey": "12e04ddbf7af5ff661e6dfe36aceb290c48df218b7ed1c6deb76691f77acdaa4",
   "promptDigest": "0b914ee6f22a30b2c234c02e932eadb5dae8d181be57440733dda6566f018de2",
+  "openPromptDigest": "99e22d67eb532830a400b2786c29881d5a14f1b3ad8e843c91c5492e4b23b735",
   "payoutRpc": "https://mainnet.base.org/",
+  "egressPolicy": "public_https",
   "egressHosts": [
     "api.mercury.com",
     "api.openai.com",
@@ -145,18 +147,1135 @@
         "maxWindowDays": 30,
         "maxReads": 4
       }
+    },
+    {
+      "version": 1,
+      "id": "chase-open-v1",
+      "bankId": "us/chase",
+      "bankName": "Chase",
+      "country": "US",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/73",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://chase.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "bank-of-america-open-v1",
+      "bankId": "us/bank-of-america",
+      "bankName": "Bank of America",
+      "country": "US",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/235",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://bankofamerica.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "wells-fargo-open-v1",
+      "bankId": "us/wells-fargo",
+      "bankName": "Wells Fargo",
+      "country": "US",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/75",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://wellsfargo.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "monobank-open-v1",
+      "bankId": "ua/monobank",
+      "bankName": "Monobank",
+      "country": "UA",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/6",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://monobank.ua",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "vietcombank-open-v1",
+      "bankId": "vn/vietcombank",
+      "bankName": "Vietcombank",
+      "country": "VN",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/8",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://vietcombank.com.vn",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "opay-open-v1",
+      "bankId": "ng/opay",
+      "bankName": "OPay",
+      "country": "NG",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/4",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://opayweb.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        },
+        {
+          "origin": "https://opay.ng",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "easypaisa-open-v1",
+      "bankId": "pk/easypaisa",
+      "bankName": "Easypaisa",
+      "country": "PK",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/86",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://easypaisa.com.pk",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "bca-open-v1",
+      "bankId": "id/bca",
+      "bankName": "BCA",
+      "country": "ID",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/7",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://klikbca.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        },
+        {
+          "origin": "https://bca.co.id",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "bancolombia-open-v1",
+      "bankId": "co/bancolombia",
+      "bankName": "Bancolombia",
+      "country": "CO",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/9",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://bancolombia.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "gcash-open-v1",
+      "bankId": "ph/gcash",
+      "bankName": "GCash",
+      "country": "PH",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/10",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://gcash.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "bkash-open-v1",
+      "bankId": "bd/bkash",
+      "bankName": "bKash",
+      "country": "BD",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/13",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://bkash.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "mpesa-open-v1",
+      "bankId": "ke/mpesa",
+      "bankName": "Safaricom M-Pesa",
+      "country": "KE",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/14",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://safaricom.co.ke",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "kaspi-open-v1",
+      "bankId": "kz/kaspi",
+      "bankName": "Kaspi Bank",
+      "country": "KZ",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/15",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://kaspi.kz",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "bbva-mexico-open-v1",
+      "bankId": "mx/bbva-mexico",
+      "bankName": "BBVA Mexico",
+      "country": "MX",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/16",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://bbva.mx",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "bcp-open-v1",
+      "bankId": "pe/bcp",
+      "bankName": "Banco de Credito del Peru",
+      "country": "PE",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/17",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://viabcp.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "ziraat-open-v1",
+      "bankId": "tr/ziraat",
+      "bankName": "Ziraat Bank",
+      "country": "TR",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/18",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://ziraatbank.com.tr",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "uala-open-v1",
+      "bankId": "ar/uala",
+      "bankName": "Uala Argentina",
+      "country": "AR",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/20",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://uala.com.ar",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "itau-open-v1",
+      "bankId": "br/itau",
+      "bankName": "Itau Brazil",
+      "country": "BR",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/21",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://itau.com.br",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "mtn-momo-open-v1",
+      "bankId": "gh/mtn-momo",
+      "bankName": "MTN MoMo Ghana",
+      "country": "GH",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/32",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://mtn.com.gh",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "bbva-spain-open-v1",
+      "bankId": "es/bbva-spain",
+      "bankName": "BBVA Spain",
+      "country": "ES",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/24",
+      "status": "active",
+      "rewardMinor": 5000000,
+      "maxContributors": 2,
+      "sources": [
+        {
+          "origin": "https://bbva.es",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
     }
   ],
   "privacy": {
     "rawRecords": "enclave_memory_only",
     "inferenceInput": "redacted_structural_artifact",
-    "artifactStorage": "operator_host_fsync",
+    "artifactStorage": "operator_host_fsync_then_private_s3_mirror",
     "inferenceBilling": "contributor_key_only",
     "providerVisibleRecipients": {
       "near": ["NEAR AI Cloud", "Chutes (possible upstream fallback)"]
     },
     "nearModelResponseAuthenticity": "unverified_gateway_assertions_only",
-    "confidentialNearEnabled": false
+    "confidentialNearEnabled": false,
+    "openInferenceInput": "contributor_notes_and_value_free_transcript",
+    "openRedaction": "deterministic_heuristic_names_formats_status_tokens",
+    "openProviderRouting": "contributor_chosen_endpoint_and_model_unpinned"
   },
   "payoutAuthority": {
     "kind": "aws_kms",
@@ -167,11 +1286,11 @@
   "stateAuthority": {
     "kind": "aws_lambda_dynamodb",
     "region": "us-east-1",
-    "functionArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-mercury-v1-authority:1",
-    "namespace": "mercury-public-v1",
-    "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/12f11ecb-8eff-4ae5-b787-13d74aafba49",
+    "functionArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-open-v1-authority:1",
+    "namespace": "open-public-v1",
+    "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/34433f8c-357e-4011-9f05-a23ce8da7bd8",
     "credentialRoleArn": "arn:aws:iam::411399509833:role/peerlink-transcript-kms-pilot-HostRole-CtMw2KLCWL9c",
     "maxCiphertextBytes": 327680,
-    "initialWalletNonce": 4
+    "initialWalletNonce": 10
   }
 }

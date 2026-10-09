@@ -43,10 +43,21 @@ def permitted_endpoint(campaign, url, method):
         source_origin = "https://" + parsed.hostname
         require(url.startswith(source_origin + "/") and ".." not in parsed.path and "//" not in parsed.path and "%" not in parsed.path,
                 "source_not_allowed")
-        parameters = parse_qsl(parsed.query, keep_blank_values=True, strict_parsing=True)
+        parameters = parse_qsl(parsed.query, keep_blank_values=True, strict_parsing="openSource" not in campaign)
     except (ValueError, UnicodeError):
         require(False, "source_not_allowed")
     for source in campaign["sources"]:
+        if "openSource" in campaign:
+            # The campaign pins the bank's registrable domain; the contributor's
+            # recipe chooses the host under it and the path.
+            from .open_source import origin_in_domain
+            if not origin_in_domain(source_origin, source["origin"]) or method not in source["methods"]:
+                continue
+            require(re.fullmatch(r"/[A-Za-z0-9_.~:@,=+;()'/-]*", parsed.path) and len(parameters) <= 30
+                    and len({name for name, _ in parameters}) == len(parameters)
+                    and all(re.fullmatch(r"[A-Za-z0-9_.$\[\]-]{1,64}", name) and len(value) <= 512
+                            for name, value in parameters), "source_not_allowed")
+            return source, "/", sorted(name for name, _ in parameters)
         if source["origin"] != source_origin or method not in source["methods"]:
             continue
         require(len(parameters) <= 30 and len({name for name, _ in parameters}) == len(parameters)
@@ -63,6 +74,9 @@ def validate_recipe(campaign, recipe, max_reads=20):
     if "sourceDescriptor" in campaign:
         from .acquisition import validate_hints
         return validate_hints(campaign, recipe, max_reads)
+    if "openSource" in campaign:
+        from .open_source import validate_open_recipe
+        return validate_open_recipe(campaign, recipe, max_reads)
     fields(recipe, {"version", "reads"})
     require(recipe["version"] == 1, "recipe_version")
     require(isinstance(recipe["reads"], list) and 1 <= len(recipe["reads"]) <= max_reads, "recipe_limits")
@@ -91,6 +105,11 @@ def validate_live_reads(campaign, reads, job_id, submitted_at, now, max_reads=20
     if "sourceDescriptor" in campaign:
         from .acquisition import validate_evidence
         return validate_evidence(campaign, reads)
+    if "openSource" in campaign:
+        # The identity and history reads carry the anonymous-probe gate; the
+        # transcript builder requires it on exactly those two.
+        require(all(read.method in {"GET", "POST"} and read.status == 200 for read in reads)
+                and any(read.authentication_gate is True for read in reads), "unauthenticated_source")
     return next(iter(account_ids))
 
 

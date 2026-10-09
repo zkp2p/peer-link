@@ -10,6 +10,7 @@ import ipaddress
 import re
 import socket
 import ssl
+import threading
 import time
 from urllib.parse import urlsplit, parse_qsl
 
@@ -83,6 +84,22 @@ def bank_status_error(status):
     return "bank_http_unexpected_status"
 
 
+PROVIDER_FAILURES = {"provider_http_bad_request", "provider_http_unauthorized", "provider_http_payment_required",
+                     "provider_http_not_found", "provider_http_rate_limited", "provider_http_server_error",
+                     "provider_http_unexpected_status"}
+
+
+def provider_status_error(status):
+    """Fixed codes so a contributor can tell a bad key from a bad model or quota."""
+    if status in (400, 422): return "provider_http_bad_request"
+    if status in (401, 403): return "provider_http_unauthorized"
+    if status == 402: return "provider_http_payment_required"
+    if status == 404: return "provider_http_not_found"
+    if status == 429: return "provider_http_rate_limited"
+    if 500 <= status < 600: return "provider_http_server_error"
+    return "provider_http_unexpected_status"
+
+
 class HTTPTransport:
     def __init__(self, mode="vsock"):
         require(mode in {"direct", "vsock"}, "invalid_transport")
@@ -91,8 +108,24 @@ class HTTPTransport:
     def request(self, method, url, *, headers=None, body=None, timeout=15, max_bytes=MAX_RESPONSE):
         return self._request(method,url,headers=headers,body=body,timeout=timeout,max_bytes=max_bytes)
 
-    def request_bank(self,url,*,headers,timeout=15,max_bytes=MAX_RESPONSE):
-        return self._request("GET",url,headers=headers,timeout=timeout,max_bytes=max_bytes,bank_status_codes=True)
+    def request_bank(self,url,*,headers,timeout=15,max_bytes=MAX_RESPONSE,open_headers=False,body=None,content_type=None):
+        # An open-campaign recipe may replay the read-only POST a bank site issues.
+        require(body is None or open_headers and isinstance(body,str) and isinstance(content_type,str),"unsafe_method")
+        if body is not None:headers={**headers,"Content-Type":content_type}
+        return self._request("GET" if body is None else "POST",url,headers=headers,timeout=timeout,max_bytes=max_bytes,
+                             body=None if body is None else body.encode("utf-8","replace"),bank_status_codes=True,open_headers=open_headers)
+
+    def request_provider(self,url,*,headers,body,timeout=15,max_bytes=65536):
+        return self._request("POST",url,headers=headers,body=body,timeout=timeout,max_bytes=max_bytes,
+                             provider_status_codes=True)
+
+    def probe_anonymous(self,url,*,headers=None,timeout=15,body=None,content_type=None):
+        """The same request without secret-bearing headers. Returns the status and,
+        only when 2xx JSON is served, that anonymous body for the caller to inspect."""
+        headers=dict(headers or {"Accept":"application/json"})
+        if body is not None:headers["Content-Type"]=content_type
+        return self._request("GET" if body is None else "POST",url,headers=headers,timeout=timeout,
+                             body=None if body is None else body.encode("utf-8","replace"),anonymous_probe=True,open_headers=True)
 
     def probe_authentication(self,url,*,timeout=15,invalid_credential=False):
         """Status-only anonymous GET: never read, retain or return an error body."""
@@ -103,12 +136,14 @@ class HTTPTransport:
         if invalid_credential:headers["Authorization"]="Bearer "+invalid_probe_token
         return self._request("GET",url,headers=headers,timeout=timeout,authentication_probe=True)
 
-    def _request(self, method, url, *, headers=None, body=None, timeout=15, max_bytes=MAX_RESPONSE, authentication_probe=False, bank_status_codes=False):
+    def _request(self, method, url, *, headers=None, body=None, timeout=15, max_bytes=MAX_RESPONSE, authentication_probe=False, bank_status_codes=False,
+                 open_headers=False, anonymous_probe=False, provider_status_codes=False):
         require(method in {"GET", "POST"}, "unsafe_method")
         integer(max_bytes, 1, MAX_RESPONSE, "response_limits")
         require(type(timeout) in (int, float) and 0 < timeout <= 300, "request_timeout")
         require(isinstance(url, str) and len(url) <= 2048 and "\\" not in url and
                 not any(ord(char) < 33 for char in url), "destination_forbidden")
+        expired = threading.Event()
         try:
             parsed = urlsplit(url)
             source = "https://" + (parsed.hostname or "")
@@ -125,7 +160,13 @@ class HTTPTransport:
                 if "X-Amz-Target" in headers:
                     require(parsed.hostname=="kms.us-east-1.amazonaws.com" and parsed.path=="/"
                             and headers["X-Amz-Target"] in {"TrentService.GenerateDataKey","TrentService.Decrypt"},"unsafe_headers")
-            require(set(headers) <= permitted, "unsafe_headers")
+            if open_headers:
+                # Contributor session headers for an open campaign. Names were
+                # validated by credential_headers; AWS endpoints never use this path.
+                require(not aws_host and all(
+                    re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,63}", name) for name in headers), "unsafe_headers")
+            else:
+                require(set(headers) <= permitted, "unsafe_headers")
             if "x-no-aliasing" in headers:
                 require(method == "POST" and parsed.hostname == "cloud-api.near.ai"
                         and parsed.path == "/v1/chat/completions" and not parsed.query
@@ -137,15 +178,35 @@ class HTTPTransport:
             end = time.monotonic() + timeout
             factory = public_socket if self.mode == "direct" else tunnel_socket
             raw = factory(parsed.hostname, 443, timeout=timeout)
+            # Socket timeouts bound each operation, not the whole exchange. Shut the
+            # connection down at the absolute deadline so a peer trickling bytes
+            # through the handshake or headers cannot hold a job slot.
+            live = [raw]
+            def expire():
+                expired.set()
+                for stream in live:
+                    # The base-class call closes the TCP stream without clearing
+                    # the TLS object, so nothing can later be written in the clear.
+                    try:socket.socket.shutdown(stream, socket.SHUT_RDWR)
+                    except (OSError, TypeError):pass
+            watchdog = threading.Timer(max(0.001, end - time.monotonic()), expire)
+            watchdog.daemon = True
+            watchdog.start()
             try:
                 context = ssl.create_default_context()
                 context.minimum_version = ssl.TLSVersion.TLSv1_2
+                # The handshake shares the call's deadline instead of a fresh timeout.
+                raw.settimeout(max(0.001, end - time.monotonic()))
                 secure = context.wrap_socket(raw, server_hostname=parsed.hostname)
+                live.append(secure)
+                require(not expired.is_set(), "request_timeout")
             except BaseException:
+                watchdog.cancel()
                 raw.close()
                 raise
             connection = http.client.HTTPSConnection(parsed.hostname, timeout=timeout, context=context)
             connection.sock = secure  # TLS has already terminated inside this process/enclave.
+            probing = False
             try:
                 secure.settimeout(max(0.001, end - time.monotonic()))
                 connection.request(method, parsed.path + ("?" + parsed.query if parsed.query else ""),
@@ -158,7 +219,17 @@ class HTTPTransport:
                     require(response.status == 401, "unauthenticated_source")
                     # No body/content-type assumption or error headers cross this boundary.
                     return HTTPResponse(401,b"",())
-                require(200 <= response.status < 300, bank_status_error(response.status) if bank_status_codes else "http_request_failed")  # Redirects never followed.
+                if anonymous_probe:
+                    kinds = [v.split(";")[0].strip().lower() for k, v in response_headers if k == "content-type"]
+                    served = len(kinds) == 1 and (kinds[0] == "application/json" or kinds[0].endswith("+json"))
+                    plain = all(v.lower() == "identity" for k, v in response_headers if k == "content-encoding")
+                    if not (200 <= response.status < 300 and served and plain):
+                        # Not JSON to an anonymous caller: nothing is read or returned.
+                        require(not expired.is_set(), "request_timeout")
+                        return HTTPResponse(response.status,b"",())
+                    probing = True
+                require(200 <= response.status < 300, bank_status_error(response.status) if bank_status_codes else
+                        provider_status_error(response.status) if provider_status_codes else "http_request_failed")  # Redirects never followed.
                 content_types = [v for k, v in response_headers if k == "content-type"]
                 require(len(content_types) == 1 and (content_types[0].split(";")[0].strip().lower() == "application/json"
                         or content_types[0].split(";")[0].strip().lower().endswith("+json")
@@ -180,13 +251,18 @@ class HTTPTransport:
                     require(count <= max_bytes, "response_size")
                     chunks.append(chunk)
                 require(response.length in (None, 0), "response_incomplete")
+                # A body cut short by the deadline is a timeout, never a result.
+                require(not expired.is_set(), "request_timeout")
+                if probing:
+                    return HTTPResponse(response.status, b"".join(chunks), (("content-type", "json"),))
                 return HTTPResponse(response.status, b"".join(chunks), response_headers)
             finally:
+                watchdog.cancel()
                 connection.close()
         except Rejected:
             raise
         except (OSError, ValueError, http.client.HTTPException):
-            raise Rejected("http_transport_failed") from None
+            raise Rejected("request_timeout" if expired.is_set() else "http_transport_failed") from None
 
 
 def json_response(response, maximum=MAX_RESPONSE):
@@ -209,6 +285,9 @@ class BankClient:
         if "sourceDescriptor" in campaign:
             from .acquisition import DescriptorBankClient
             return DescriptorBankClient(campaign,*args,**kwargs)
+        if "openSource" in campaign:
+            from .open_source import OpenBankClient
+            return OpenBankClient(campaign,*args,**kwargs)
         return super().__new__(cls)
 
     def __init__(self, campaign, credential, transport=None, *, profile_id=None, max_reads=20, timeout=15):

@@ -1,6 +1,6 @@
 # PeerLink agent entrypoint
 
-Read AGENTS.md and skills/contribute-transcript/SKILL.md. The active contribution program collects attested banking transcripts; provider-code bounties are retired.
+Read AGENTS.md first. To help someone contribute a banking transcript, follow skills/contribute-transcript/SKILL.md and docs/transcript-recipes.md: pick a campaign, write a recipe, `preview` it locally, get the owner's consent, then `contribute`. Provider-code bounties are retired.
 
 
 ## Required logos for main-page integrations

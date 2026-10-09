@@ -131,9 +131,13 @@ def _schema(value, safe_fields, output, path="$", depth=0, counter=None):
             _schema(item, safe_fields, output, path + "[]", depth + 1, counter)
 
 
-def extract_artifact(campaign, reads):
+def extract_artifact(campaign, reads, context=None):
     validate_campaign(campaign)
     require(isinstance(reads, list) and bool(reads) and all(type(read) is LiveRead for read in reads), "untrusted_evidence")
+    if "openSource" in campaign:
+        from .open_source import extract_transcript
+        return extract_transcript(campaign, reads, context)
+    require(context is None, "invalid_submission")
     if "sourceDescriptor" in campaign:
         from .acquisition import validate_evidence
         validate_evidence(campaign, reads)
@@ -184,6 +188,9 @@ def extract_artifact(campaign, reads):
 
 def validate_artifact(campaign, artifact):
     validate_campaign(campaign)
+    if "openSource" in campaign:
+        from .open_source import validate_transcript
+        return validate_transcript(campaign, artifact)
     fields(artifact, ARTIFACT_FIELDS)
     require(artifact["version"] == 1 and artifact["campaignId"] == campaign["id"]
             and artifact["bankId"] == campaign["bankId"], "unsafe_artifact")
@@ -313,16 +320,29 @@ def validate_archive_record(campaign, record, *, policy):
     require((job["state"] == "accepted" and job["transactionId"] is None) or
             (job["state"] != "accepted" and isinstance(job["transactionId"],str)
              and re.fullmatch(r"0x[0-9a-f]{64}",job["transactionId"])), "unsafe_archive")
+    from .policy import CUSTOM_PROVIDER, inference_base_url, route_allows
     grade = record["modelResult"]
-    fields(grade, {"rubricVersion", "score", "useful"})
-    require(grade["rubricVersion"] == campaign["rubricVersion"] and grade["useful"] is True, "unsafe_archive")
-    integer(grade["score"],campaign["evidenceRequirements"]["minScore"],100,"unsafe_archive")
     inference = record["inference"]
-    fields(inference,{"requestDigest","responseDigest","provider","model","privacyMode","inputTokens","outputTokens"})
+    require(isinstance(inference, dict), "unsafe_archive")
+    custom = inference.get("provider") == CUSTOM_PROVIDER
+    fields(inference,{"requestDigest","responseDigest","provider","model","privacyMode","inputTokens","outputTokens"}
+           | ({"baseUrl"} if custom else set()))
     hex_digest(inference["requestDigest"])
-    require(inference["responseDigest"] == digest(grade),"unsafe_archive")
-    require(any(inference["provider"] == route["provider"] and inference["model"] in route["models"]
-                and inference["privacyMode"] in route["privacyModes"] for route in campaign["inferenceRoutes"]),
+    if "openSource" in campaign:
+        # The model only proposed roles; the stored result is the code-derived
+        # assessment, so its digest is not the model response digest.
+        from .open_source import validate_model_result
+        validate_model_result(campaign, record["artifact"], grade)
+        require(grade["useful"] is True, "unsafe_archive")
+        hex_digest(inference["responseDigest"])
+        if custom:
+            inference_base_url(inference["baseUrl"])
+    else:
+        fields(grade, {"rubricVersion", "score", "useful"})
+        require(grade["rubricVersion"] == campaign["rubricVersion"] and grade["useful"] is True, "unsafe_archive")
+        require(not custom and inference["responseDigest"] == digest(grade),"unsafe_archive")
+    integer(grade["score"],campaign["evidenceRequirements"]["minScore"],100,"unsafe_archive")
+    require(route_allows(campaign, inference["provider"], inference["model"], inference["privacyMode"]),
             "unsafe_archive")
     integer(inference["inputTokens"],0,100000,"unsafe_archive")
     integer(inference["outputTokens"],0,20000,"unsafe_archive")

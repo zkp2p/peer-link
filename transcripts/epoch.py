@@ -213,10 +213,11 @@ class BootEpoch:
             self.require_active()
             yield
 
-    def accept(self, job_id, reads, model_result, *, now, evidence=None, policy=None):
+    def accept(self, job_id, reads, model_result, *, now, evidence=None, policy=None, context=None):
         with self._lock:
             self.require_active()
-            return self.ledger.accept(job_id, reads, model_result, dedup_key=self._dedup_key, now=now,evidence=evidence,policy=policy)
+            return self.ledger.accept(job_id, reads, model_result, dedup_key=self._dedup_key, now=now,evidence=evidence,
+                                      policy=policy, context=context)
 
     def sign_transaction(self, transaction):
         with self._lock:

@@ -1,77 +1,127 @@
 # Transcript privacy
 
-**Mercury source validation requires an independently approved release and a funded
-reservation before keys.** One authorized organization may earn $10 USDC if accepted;
-its first positive live API acquisition remains pending. Other campaigns are planned.
-Wise tests are internal validation only; Wise is excluded from rewards.
-Independently pin the [release](../transcripts/release.json), verify fresh attestation,
-and reserve a funded slot before collecting or sending keys. Follow the
-[contribution skill](../skills/contribute-transcript/SKILL.md).
+A contribution sends a bank session to PeerLink's enclave and leaves behind a
+value-free transcript. This page says where each kind of data goes. Follow the
+[contribution skill](../skills/contribute-transcript/SKILL.md) and run `preview`
+before contributing: it prints, on your own machine, exactly what would be kept.
 
 ## Where data goes
 
 | Boundary | Data it may receive |
 | --- | --- |
-| Account owner's browser and local agent | Authorized transaction-history navigation and local bank content. |
-| PeerLink Nitro enclave | Application-encrypted submission after attestation verification; fresh authenticated bank responses, transient session and inference key. |
-| Approved ordinary inference provider | Validated redacted structural artifact and fixed grading instructions only; no raw bank response, session or payout key. |
-| Parent host/API infrastructure | Encrypted submission, public routing/status metadata, approved egress hostname and opaque TLS bytes. |
-| Retained/public outputs | Templated endpoints, allowlisted field paths/types, coverage, limitations and opaque receipt identifiers/digests. |
+| Account owner's browser and local agent | The bank pages and requests the owner chooses to inspect, and the session used to replay them. |
+| PeerLink Nitro enclave | The encrypted submission after the client has verified attestation: recipe, notes, bank session or token, inference key. Fresh bank responses to the recipe's reads. All of it in memory only. |
+| The bank | The recipe's requests with the session headers, from the enclave, to the single host the contributor declared inside the campaign's bank domain. |
+| The owner's chosen model provider | One request on the owner's key: PeerLink's fixed instructions, the contributor's notes and the value-free transcript. No session, token, raw response, id, name, amount or payout key. |
+| Parent host and API gateway | Ciphertext of the submission, public job status, destination hostnames and opaque TLS bytes. |
+| Retained by Peer (enclave host disk and a private S3 bucket) | For accepted jobs only: the signed record containing the transcript, the notes, the code-verified field mapping and score, inference metadata, and the payout coordinates. |
+| Public | Campaign terms and the on-chain USDC transfer. A contributor holds their own signed receipt. |
 
-A cloud-backed local agent can separately process browser content. Explain that
-boundary and obtain the owner's consent before inspection; repository instructions
-do not authorize sharing banking data with an unrelated service.
+A cloud-backed local agent can separately process whatever it reads in the
+browser. Explain that boundary and obtain the owner's consent before inspection;
+repository instructions do not authorize sharing banking data with an unrelated
+service.
 
-The pilot performs deterministic redaction **before inference**. Ordinary
-provider-visible inference requires explicit consent to the named provider/model
-and approved upstream routing even though the content is structural. Peer enclave
-protection does not establish the provider's confidentiality or retention policy.
-The ordinary NEAR route is implemented for canonical `z-ai/glm-5.3-flash`,
-with explicit consent to NEAR and its approved Chutes upstream. It requests no
-aliasing, rejects alias/model mismatches and unapproved serving-provider headers,
-and makes at most one grading call. Those gateway assertions over TLS are not
-independent model attestation. Paid ordinary schema probes and the supervised
-Wise pilots exercised this route. The [durable release evidence](../transcripts/durable-pilot-evidence.json)
-records the authenticated Wise job, bounded contributor billing, automatic payment
-and receipt recovery after restart. Confidential inference remains unavailable.
+## What the enclave sends to a model
 
-NEAR confidential inference is unavailable until its exact attestation and encrypted
-request/response adapter have been verified. Failed confidential verification must
-not downgrade to ordinary inference.
+The enclave builds the prompt itself. PeerLink's instructions come first, the
+contributor's notes and the transcript sit in the middle, and PeerLink's output
+contract comes last. **The bank session is never placed in a prompt.** The
+enclave uses the session only to make the reads; the model sees structure, not
+values. For open campaigns the owner may choose any OpenAI-compatible endpoint
+and model, so consent to that provider is the owner's decision and is recorded
+with `--consent`. Enclave protection applies to Peer's handling of the session
+and raw data; it does not make the chosen provider confidential or govern its
+retention. Confidential NEAR inference is not available and a job never
+downgrades silently from a mode it reserved.
+
+The model cannot grant a reward. It proposes which transaction field plays each
+role, and code verifies every proposal against the live records and computes the
+score. Reviewed campaigns such as Mercury keep their pinned provider and model
+routes and send only the allowlisted structural artifact described in
+[source validation](source-validation.md).
 
 ## Credentials and acquisition
 
-The owner logs in and completes MFA. The encrypted job includes only the authorized
-session/API credential needed for approved reads, the recipe and the contributor's
-inference key; never passwords, MFA codes or private payout keys. Verify fresh
-Nitro attestation, the pinned approved image, encryption key and policy binding
-before encryption. Reject debug/unreleased images and changed scope or privacy mode.
+The owner logs in and completes MFA. The encrypted job includes only the session
+headers or API token needed for the reads, the recipe, the notes and the
+contributor's inference key; never passwords, MFA codes or private payout keys.
+The client verifies fresh Nitro attestation, the pinned image measurements,
+encryption key and policy before encryption, and rejects debug or unreleased
+images.
 
-Bank/provider TLS and HTTP processing terminate inside the enclave. The host relay
-sees destination metadata and ciphertext. Submitted captures are hints; the enclave
-must acquire new bank responses and derive account identity from those authenticated
-responses. No payment initiation or account changes are permitted.
+Bank and provider TLS end inside the enclave. The host relay sees destination
+hostnames and ciphertext. The enclave sends the bank credential only to the
+`https://host` the contributor declared, which must be the campaign's bank
+domain or a subdomain, and the inference key only to the reserved endpoint.
+The credential must include at least one header beyond those every browser
+sends (`User-Agent`, `Accept`, `Referer` and similar). Before the authenticated
+reads, the enclave replays the identity and history requests with only those
+browser headers and stops if the answer still contains the selected identity or
+history rows, so an endpoint that serves the data without a session cannot stand
+in for an account. This shows the data needs something the contributor supplied;
+it cannot show that the something is a customer login. Hosts named like a
+sandbox, test or developer environment are refused. No payment initiation or account change is part
+of a contribution; for POST reads the enclave refuses requests that are
+obviously named as state changes, and the contributor remains responsible for
+replaying only requests the bank's site issues while viewing history.
 
-Keys remain transient and are not read from an environment fallback, returned in
-errors, included in model prompts, or logged. After the job, revoke the inference
-key and use the bank's logout/session controls. Logout is not a universal bank-token
-revocation guarantee. Python reference removal is not guaranteed memory zeroization;
-enclave destruction is the final key-erasure boundary.
+Keys are transient inside the enclave: never read from the enclave's
+environment, returned in errors, included in prompts, logged or written to
+durable state. On the contributor's machine, secrets may come from environment
+variables the owner exports, from the stdin payload, or from a terminal prompt;
+never from a command argument. After the job, log out of the bank session,
+revoke any dedicated token and revoke or cap the inference key. Logging out does
+not revoke an API token. Python reference removal is not guaranteed memory
+zeroization; enclave destruction is the final key-erasure boundary.
 
 ## Redaction and retention
 
-Retain endpoint templates, safe parameter/header names, field paths and types,
-list/detail and authenticated Wise profile/balance/history relationships, read
-coverage and limitations. The policy allowlists 59 public schema field names;
-unknown or dynamic keys still become wildcards. Remove names, account
-numbers, balances, exact amounts, memos, transaction IDs and credentials, including
-values in URL segments, queries, nested bodies and dynamic object keys. Unknown
-field names become structural wildcards. Model free text is not retained as a
-supposedly safe banking transcript.
+For open campaigns the transcript contains, and the validator admits, only:
 
-Account deduplication uses purpose-scoped keyed identifiers derived from live bank
-account evidence. Never publish those identifiers or ordinary hashes of guessable
-banking values. Public receipts hash already-redacted artifacts only.
+- request method, host, path template and query parameter names. Path segments
+  that are not plain words, or that follow a collection such as `users` or
+  `accounts`, become `{id}`; query values become a format class; a host label
+  under the bank domain that is not a common infrastructure word (`api`,
+  `secure`, `online` and similar) becomes `{sub}`;
+- the names of the credential headers, never their values;
+- for a POST, the body's field names and format classes and a GraphQL operation
+  name, never the document text or variable values;
+- response field paths with JSON types and closed-vocabulary format classes
+  such as `decimal:neg:2`, `datetime:iso8601:utc` or `text:short:alpha`;
+- short tokens under payment status-like keys (`status`, `state`, `type`,
+  `kind`, `currency`, `scheme`, `direction`, `method`, `rail`, `network`, with
+  prefixes such as `payment` or `transfer`), taken only from the history rows.
+  A token is dropped if it contains two digits in a row, sits under an object
+  describing a person or address, or also appears as an ordinary value. Nothing
+  from profile or account reads is kept as a value;
+- the contributor's notes, which are rejected if they contain emails, long or
+  grouped digit runs, token-like strings, or identifier-like and multi-word
+  values copied from the responses;
+- the selectors for identity and history, a coverage flag, and fixed limitation
+  labels.
+
+A field name is kept when it recurs across the rows of a list, in any
+language, or when it is made of common field-name words; any other object key,
+such as a handle, an account nickname or an id used as a key, is shown as
+`{key}`. The same word list screens URL path segments. The count of transactions is not kept. **These rules for names and
+tokens are heuristic.** A field name or a status-like token that is itself
+personal could be retained, which is why `preview` exists and why the owner
+should read its output before contributing.
+
+Reviewed campaigns keep the earlier, stricter artifact: only schema field names
+allowlisted in the measured policy, types, and templated endpoint relationships.
+
+Accepted records are signed inside the enclave, written to the enclave host's
+disk, and mirrored to a private, versioned S3 bucket in Peer's AWS account that
+Peer engineers read; see [transcript archive](transcript-archive.md). Rejected
+jobs leave no transcript with Peer, although the chosen model provider may
+already have received the notes and transcript.
+
+Account deduplication uses purpose-scoped keyed identifiers derived from live
+bank account evidence, kept only in encrypted enclave state. For open campaigns
+that evidence is the value at the contributor's `identity` selector. Never
+publish those identifiers or ordinary hashes of guessable banking values.
 
 The revised payout key is non-exportable in AWS KMS. Authorized operator IAM and
 the host broker can request signatures outside the enclave and recover funds;

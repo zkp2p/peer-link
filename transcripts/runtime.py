@@ -62,8 +62,10 @@ def bootstrap_wallet_gate(config,wallet,rpc):
 
 class Runtime:
     def __init__(self,policy,epoch,transport,archive,attester=attest):
-        from .providers import SYSTEM_PROMPT
+        from .providers import SYSTEM_PROMPT,open_prompt_digest
         require(policy['promptDigest']==hashlib.sha256(SYSTEM_PROMPT.encode()).hexdigest(),'prompt_mismatch')
+        if any('openSource' in campaign for campaign in policy['campaigns']):
+            require(policy.get('openPromptDigest')==open_prompt_digest(),'prompt_mismatch')
         validate_epoch_descriptor(epoch.public_descriptor(), policy)
         self.policy,self.policy_digest=policy,digest(policy)
         self.epoch,self.ledger,self.transport,self.archive=epoch,epoch.ledger,transport,archive
@@ -146,7 +148,12 @@ class Runtime:
             # be embedded in the image whose measurements they approve.
             return {'version':1,'status':'discovery_only','policyDigest':self.policy_digest,
                     'releaseSource':'https://github.com/zkp2p/peer-link/blob/main/transcripts/release.json'}
-        if command=='campaigns':return {'policyDigest':self.policy_digest,'campaigns':self.policy['campaigns']}
+        if command=='campaigns':
+            result={'policyDigest':self.policy_digest,'campaigns':self.policy['campaigns']}
+            # A capacity hint only; the static campaign list stays served if state is unavailable.
+            try:result['availability']=self.ledger.availability(self.policy['campaigns'],int(time.time()))
+            except Rejected:pass
+            return result
         if command=='attest':
             fields(body,{'nonce'});require(isinstance(body['nonce'],str) and len(body['nonce'])==64 and all(c in '0123456789abcdef' for c in body['nonce']),'invalid_nonce')
             context={'protocol':'peerlink-epoch-v2' if self.durable else 'peerlink-epoch-v1',
@@ -334,14 +341,15 @@ class Runtime:
                 except Exception:return
                 time.sleep(2)
 
-    def accept_graded(self,job_id,reads,grade,evidence,deadline):
+    def accept_graded(self,job_id,reads,grade,evidence,deadline,context=None):
         # Retain the already-billed grade only for a short pre-CAS state outage.
         # An ambiguous write must use the ledger's original exact-opId recovery.
         retry_deadline=time.monotonic()+max(0,deadline-time.time())
+        extra={'context':context} if context is not None else {}
         for attempt in range(ACCEPT_MAX_ATTEMPTS):
             require(time.monotonic()<retry_deadline,'limits_exceeded')
             try:
-                return self.epoch.accept(job_id,reads,grade,now=int(time.time()),evidence=evidence,policy=self.policy)
+                return self.epoch.accept(job_id,reads,grade,now=int(time.time()),evidence=evidence,policy=self.policy,**extra)
             except Rejected as error:
                 if (getattr(self.ledger,'_pending_snapshot',None) is not None or
                         str(error) not in STATE_ERRORS|TRANSIENT_SETTLEMENT_ERRORS or attempt+1==ACCEPT_MAX_ATTEMPTS):raise
@@ -357,10 +365,15 @@ class Runtime:
         try:
             terms=self.ledger.terms(job_id);campaign,request=terms['campaign'],terms['request']
             start=int(time.time());self.ledger.begin_verification(job_id,start)
+            context=None
+            if 'openSource' in campaign:
+                # Contributor-authored recipe and notes; private until redacted.
+                from .open_source import submission_context
+                context=submission_context(campaign,payload)
             phase='bank'
             bank=BankClient(campaign,payload['credential'],transport=self.transport,profile_id=payload['profileId'],max_reads=request['limits']['maxBankReads'])
             reads=bank.acquire(job_id,payload['recipe'],start)
-            artifact=extract_artifact(campaign,reads)
+            artifact=extract_artifact(campaign,reads,context) if context is not None else extract_artifact(campaign,reads)
             if self.durable:
                 from .aws_state import MAX_RECORD
                 require(len(canonical(artifact))<=MAX_RECORD-8192,'unsafe_artifact')
@@ -373,17 +386,22 @@ class Runtime:
             provider=ProviderClient(campaign,request,payload['inferenceKey'],transport=self.transport)
             grade=provider.grade(artifact,int(time.time()))
             require(time.time()-start<=request['limits']['deadlineSeconds'],'limits_exceeded')
+            if context is not None:
+                # The model proposed field roles; code scores them on the live rows.
+                from .open_source import assess
+                grade=assess(campaign,reads,context,artifact,grade)
             evidence={'epoch':self.epoch.public_descriptor(),'modelResult':grade,
                       'inference':provider.metadata,'policyDigest':self.policy_digest}
             phase='state'
-            if self.durable:self.accept_graded(job_id,reads,grade,evidence,start+request['limits']['deadlineSeconds'])
+            if self.durable:self.accept_graded(job_id,reads,grade,evidence,start+request['limits']['deadlineSeconds'],context)
+            elif context is not None:self.epoch.accept(job_id,reads,grade,now=int(time.time()),context=context)
             else:self.epoch.accept(job_id,reads,grade,now=int(time.time()))
             record={'version':1,'epoch':self.epoch.public_descriptor(),'job':self.ledger.status(job_id),
                     'artifact':artifact,'modelResult':grade,'inference':provider.metadata,'policyDigest':self.policy_digest}
             self.pending_records[job_id]=record
             # Settlement needs only the redacted record and ledger payment.
             # Release credentials/raw history before any potentially long retry.
-            bank.close();provider.close();payload.clear();reads=None
+            bank.close();provider.close();payload.clear();reads=None;context=None
             phase='settlement'
             self.settle(job_id)
         except Rejected as error:
