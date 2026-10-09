@@ -1,6 +1,6 @@
 # Security
 
-Do not use experimental parser results alone to release money. Inputs are unauthenticated. No hosted bank-session processing or signing service exists here.
+Do not use experimental parser results alone to release money; inputs to the legacy bank adapters under `banks/` are unauthenticated. The transcript service is separate: it processes a contributor's bank session only inside an attested AWS Nitro enclave that the client verifies against the pinned [release](transcripts/release.json), and it pays fixed rewards from an operator-recoverable AWS KMS key. Its trust boundaries and heuristics are described in [docs/privacy.md](docs/privacy.md).
 
 Report vulnerabilities or exposed data through [GitHub private vulnerability reporting](https://github.com/zkp2p/peer-link/security/advisories/new) on this repository. If unavailable, email 0xsachink@gmail.com with a minimal description, not credentials or raw banking data. Avoid public issues for exploit details or personal records.
 

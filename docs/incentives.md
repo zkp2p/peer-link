@@ -77,8 +77,9 @@ or production approval.
 ## Pilot budget and availability
 
 The architecture reward ceiling is **$50 USDC** per funded epoch, with separate
-bounded gas and no automatic refill. The open-recipe release funds that ceiling
-once and shares it across every campaign, first come first served; refilling
+bounded gas and no automatic refill. The open-recipe release funds one amount
+up to that ceiling, currently $10, and shares it across every campaign, first
+come first served; refilling
 means retiring the epoch and publishing a new measured release. The completed
 supervised Wise experiment used a measured
 **$5 USDC budget** and one contributor slot after a confirmed $1 recovery test.

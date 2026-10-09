@@ -14,7 +14,7 @@ Useful history/schema fields (names only, no values):
 Known access limitations:
 
 Opening this request does not activate bank access, reserve a slot or promise funds.
-The transcript service is unreleased. Once enabled, each campaign publishes a fixed
-$5/$10 USDC reward and collects 1–5 distinct contributors. Enrollment uses the
-contribute-transcript skill and an attested encrypted job, not claiming comments
-or provider PRs. Contributors pay their inference costs even if rejected.
+Banks are added to the transcript service in a new measured release. Each campaign
+pays a fixed $5/$10 USDC and takes up to two contributors, sharing one funded budget.
+Enrollment uses the contribute-transcript skill and an attested encrypted job, not
+claiming comments or provider PRs. Contributors pay their inference costs even if rejected.

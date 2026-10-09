@@ -959,6 +959,74 @@ class HostAndCliTests(unittest.TestCase):
                                            "contentType": "application/json", "body": "{}"}
             with self.assertRaisesRegex(Rejected, "write_request_refused"):
                 lookup(policy, "synthetic-open-v1", write, 0, ["id"])
+    def test_check_lints_a_payload_without_any_credential(self):
+        from transcripts.cli import lint
+        policy = {"campaigns": [campaign()]}
+        body = {key: value for key, value in payload().items() if key != "inferenceKey"}
+        body["credential"] = {"origin": ORIGIN, "kind": "headers"}
+        result = lint(policy, "synthetic-open-v1", body)
+        self.assertEqual((result["ok"], result["reads"], result["methods"]), (True, 2, ["GET", "GET"]))
+        listing = json.loads(json.dumps(body))
+        listing["recipe"]["reads"][1] = {"url": ORIGIN + "/api/notifications/activity/list", "method": "POST",
+                                         "contentType": "application/json", "body": "{}"}
+        self.assertTrue(lint(policy, "synthetic-open-v1", listing)["ok"])
+        for change, code in ((lambda b: b.update(notes="call 4155550101999"), "unsafe_notes"),
+                             (lambda b: b["recipe"]["reads"].__setitem__(0, {"url": "https://elsewhere.example/x"}), "source_not_allowed"),
+                             (lambda b: b["recipe"]["reads"].__setitem__(1, {
+                                 "url": ORIGIN + "/api/payments/send", "method": "POST",
+                                 "contentType": "application/json", "body": "{}"}), "write_request_refused"),
+                             # A settings write the enclave's list does not name yet is refused locally.
+                             (lambda b: b["recipe"]["reads"].__setitem__(1, {
+                                 "url": ORIGIN + "/personal/webhook", "method": "POST",
+                                 "contentType": "application/json", "body": "{}"}), "write_request_refused"),
+                             (lambda b: b.pop("transcript"), "invalid_fields"),
+                             (lambda b: b["credential"].update(origin="https://evilbank.example"), "invalid_credential")):
+            broken = json.loads(json.dumps(body))
+            change(broken)
+            with self.assertRaisesRegex(Rejected, code):
+                lint(policy, "synthetic-open-v1", broken)
+    def test_env_secrets_path_checks_everything_before_reserving(self):
+        import io
+        import tempfile
+        from contextlib import redirect_stdout
+        from pathlib import Path
+        from unittest.mock import Mock
+        from transcripts.cli import main
+        body = {key: value for key, value in payload().items() if key != "inferenceKey"}
+        body["credential"] = {"origin": ORIGIN, "kind": "headers"}
+        secrets = {"PEERLINK_BANK_CREDENTIAL": json.dumps({COOKIE: SESSION}), "PEERLINK_INFERENCE_KEY": INFERENCE}
+        with tempfile.TemporaryDirectory() as directory:
+            release, policy_path = Path(directory) / "release.json", Path(directory) / "policy.json"
+            release.write_text(json.dumps({"status": "approved", "expiresAt": 2**40}))
+            policy_path.write_text(json.dumps({"campaigns": [campaign()], "pilotBudgetMinor": 10_000_000}))
+
+            def run(stdin_payload, environment):
+                client = Mock()
+                client.job = None
+                stdin = Mock()
+                stdin.isatty.return_value = False
+                stdin.buffer.read.return_value = json.dumps(stdin_payload).encode()
+                output = io.StringIO()
+                argv = ["transcripts.cli", "contribute", "--campaign", "synthetic-open-v1", "--payout", "0x" + "1" * 40,
+                        "--provider", "openai", "--model", "any-model", "--consent", "--secrets-from-env",
+                        "--release", str(release), "--policy", str(policy_path), "--state", str(Path(directory) / "job.json")]
+                with patch("sys.argv", argv), patch("sys.stdin", stdin), patch("transcripts.cli.Client", return_value=client), \
+                        patch.dict("os.environ", environment, clear=True), redirect_stdout(output):
+                    try:
+                        main()
+                    except SystemExit:
+                        pass
+                return client, stdin, json.loads(output.getvalue().splitlines()[-1])
+
+            # A missing secret or a payload the enclave would refuse never holds a slot.
+            client, stdin, result = run(body, {})
+            self.assertEqual(result["error"], "secrets_env_missing")
+            client.reserve.assert_not_called()
+            stdin.buffer.read.assert_not_called()
+            client, _, result = run(dict(body, notes="call 4155550101999"), secrets)
+            self.assertEqual(result["error"], "unsafe_notes")
+            client.reserve.assert_not_called()
+            self.assertNotIn(SESSION, json.dumps(result))
     def test_secrets_from_env_fill_the_payload_after_admission(self):
         from transcripts.cli import secrets_from_env
         body = {key: value for key, value in payload().items() if key != "inferenceKey"}

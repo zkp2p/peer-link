@@ -54,21 +54,29 @@ and raw responses are never part of a prompt.
 
 ```sh
 npm run transcripts:setup
+.local/transcript-venv/bin/python -m transcripts.cli preflight
 .local/transcript-venv/bin/python -m transcripts.cli campaigns --live
 ```
 
+`preflight` verifies the enclave's attestation against the pinned release
+without reserving anything; stop if it does not print `"verified": true`.
+`status` prints the release manifest, whose `limitations` say what has and has
+not been demonstrated; read them to the owner.
+
 If npm is not available, run the three commands behind `transcripts:setup` in
-`package.json` by hand. `preflight` checks the enclave's attestation against the
-pinned release without reserving anything; run it if any later command reports
+`package.json` by hand. Run `preflight` again if any later command reports
 `service_unavailable`.
 
-`campaigns` lists each campaign with its `kind`, reward, allowed `domains` and
-inference routes. `--live` adds `availability`: remaining slots per campaign and
+`campaigns` lists each campaign with its `kind`, reward, allowed hosts and
+inference routes. An open campaign prints `domains`: any `https` host on that
+domain or a subdomain is accepted. Mercury prints `origins`: exactly those
+hosts. `--live` adds `availability`: remaining slots per campaign and
 the remaining shared budget. One funded budget covers all campaigns for the
 release: `epochBudgetUSDC` in the output, at most $50 and often less. It is not
 refilled automatically, so stop here if the bank's
 `slotsRemaining` is 0 or `budgetRemainingMinor` is below the reward (USDC has six
-decimals, so 5000000 is $5). The hint is unsigned; only a reservation in step 5
+decimals, so 5000000 is $5). The budget is usually the scarcer of the two: a
+$10 campaign needs $10 still unreserved, whatever its slots say. The hint is unsigned; only a reservation in step 5
 admits a job.
 
 | `kind` | Campaigns | What you supply |
@@ -85,8 +93,9 @@ bank's campaign issue.
 
 Follow [docs/transcript-recipes.md](../../docs/transcript-recipes.md) to find the
 JSON request the bank's own site issues when the owner views their activity, and
-to choose the selectors. Replay only requests the site makes while viewing
-history. Never replay anything from a send, confirm, settings or logout screen:
+to choose the selectors. Replay only read requests: the ones the site makes
+while viewing history, or the read endpoints of the bank's documented API.
+Never replay anything from a send, confirm, settings or logout screen:
 the enclave refuses requests that are obviously named as state changes, but it
 cannot prove a request is read-only.
 
@@ -141,8 +150,17 @@ value, so you never have to dump a response to find an id:
   --secrets-from-env < .local/payload.json
 ```
 
-It needs only `credential` and `recipe.reads` to be filled in. The value is raw
-account data: use it in the URL and nowhere else.
+The payload must have all five top-level keys, but only `credential` and
+`recipe.reads` are used. The value is raw account data: use it in the URL and
+nowhere else.
+
+`check` validates a payload without any credential or network call: its shape,
+URLs and methods, the POST write guard, the selectors and the notes.
+
+```sh
+.local/transcript-venv/bin/python -m transcripts.cli check \
+  --campaign <campaign-id> < .local/payload.json
+```
 
 ## 3. Preview locally
 
@@ -196,7 +214,9 @@ Before spending anything, show the owner the campaign and fixed reward, the
 provider and model their key will pay for, the transcript from `preview`, and
 the limits in [What to tell the owner](#what-to-tell-the-owner). `terms
 --campaign <campaign-id> --provider <provider> --model <model-id>` prints the
-same terms as JSON. Continue only on a clear yes. Passing `--consent` records
+same terms as JSON; pass the same `--base-url`, `--max-output-tokens` and
+`--deadline` you will use so the owner sees the real limits. `terms` is offline:
+its `accepting` is always `false` and it cannot tell whether a model id exists. Continue only on a clear yes. Passing `--consent` records
 that the owner agreed to the chosen provider seeing the notes and transcript.
 
 If the owner is not present, continue only when their instructions already name
@@ -230,10 +250,17 @@ output tokens thinking first: pass `--max-output-tokens 8000` for one (default
 2048, maximum 20000). The limit is a ceiling, and the owner pays only for tokens
 used. Add `--deadline 240` for a slow model (default 120 seconds, maximum 300).
 
-The command verifies the enclave's attestation against the pinned release,
-reserves the job, writes the public recovery handle to `--state` (the file must
-not exist yet), prints `{"event":"reserved",...}`, and only then reads the
-payload and secrets, encrypts them to the attested key and submits.
+With `--secrets-from-env` the command first checks that both variables are set
+and runs `check` on the payload, so a missing secret or a malformed recipe never
+holds a slot. It then verifies the enclave's attestation against the pinned
+release, reserves the job, writes the public recovery handle to `--state` (the
+file must not exist yet), prints `{"event":"reserved",...}`, and only then reads
+the secrets, encrypts everything to the attested key and submits.
+
+A reservation holds the slot, the reward and the payout address for ten
+minutes. If the command stops after `reserved` and before submitting, do not
+start again: fix the cause and continue the same job with `submit-reserved
+--state .local/job.json --consent --secrets-from-env < .local/payload.json`.
 
 ## 6. Poll the same job and verify the receipt
 
@@ -268,9 +295,10 @@ out does not revoke a token) and revoke or cap the inference key.
 
 | Method | Use it when | How |
 | --- | --- | --- |
-| Environment | The owner can export values so you never read them. | The owner sets `PEERLINK_BANK_CREDENTIAL` and `PEERLINK_INFERENCE_KEY` in the terminal that starts you, and you pass `--secrets-from-env`. For `kind: headers` the bank variable is a JSON object of header name to value. `preview` needs only the bank variable. |
+| Environment | The owner can export values so you never read them. | The owner sets `PEERLINK_BANK_CREDENTIAL` and `PEERLINK_INFERENCE_KEY` in the terminal that starts you, and you pass `--secrets-from-env`. For `kind: headers` the bank variable is a JSON object of header name to value. `preview`, `lookup` and `check` do not need the inference key. |
+| Files | The secrets do not exist until after you have started, or the owner cannot restart you. | The owner saves each secret in its own file under `.local/` with mode 600, without using a shell command that records it in history (an editor is fine). You load them inside the same command that runs the tool and never print them: `PEERLINK_BANK_CREDENTIAL="$(cat .local/bank-credential)" PEERLINK_INFERENCE_KEY="$(cat .local/inference-key)" .local/transcript-venv/bin/python -m transcripts.cli ... --secrets-from-env`. Delete the files afterwards. |
 | Payload | You captured the session yourself. | Add `"value"` inside `credential` and a top-level `"inferenceKey"` to the JSON on stdin, omit `--secrets-from-env`, keep the file mode 600 under `.local/` and delete it afterwards. `preview` accepts the payload with or without `inferenceKey`. |
-| Terminal prompt | A human runs the command themselves. | `--prompt-secrets` asks on the controlling terminal with echo off. For `kind: headers` the owner pastes the JSON object of header name to value. |
+| Terminal prompt | A human runs the command themselves. | `--prompt-secrets` asks on the controlling terminal with echo off, for `preview`, `lookup`, `contribute` and `submit-reserved`. For `kind: headers` the owner pastes the JSON object of header name to value on one line. |
 
 With `--secrets-from-env` or `--prompt-secrets` the stdin payload must not
 contain `value` or `inferenceKey`. Never put a secret in a command argument, a
@@ -336,14 +364,15 @@ Every error and job reason is a fixed code, and the CLI prints a `hint` for most
 | `invalid_fields`, `invalid_submission` | The payload has a missing or extra key. Match the shapes above exactly; open campaigns need `profileId: null` and `transcript: []`. |
 | `secrets_env_missing`, `secrets_already_in_payload` | Export `PEERLINK_BANK_CREDENTIAL` (and `PEERLINK_INFERENCE_KEY` to contribute) in the shell that runs the command, and keep `value` and `inferenceKey` out of the stdin payload when a secrets flag is used. |
 | `invalid_credential` | `credential.origin` must be the `https://host` every read URL starts with, on the campaign domain or a subdomain of it, with a non-empty value. |
-| `credential_headers_invalid` | Use plain ASCII header names and values and drop Host, Content-Length, Connection and Accept-Encoding. |
+| `credential_headers_invalid` | Use plain ASCII header names and values, at most 24 headers, no header name with three or more digits in a row, and drop Host, Content-Length, Content-Type, Transfer-Encoding, Connection and Accept-Encoding. |
 | `source_not_allowed`, `recipe_invalid` | A URL leaves the campaign domain or the single host, is a sandbox, test or developer host, has a port, fragment, percent-encoded path or repeated query name, or uses POST where the campaign lists only GET. |
 | `write_request_refused` | The POST names a state change; the exact rules are in the [recipe guide](../../docs/transcript-recipes.md). Use the request that lists history. |
 | `credential_not_secret` | The credential holds only headers every browser sends, such as `User-Agent`, `Accept` and `Referer`. Include the cookie, token or CSRF header the request needs. |
 | `anonymous_access_allowed` | The identity or history request returns the same data without the session headers. Choose an authenticated endpoint. |
-| `bank_http_unauthorized`, `bank_http_redirect` | The session expired or a required header is missing. Capture fresh headers and go straight to `contribute`. |
+| `bank_http_unauthorized`, `bank_http_redirect` | The session expired or a required header is missing. Capture fresh headers, run `preview` once so the owner sees the transcript, then contribute straight away. |
+| `bank_http_client_error` | Another 4xx. Often a rate limit: some APIs allow one call per endpoint per minute, and `lookup`, `preview` and the enclave each spend one. Wait out the limit after the last local call, then contribute. Otherwise fix the URL. |
 | `bank_response_non_json`, `response_encoding` | The read returned HTML or a compressed body. Use the JSON API host the page calls. |
-| `identity_path_invalid`, `history_path_invalid`, `insufficient_history` | Fix the selector; identity is a number of at least 100 or a string of 3 or more characters, and history is an array with at least three object records. |
+| `identity_path_invalid`, `history_path_invalid`, `insufficient_history` | Fix the selector; identity is a number of at least 100 or a string of 3 to 200 characters without spaces, and history is an array of 3 to 2000 object records in one response. |
 | `unsafe_notes` | Remove ids, emails, digit runs of six or more, token-like strings of 28 or more characters, the word `bearer` before another word, and copied values from `notes`. |
 | `transcript_too_large` | Drop reads that are not needed or request a smaller page. |
 | `mapping_missing_<role>` | No field was verified for that required role. Check the path with `preview --mapping` and name it in `notes`. |
@@ -365,6 +394,10 @@ Every error and job reason is a fixed code, and the CLI prints a `hint` for most
   `preview` prints is what Peer keeps.
 - Responses must be JSON and uncompressed, and a bank that blocks data-centre
   addresses may refuse the enclave's requests even though `preview` worked.
+- The enclave signs in to nothing, but it does use the owner's session or token
+  from an AWS address. A bank may treat that as unusual activity, and a bank's
+  terms may forbid sharing a session or API token with a third party. The owner
+  decides whether that is acceptable for their account.
 - One contribution per bank account is paid per campaign. For open campaigns the
   account is identified by the `identity` selector the contributor declares.
 - Rewards are paid from an AWS KMS key that Peer's operators can also use and

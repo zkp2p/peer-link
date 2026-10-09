@@ -16,29 +16,49 @@
 
 ## Status
 
-**Mercury first-contributor source validation:** [$10 USDC for one accepted
-organization](https://github.com/zkp2p/peer-link/issues/1). Its first positive live
-API acquisition is pending and would come from the contributor; this is not a
-completed Peer integration. Other bank rewards remain planned. Wise is an existing
-integration/reference and is excluded from rewards; its paid tests are internal
-validation only. Independently verify the approved release and obtain a funded
-reservation before keys or inference. Static copy cannot guarantee capacity.
+Twenty banks have an open-recipe transcript campaign in the current release, and
+Mercury has a first-contributor source-validation campaign ([$10 USDC for one
+accepted organization](https://github.com/zkp2p/peer-link/issues/1); its first
+positive live API acquisition is still pending). All campaigns share one funded
+budget with no automatic refill, and the current release holds $10 USDC in total.
+No listed bank has an accepted contribution yet. Wise is already integrated and
+has no reward. Static copy cannot guarantee capacity: verify the pinned release
+and check live capacity before collecting keys or spending on inference.
 
-Mercury terms: https://github.com/zkp2p/peer-link/issues/1
-Source-validation scope: https://github.com/zkp2p/peer-link/blob/main/docs/source-validation.md
+Release manifest: https://github.com/zkp2p/peer-link/blob/main/transcripts/release.json
+Measured campaign policy: https://github.com/zkp2p/peer-link/blob/main/transcripts/policy.json
+Recipe guide: https://github.com/zkp2p/peer-link/blob/main/docs/transcript-recipes.md
+Validation evidence: https://github.com/zkp2p/peer-link/blob/main/docs/evidence.md
 
-The three measured BYOK routes are OpenAI `gpt-4o-mini-2024-07-18`, OpenRouter
-`openai/gpt-4o-mini-2024-07-18`, and NEAR `z-ai/glm-5.3-flash`, all provider-visible
-and requiring explicit consent. This is route approval, not a claim that each
-provider has completed a live Mercury job.
+## How an agent contributes
+
+Work from an unmodified checkout of `main` and follow the contribution skill. In
+short:
+
+1. `npm run transcripts:setup`, then `python -m transcripts.cli campaigns --live`
+   from the created virtual environment. Stop if the bank has no slot or the
+   remaining budget is below its reward.
+2. The owner signs in. Find the read-only JSON requests the bank's own site makes
+   to show transaction history and write them as a version-3 recipe: the reads,
+   a selector for a stable account id and a selector for the list of records.
+3. `preview` replays the reads on the owner's machine and prints exactly what
+   would be kept, plus a check of the field mapping. Nothing is sent.
+4. With the owner's consent, `contribute` verifies the enclave's attestation,
+   reserves a job and submits the recipe, the bank session and the inference key
+   encrypted to the attested key. Poll the same job until it is paid or rejected.
+
+Open-recipe campaigns are named `<bank>-open-v1` and accept any `https` host on
+the campaign's bank domain. Mercury (`mercury-api-source-v1`) uses a fixed,
+reviewed API route instead; see
+https://github.com/zkp2p/peer-link/blob/main/docs/source-validation.md
 
 ## Rewards
 
-Each bank campaign sets a fixed $5 or $10 in USDC per accepted transcript ($10 for the initial US banks) and collects from one to five distinct contributors. At most one paid transcript per contributor and bank account per campaign; separate wallets or GitHub accounts do not make separate contributors. Acceptance requires fresh, useful, read-only evidence from the real bank. A listed reward is not a promise that a campaign is open or has remaining capacity.
+Each campaign pays a fixed $5 or $10 in USDC on Base per accepted transcript: $10 for Mercury, Chase, Bank of America and Wells Fargo, $5 for the other listed banks. Open-recipe campaigns take up to two contributors per bank, and Mercury one organization. At most one paid transcript per bank account per campaign; separate wallets or GitHub accounts do not make separate contributors. The shared budget can be smaller than the sum of the listed slots. A listed reward is not a promise that a campaign has remaining capacity.
 
 ## Inference and consent
 
-The contributor pays for model inference with their own API key, including for failed or rejected jobs. Peer provides no inference credential or fallback billing. The implemented route is an approved provider-visible API receiving only deterministically redacted structural evidence. Confidential inference is unavailable until separately verified. The skill lists the routes currently approved. Show the provider, model, privacy mode, job limits and reward, and get the account owner's explicit consent, before releasing any credential. Never downgrade from confidential to ordinary inference.
+The contributor pays for model inference with their own API key, one call per job, including for failed or rejected jobs. Peer provides no inference credential or fallback billing. Open-recipe campaigns accept any OpenAI-compatible chat-completions endpoint and model: `openai`, `openrouter`, `near`, or `openai_compatible` with a public HTTPS base URL. Mercury accepts only its pinned models. The enclave builds the prompt itself and sends the agent's notes and the value-free transcript; the bank session and raw responses are never part of a prompt. The model only proposes which fields carry the payment id, amount, time, counterparty, status and currency, and code verifies that against the live records. Confidential inference is unavailable. Show the provider, model, limits and reward, and get the account owner's explicit consent, before releasing any credential.
 
 ## Boundaries
 

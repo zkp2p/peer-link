@@ -8,7 +8,7 @@
   "contributionSkill": "https://github.com/zkp2p/peer-link/blob/main/skills/contribute-transcript/SKILL.md",
   "campaigns": "https://github.com/zkp2p/peer-link/issues",
   "verification": {
-    "status": "approved_first_contributor_source_validation",
+    "status": "approved_open_recipe_release",
     "endpoint": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
     "scheduledJudgment": false,
     "automaticPayout": true,
@@ -23,19 +23,21 @@
     "fixedCampaignAmounts": [5, 10],
     "contributorsPerBank": {
       "minimum": 1,
-      "maximum": 5
+      "maximum": 2
     },
     "paidContributionsPerAccountPerCampaign": 1,
     "allCampaignsFunded": false,
     "automaticRefill": false,
     "publicCampaignsAvailable": true,
-    "wiseIncentivized": false
+    "wiseIncentivized": false,
+    "currentEpochBudgetUSDC": 10,
+    "sharedEpochBudget": true
   },
   "inference": {
     "billing": "contributor",
     "rejectedJobsStillBilled": true,
     "peerKeyFallback": false,
-    "input": "validated_redacted_structural_artifact",
+    "input": "contributor_notes_and_value_free_transcript",
     "privacyMode": "provider_visible",
     "explicitConsentRequired": true,
     "nearConfidentialAvailable": false,
@@ -49,7 +51,7 @@
       "billableInferenceVerified": true,
       "strictJsonProbeVerified": true
     },
-    "approvedRoutes": [
+    "reviewedCampaignRoutes": [
       {
         "provider": "openai",
         "models": ["gpt-4o-mini-2024-07-18"],
@@ -65,7 +67,31 @@
         "models": ["z-ai/glm-5.3-flash"],
         "privacyModes": ["provider_visible"]
       }
-    ]
+    ],
+    "openCampaignRoutes": [
+      {
+        "provider": "openai",
+        "models": ["*"],
+        "privacyModes": ["provider_visible"]
+      },
+      {
+        "provider": "openrouter",
+        "models": ["*"],
+        "privacyModes": ["provider_visible"]
+      },
+      {
+        "provider": "near",
+        "models": ["*"],
+        "privacyModes": ["provider_visible"]
+      },
+      {
+        "provider": "openai_compatible",
+        "models": ["*"],
+        "privacyModes": ["provider_visible"],
+        "baseUrl": "contributor_supplied_public_https"
+      }
+    ],
+    "modelDecidesReward": false
   },
   "discovery": {
     "meritProjectProfile": "https://terminal.merit.systems/zkp2p/peer-link",
@@ -74,7 +100,7 @@
   "internalValidation": {
     "status": "completed_internal_validation_not_public_enrollment",
     "bank": "wise",
-    "otherBanks": "planned",
+    "otherBanks": "open_recipe_campaigns_in_current_release",
     "durableState": "encrypted_snapshot_immutable_lambda_cas_verified_scope",
     "descriptorVersion": 3,
     "restartRequiresOperatorReview": true,
@@ -87,7 +113,8 @@
     "evidence": "https://github.com/zkp2p/peer-link/blob/main/transcripts/durable-pilot-evidence.json",
     "ledgerPersistence": "aws_dynamodb_encrypted_snapshot",
     "hardwarePaidRestartProof": "verified_scoped",
-    "excludedFromRewardRecruitment": true
+    "excludedFromRewardRecruitment": true,
+    "openRecipeEvidence": "https://github.com/zkp2p/peer-link/blob/main/transcripts/open-validation-evidence.json"
   },
   "historicalRamOnlyPilot": {
     "publicAcceptanceEnabled": false,
@@ -122,6 +149,42 @@
     "emptyEpochRetirementVerified": true,
     "remainingUsdcMinor": 0,
     "scope": "completed_supervised_one_slot_pilot"
+  },
+  "openCampaigns": {
+    "kind": "open-json-read-v1",
+    "count": 20,
+    "campaignIds": [
+      "chase-open-v1",
+      "bank-of-america-open-v1",
+      "wells-fargo-open-v1",
+      "monobank-open-v1",
+      "vietcombank-open-v1",
+      "opay-open-v1",
+      "easypaisa-open-v1",
+      "bca-open-v1",
+      "bancolombia-open-v1",
+      "gcash-open-v1",
+      "bkash-open-v1",
+      "mpesa-open-v1",
+      "kaspi-open-v1",
+      "bbva-mexico-open-v1",
+      "bcp-open-v1",
+      "ziraat-open-v1",
+      "uala-open-v1",
+      "itau-open-v1",
+      "mtn-momo-open-v1",
+      "bbva-spain-open-v1"
+    ],
+    "rewardUSDC": [5, 10],
+    "maximumContributorsPerBank": 2,
+    "recipeVersion": 3,
+    "methods": ["GET", "POST"],
+    "hostRule": "any_https_host_on_the_campaign_bank_domain",
+    "availability": "fresh_reservation_required",
+    "positiveLiveAcquisitionVerified": false,
+    "policy": "https://github.com/zkp2p/peer-link/blob/main/transcripts/policy.json",
+    "recipeGuide": "https://github.com/zkp2p/peer-link/blob/main/docs/transcript-recipes.md",
+    "localPreview": true
   },
   "publicCampaign": {
     "bank": "mercury",
