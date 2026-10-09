@@ -101,13 +101,17 @@ reserved funds before enrollment.
 ## Retired provider awards
 
 The [legacy Bank of America commitment record #74](https://github.com/zkp2p/peer-link/issues/74)
-was administratively closed and removed from award discovery. Its preserved
-**$50 original commitment**, Primuez assignment and **October 16, 2026** terms
-remain historical obligations for review. Closure neither accepts nor rejects the
-work or cancels a valid prior payment commitment; the amount is not reduced to
-the transcript rate. There are no active individual Merit award listings.
+is archived after Primuez [voluntarily withdrew on October 9, 2026](https://github.com/zkp2p/peer-link/issues/74#issuecomment-6074393805),
+citing unavailable authorized account access for live verification. This attempt
+was not accepted as a live-verified integration and is closed without payout;
+there is no active assignment or deadline. The original $50 terms, submitted
+code and discussion remain preserved. This records a withdrawal, not a reduction
+of an accepted award to the transcript rate. There are no active individual
+Merit award listings.
 The new Bank of America campaign is [#235](https://github.com/zkp2p/peer-link/issues/235),
 at **$10 per accepted transcript**, with 1–5 distinct contributors when enabled.
+It requires authorized Bank of America account access and remains planned,
+not open for submissions.
 No new transcript campaigns are enrolled as Merit bounties.
 
 The $50-per-provider/Merit authoring program is retired for new work. Its

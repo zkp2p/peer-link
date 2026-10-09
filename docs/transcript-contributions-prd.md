@@ -499,8 +499,11 @@ Do not publish personal account identifiers, private values or personal history 
 
 Completed migration: all 41 existing campaign issues were updated in place, with
 their previous terms archived, and all 81 pre-migration PRs were closed with
-transition notices. The valid legacy assignment and its original $50 commitment
-remain preserved. Every issue/archive and PR/notice was read back after migration.
+transition notices. Original terms and discussion remain preserved. Primuez
+[voluntarily withdrew the remaining Bank of America assignment on October 9, 2026](https://github.com/zkp2p/peer-link/issues/74#issuecomment-6074393805);
+that attempt is archived without acceptance or payout, and the new route is the
+planned [$10 transcript campaign #235](https://github.com/zkp2p/peer-link/issues/235).
+Every issue/archive and PR/notice was read back after migration.
 
 Snapshot existing issues/open PRs and previous text before edits. Close the
 pre-migration PR set with a respectful program-change notice and new instructions;
