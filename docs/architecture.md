@@ -1,5 +1,11 @@
 # Manual verification architecture
 
+This page describes the earlier adapter verification system under
+`verification/`. The transcript contribution service, including open-recipe
+campaigns, is described in the
+[transcript PRD](transcript-contributions-prd.md) and
+[operations](transcript-operations.md).
+
 Status: protected infrastructure and synthetic hardware flow verified; no approved live bank release.
 The current release manifest refuses bank sessions. No three-user gate applies.
 

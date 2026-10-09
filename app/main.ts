@@ -29,9 +29,9 @@ type Integration = {
   logo: string | null;
   mark: string;
   hasAdapter: boolean;
-  // Planned USDC per accepted transcript; the bank's issue holds live availability.
+  // Fixed USDC per accepted transcript; capacity is a shared budget checked by reservation.
   bounty: number | null;
-  campaignStatus: "planned" | "source_validation";
+  campaignStatus: "planned" | "source_validation" | "open";
   maxContributorOrganizations: number | null;
 };
 
@@ -47,8 +47,13 @@ type Campaign = {
   url: string;
   amount: number;
   status?: string;
+  campaign?: string;
   maxContributorOrganizations?: number;
 };
+const campaignStatus = (campaign?: Campaign): Integration["campaignStatus"] =>
+  campaign?.status === "source_validation" || campaign?.status === "open"
+    ? campaign.status
+    : "planned";
 const bountyByUrl = new Map<string, Campaign>(bounties.map((bounty) => [bounty.url, bounty]));
 const bountyByAdapter = new Map<string, Campaign>(
   bounties.map((bounty) => [bounty.adapter, bounty]),
@@ -70,7 +75,7 @@ function fromProvider(provider: Provider, bank?: Bank): Integration {
     mark: provider.name.slice(0, 2).toUpperCase(),
     hasAdapter: true,
     bounty: campaign?.amount ?? null,
-    campaignStatus: campaign?.status === "source_validation" ? "source_validation" : "planned",
+    campaignStatus: campaignStatus(campaign),
     maxContributorOrganizations: campaign?.maxContributorOrganizations ?? null,
   };
 }
@@ -86,7 +91,7 @@ function fromBank(bank: Bank): Integration {
     mark: bank.mark,
     hasAdapter: false,
     bounty: campaign?.amount ?? null,
-    campaignStatus: campaign?.status === "source_validation" ? "source_validation" : "planned",
+    campaignStatus: campaignStatus(campaign),
     maxContributorOrganizations: campaign?.maxContributorOrganizations ?? null,
   };
 }
@@ -158,7 +163,9 @@ function render(providers: Provider[], catalogUnavailable = false) {
     const rewardDescription =
       integration.campaignStatus === "source_validation"
         ? `First-contributor source validation: $${integration.bounty} per accepted contribution.${organizationLimit} A verified release and funded reservation are required; availability is not guaranteed.`
-        : `Planned $${integration.bounty} per accepted transcript.${organizationLimit} This bank’s campaign is planned.`;
+        : integration.campaignStatus === "open"
+          ? `Open transcript campaign: $${integration.bounty} per accepted contribution. All banks share one funded budget; a reservation admits a job and availability is not guaranteed.`
+          : `Planned $${integration.bounty} per accepted transcript.${organizationLimit} This bank’s campaign is planned.`;
     card.setAttribute(
       "aria-label",
       integration.name === "Wise"

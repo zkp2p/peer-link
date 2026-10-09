@@ -2,126 +2,99 @@
 
 **Contribute your bank. Earn USDC for useful evidence.**
 
-PeerLink is building a transcript contribution service. Your local agent learns the
-read-only route to your bank's transaction history. An attested AWS Nitro enclave
-acquires fresh bank responses, extracts redacted endpoint/schema evidence, and uses
-your inference API key to grade its usefulness. Peer engineers turn accepted evidence
-into Curator metadata and attestation transformers. You do not write a provider or
-open a contribution PR.
+PeerLink collects banking transcripts from account owners. Your local agent
+finds the read-only requests your bank's own site uses to show transaction
+history. An attested AWS Nitro enclave replays them with your session, keeps a
+value-free transcript of the request and response structure, and pays a fixed
+$5 or $10 USDC on Base when the transcript is useful. Peer engineers turn
+accepted transcripts into Curator metadata and attestation transformers. You do
+not write a provider or open a pull request.
 
-**Mercury: experimental first-contributor source validation, $10 USDC for one
-accepted organization.** Its first positive live API acquisition is pending;
-this is not a completed Peer integration. Check [Mercury #1](https://github.com/zkp2p/peer-link/issues/1)
-and the independently approved [release](transcripts/release.json), then obtain a
-funded reservation before keys or inference. Capacity is not guaranteed. Other
-bank rewards remain planned; Wise is excluded from reward recruitment.
-
-[Website](https://link.peer.xyz) · [Contribution guide](CONTRIBUTING.md) ·
-[Campaign issues](https://github.com/zkp2p/peer-link/issues) · [Rewards](docs/incentives.md) ·
-[Merit project profile](https://terminal.merit.systems/zkp2p/peer-link)
+[Website](https://link.peer.xyz) · [Contribution skill](skills/contribute-transcript/SKILL.md) ·
+[Recipe guide](docs/transcript-recipes.md) · [Campaign issues](https://github.com/zkp2p/peer-link/issues/64) ·
+[Rewards](docs/incentives.md) · [Privacy](docs/privacy.md) ·
+[Developer docs](https://docs.peer.xyz/developer/peer-link)
 
 ## Start with your local agent
 
 > Read AGENTS.md and skills/contribute-transcript/SKILL.md in
-> https://github.com/zkp2p/peer-link. Check the release and my bank's campaign first.
-> Help me contribute a read-only banking transcript using my own inference key.
-> Verify attestation before encrypting credentials. Do not initiate payments or
-> publish banking data. Stop if the release or campaign is unavailable.
+> https://github.com/zkp2p/peer-link and help me contribute a read-only
+> transcript of my bank's transaction history. Check live capacity for my bank
+> first. I will sign in myself; never start a payment or change a setting.
+> Preview what will be kept, and show me the model my API key will pay for,
+> before you send anything. Keep credentials and bank data out of chat, Git and
+> logs.
 
-The [contribution skill](skills/contribute-transcript/SKILL.md) owns the current
-runbook. The account owner signs in and completes MFA. The agent checks scope,
-privacy consent, job limits and capacity, prepares a recipe, verifies the measured
-release and encryption key, and encrypts the submission to the enclave.
+## How it works
 
-The enclave performs the actual approved bank reads over TLS. Local captures are
-navigation hints, not authenticated evidence. Deterministic structural redaction
-happens **before grading**: ordinary approved inference providers receive only the
-redacted artifact, not raw bank responses, session credentials or payout keys.
-Provider-visible inference still requires explicit consent. Confidential NEAR
-inference is unavailable until its attested encrypted adapter is verified.
+1. **Pick a campaign.** Twenty banks have an `open_recipe` campaign in which the
+   contributor's agent supplies the read route. Mercury has a
+   `reviewed_descriptor` campaign with a fixed API route. After
+   `npm run transcripts:setup`, run
+   `.local/transcript-venv/bin/python -m transcripts.cli campaigns --live` to
+   see them with remaining capacity.
+2. **Write a recipe.** The agent records up to six GET or read-only POST
+   requests on the bank's domain, a selector for a stable account id, a
+   selector for the transaction list, and notes for engineers.
+3. **Preview.** `preview` runs the reads from the contributor's own machine and
+   prints exactly what would be kept, so the owner can review it before
+   anything leaves.
+4. **Verify and encrypt.** The client checks the enclave's Nitro attestation
+   against the measurements pinned in [`transcripts/release.json`](transcripts/release.json),
+   reserves a job, and encrypts the recipe, the bank session and the owner's
+   inference key to the attested key.
+5. **Acquire and redact.** The enclave confirms the reads are not served
+   without a session, replays them over TLS that ends inside the enclave, and
+   derives the transcript: path templates, query names, credential header
+   names, response field paths with types and format classes, and tokens under
+   status-like keys. Values, ids, cookies and tokens are discarded.
+6. **Ask the owner's model.** The enclave builds one prompt: PeerLink's
+   instructions, then the contributor's notes and the transcript, then
+   PeerLink's output contract. It sends that once to the OpenAI-compatible
+   endpoint and model the owner chose, on the owner's key. The model proposes
+   which field is the payment id, amount, timestamp, counterparty, currency and
+   status.
+7. **Check in code and pay.** Code tests every proposed field against the live
+   records and computes the score itself. A passing transcript is signed and
+   archived on the enclave host, mirrored to Peer's private S3 bucket, and the
+   reward is sent at once; the contributor receives a signed receipt with the
+   Base transaction.
 
-The ordinary NEAR route is implemented for canonical `z-ai/glm-5.3-flash`,
-with explicit consent to NEAR and its approved Chutes upstream. It requests no
-aliasing, rejects alias/model mismatches and unapproved serving-provider headers,
-and makes at most one grading call. Those gateway assertions over TLS are not
-independent model attestation. Paid provider-visible tool-call and strict-JSON
-schema checks passed; confidential inference remains unavailable.
+Two properties are deliberate. The bank session is used by the enclave to make
+the reads and is never placed in a prompt, so no model provider sees it. And
+because the score comes from code checking the records, not from the model, any
+inference endpoint can be allowed without letting a model award a reward.
 
-## Rewards and costs
+## Campaigns, rewards and costs
 
-Each bank has one campaign issue with a fixed **$5 or $10 USDC reward per accepted
-contribution**, its access status and available capacity. Collect **1–5 distinct
-contributors per bank**; pay at most once per contributor/account per campaign.
-There is no issue-claim comment, assignment or provider PR requirement.
+- Each accepted contribution earns the campaign's fixed **$5 or $10 USDC**; one
+  paid contribution per bank account per campaign.
+- All campaigns share one funded budget of at most **$50** per release epoch
+  with no automatic refill. A successful reservation, valid for ten minutes, is
+  what admits a job. A listing is not a promise of capacity.
+- **The contributor pays for inference**, one call per job, including when the
+  job is rejected. Peer pays infrastructure, gas and rewards.
+- **Mercury** is first-contributor source validation: one accepted organization,
+  $10, through a read-only API token. Its first positive live acquisition is
+  still pending. See [source validation](docs/source-validation.md).
+- **Wise** is already integrated in Peer and has no public reward. The
+  `wise-open-validation-*` campaigns are Peer's internal test slots.
 
-**You pay inference even for rejected or failed jobs.** Peer pays infrastructure,
-payout gas and accepted rewards. Code enforces bank authenticity, eligibility,
-redaction, duplicates, budget and the fixed payout; the model cannot choose an
-amount or recipient. Reward availability is campaign-specific, not implied by
-an issue listing. See [terms](docs/incentives.md) and [privacy](docs/privacy.md).
+Terms are in [docs/incentives.md](docs/incentives.md).
 
-The architecture caps rewards at $50 USDC with no automatic refill. The revised
-candidate's measured budget is $5 for one $5 contribution. The separate $1
-operator KMS recovery test confirmed its return. A supervised Wise job then
-completed authenticated enclave reads, redaction and paid NEAR grading, followed
-by a [confirmed $5 payout](https://basescan.org/tx/0x88899fbe3b6036390f19207ec911493db6f1245ab1c50811c44ca2ee4752c677).
-The job first returned `payout_pending` and needed one signed operator reconciliation.
-A fresh client restored the same signed receipt without another reservation or
-submission. That completed one-slot test allocation has no remaining capacity;
-it does not establish public availability.
-The revised payout design uses a non-exportable AWS KMS signing key. Authorized
-operator IAM and the host signing broker can sign outside the enclave and recover
-funds; this is not exclusive enclave custody. The completed one-slot pilot
-kept ledger and deduplication authority RAM-only. Restart of that historical pilot
-requires operator review and does not make its wallet reuse or old-job continuation
-safe. The durable Wise tests below provide internal validation only. The built
-operator retirement flow permanently closes admission, finishes and archives
-existing obligations, and refunds remaining USDC only to the fixed deployer address.
-Its runtime accepts no arbitrary refund recipient or ETH sweep; its live refund
-path has not yet been demonstrated. Operator KMS recovery is separate from that
-runtime flow. The earlier enclave-only pilot's $50 remains unrecovered at this
-checkpoint; changing custody for a new release does not recover its old key.
+## Limits to know
 
-Before funding the revised wallet, the signed operator preflight must exercise
-real Base RPC and KMS refund signing while paused with zero USDC. The public
-operator response excludes raw signed bytes, and code does not broadcast. The
-host broker can see the signature/digest and reconstruct the fixed one-unit refund;
-this is not signature secrecy from the operator. The new host signing route and
-independent signature verification passed. The KMS candidate at `c2bc4b0` was
-independently reproduced in [CI 37874831981](https://github.com/zkp2p/peer-link/actions/runs/37874831981)
-and verified on live Nitro hardware, including key/wallet/policy bindings. Public
-release approval remains a separate gate. The
-[$1 operator recovery receipt](https://basescan.org/tx/0xf1447663200c551dbe42d2d989982563209076b56f9d1f56f8175895eb39e5da)
-verified the fixed deployer return and zero remaining USDC with the relay stopped;
-it does not prove the enclave retirement flow.
-
-## Internal Wise validation; Mercury source-validation campaign
-
-**Mercury first-contributor source validation:** [$10 USDC for one accepted
-organization](https://github.com/zkp2p/peer-link/issues/1). Its first positive live
-API acquisition is pending and would come from the contributor; this is not a
-completed Peer integration. Other bank rewards remain planned. Wise is an existing
-integration/reference and is excluded from rewards; its paid tests are internal
-validation only. Independently verify the approved release and obtain a funded
-reservation before keys or inference. Static copy cannot guarantee capacity.
-
-The internal validation service was `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
-with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
-Fresh Nitro verification, authenticated Wise reads, ordinary NEAR grading, an
-automatic confirmed $5 payout and paid-job recovery after an enclave restart passed.
-Recovery preserved the signed receipt without another reservation, submission or
-model call. See the separately scoped
-[durable evidence](transcripts/durable-pilot-evidence.json) for verified scope and remaining limitations.
-
-The v3 release uses encrypted job/deduplication/payout snapshots and a
-version-fenced state authority. Restore stays paused for operator review and
-chain reconciliation; interrupted bank/model calls fail without a paid retry.
-Bank sessions and inference keys remain transient. Bank-upload ingress keys are
-fresh per boot and never persisted; only the separate receipt signer is encrypted
-in durable state. Later snapshot recovery cannot recover prior upload decryption
-keys. KMS administrators remain trusted for metadata/deduplication secrecy.
-The Wise hardware and paid-job/restart scope was verified; see the
-[durable contract and release gates](docs/transcript-contributions-prd.md).
+- Field names and status tokens are kept by heuristic rules; review the
+  `preview` output before contributing.
+- The enclave refuses POST requests that are obviously named as state changes,
+  but it cannot prove a request is read-only. Replay only what the bank's site
+  issues while viewing history.
+- The chosen model provider sees the notes and the value-free transcript.
+- For open campaigns the account identity used for deduplication is declared by
+  the contributor's recipe.
+- Rewards are paid from an AWS KMS key that Peer's operators can also use and
+  recover. It is not an escrow, and the enclave is not the key's only user.
+- A paid transcript does not add a bank to Peer or prove any payment.
 
 ## Develop and inspect
 
@@ -138,13 +111,27 @@ npm run transcripts:test
 npm run dev
 ```
 
-`transcripts/` contains the new service. `app/` is the public landing page.
-Existing `banks/` adapters, fixtures and reports remain reference assets under
-MIT; their presence does not make them the paid contribution workflow.
+`transcripts/` holds the service, client and CLI. `transcripts/open_source.py`
+implements open recipes, redaction and the mapping check. `app/` is the landing
+page. `banks/`, `lib/` and `verification/` are reference assets from the
+earlier program.
 
-[PRD](docs/transcript-contributions-prd.md) · [Evidence](docs/evidence.md) ·
-[Legacy verifier](docs/verification.md) · [Operations](docs/transcript-operations.md) ·
-[Developer docs](https://docs.peer.xyz/developer/peer-link) · [Security](SECURITY.md)
+[Product and architecture](docs/transcript-contributions-prd.md) ·
+[Operations](docs/transcript-operations.md) · [Archive](docs/transcript-archive.md) ·
+[Evidence](docs/evidence.md) · [Legacy verifier](docs/verification.md) ·
+[Security](SECURITY.md)
+
+## History and evidence
+
+The service was first validated internally against Wise: authenticated reads in
+the enclave, contributor-funded grading, a
+[confirmed $5 payout](https://basescan.org/tx/0x88899fbe3b6036390f19207ec911493db6f1245ab1c50811c44ca2ee4752c677)
+and recovery of the same receipt after an enclave restart. Those results are
+scoped in [durable-pilot-evidence.json](transcripts/durable-pilot-evidence.json)
+and [kms-pilot-evidence.json](transcripts/kms-pilot-evidence.json). An earlier
+enclave-only pilot wallet still holds $50 that has not been recovered; the
+current KMS custody cannot recover that key. What each release has and has not
+demonstrated is recorded in [docs/evidence.md](docs/evidence.md).
 
 ## Retired provider program
 

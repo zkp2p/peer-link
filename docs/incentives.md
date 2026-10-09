@@ -1,73 +1,86 @@
 # Transcript contribution rewards
 
-**Mercury first-contributor source validation:** [$10 USDC for one accepted
-organization](https://github.com/zkp2p/peer-link/issues/1). Its first positive live
-API acquisition is pending and would come from the contributor; this is not a
-completed Peer integration. Other bank rewards remain planned. Wise is an existing
-integration/reference and is excluded from rewards; its paid tests are internal
-validation only. Independently verify the approved release and obtain a funded
-reservation before keys or inference. Static copy cannot guarantee capacity.
-The [release manifest](../transcripts/release.json), independently verified release
-and a successful live reservation control admission. Approval and static issue
-text cannot guarantee remaining capacity. A bank issue, logo, host deployment
-or synthetic test does not prove acceptance is open.
+Each campaign pays a fixed **$5 or $10 USDC on Base** for one accepted
+transcript. All campaigns in a release share one funded budget of at most
+**$50**, with no automatic refill. A successful reservation, made by the client
+after it verifies the enclave against the pinned
+[release manifest](../transcripts/release.json), is what admits a job. A bank
+issue, a logo or this page does not guarantee remaining capacity; run
+`campaigns --live` for the current unsigned hint.
 
 ## Campaign terms
 
-One campaign issue per bank publishes scope, approved source access, fixed reward,
-available capacity, provider/model and privacy choices, limits and the
-[contribution skill](../skills/contribute-transcript/SKILL.md). Existing bank issue
-URLs are retained where possible. There is no claim-comment, assignment, provider
-implementation or code PR requirement.
+| Campaign kind | Banks | Reward | Slots |
+| --- | --- | --- | --- |
+| `open_recipe` | The twenty banks with a `<bank>-open-v1` campaign in [`transcripts/policy.json`](../transcripts/policy.json) | $10 for Chase, Bank of America and Wells Fargo; $5 for the others | 2 per bank |
+| `reviewed_descriptor` | Mercury, [`mercury-api-source-v1`](https://github.com/zkp2p/peer-link/issues/1) | $10 | 1 organization |
 
-GitHub bank issues remain public campaign and discovery pages. New transcript
-rewards are paid through PeerLink, not Merit; contributors do not need to claim
-a Merit bounty. The [campaign index](https://github.com/zkp2p/peer-link/issues/64)
-lists planned rates and availability. The single [Merit project profile](https://terminal.merit.systems/zkp2p/peer-link)
-links to PeerLink for discovery; bank campaigns are not separate Merit bounties.
-Keeping either page visible does not open a paid slot.
+Mercury remains first-contributor [source validation](source-validation.md):
+its first positive live API acquisition is pending and would come from the
+contributor. Wise is an existing integration and is excluded from rewards; the
+`wise-open-validation-*` campaigns are Peer's internal test slots.
 
-- Fixed **$5 or $10 USDC for each accepted contribution**. The Mercury first-contributor campaign is capped at one organization for $10;
-  other US campaigns remain planned at $10; other rates are explicit campaign policy, not inferred from personal data.
-- Collect **1–5 distinct contributors per bank**, ordinarily targeting five but
-  stopping earlier when the evidence is sufficient.
-- At most one paid contribution per contributor/account per bank campaign.
-  Different wallets or GitHub accounts alone do not establish different people;
-  account deduplication is not proof of humanity.
-- Contributions require an active verified source campaign, available slots and
-  reserved funds. Campaigns can pause, complete or reject admission before inference.
-  Do not infer that all listed banks are funded.
+One campaign issue per bank publishes its scope and reward, and the
+[campaign index](https://github.com/zkp2p/peer-link/issues/64) lists them.
+There is no claim comment, assignment, provider implementation or code PR
+requirement. Rewards are paid by the PeerLink service, not through Merit; the
+single [Merit project profile](https://terminal.merit.systems/zkp2p/peer-link)
+is for discovery only.
 
-The reserved job binds the campaign terms, reward, recipient, model/provider,
-privacy consent, limits and expiry. Later policy edits do not retroactively change
-those reserved terms. USDC has 6 decimals; code stores rewards as integer minor units.
+- At most one paid contribution per bank account per campaign. Different
+  wallets or GitHub accounts alone do not establish different people, and
+  account deduplication is not proof of humanity. For open campaigns the account
+  is identified by the value at the contributor's `identity` selector.
+- A payout address can hold one active or paid job per campaign.
+- Campaigns can fill, pause or be retired before a contribution is admitted.
+
+The reserved job binds the campaign terms, reward, recipient, provider, model,
+inference endpoint, privacy consent, limits and expiry. Later policy edits do not
+change reserved terms. USDC has 6 decimals; code stores rewards as integer minor
+units.
 
 ## Costs and acceptance
 
-**The contributor pays inference even when the job fails or is rejected.** Review
-provider/model, limits, privacy mode, possible reward and provider spending controls
-before releasing the key. The ordinary NEAR route uses prepaid contributor
-credits and one canonical-model call, with consent naming NEAR and Chutes. Provider quota enforcement may lag; published token/call
-limits are not a guaranteed exact dollar ceiling. A reward may not cover inference cost.
-Peer pays infrastructure, payout gas and accepted rewards. There is no Peer
-inference key or fallback billing route.
+**The contributor pays inference even when the job fails or is rejected.** Each
+job makes one model call on the contributor's key. For open campaigns the
+contributor chooses any OpenAI-compatible endpoint and model; reviewed campaigns
+pin theirs. Token and deadline limits are bound into the reservation but are not
+an exact dollar ceiling, and a reward may not cover the inference cost. Peer
+pays infrastructure, payout gas and accepted rewards. There is no Peer inference
+key or fallback billing route.
 
-Acceptance requires fresh authorized bank reads over verified TLS, authenticated
-account identity, useful history/schema evidence, approved provider/model and consent,
-safe redaction, no duplicate award and available reserved budget. The model grades
-only redacted structure. Code owns eligibility, amount, recipient and signing;
-the model cannot override mandatory checks. Unknown or insufficient evidence is rejected.
+An open-recipe contribution is accepted when all of these hold:
 
-An enabled service automatically pays the fixed reward after acceptance and artifact
-receipt. Failed, rejected, expired or cancelled jobs receive no reward. A pending
-chain result must be reconciled against the same signed transaction; retrying does
-not authorize a new award. Acceptance does not enable a bank in Peer or establish
-recipient credit, final settlement or production approval.
+- the reads ran from the enclave over verified TLS on the campaign's bank
+  domain, and the identity and history requests were not served without a
+  session;
+- the history response held at least three records;
+- the transcript passed redaction validation;
+- the account was not already paid in the campaign and budget was reserved;
+- the field mapping scored at least 85 of 100. The model proposes which history
+  field is the payment id (25), amount (25), timestamp (20), counterparty (15),
+  status (10) and currency (5); code verifies each proposal on the live records
+  and adds the weight only when it holds. The first four are required.
+
+The model's reply cannot set the score, the recipient or the amount, which is
+why any inference endpoint may be used. Reviewed campaigns instead use a pinned
+model's usefulness grade of the allowlisted artifact together with the source
+checks in [source validation](source-validation.md).
+
+The service pays the fixed reward immediately after acceptance and after the
+enclave host acknowledges the signed record. Failed, rejected, expired or
+cancelled jobs receive no reward. A pending chain result is reconciled against
+the same signed transaction; retrying does not authorize a new award. Acceptance
+does not enable a bank in Peer or establish recipient credit, final settlement
+or production approval.
 
 ## Pilot budget and availability
 
-The architecture reward ceiling is **$50 USDC**, with separate bounded gas
-and no automatic refill. The completed supervised Wise experiment used a measured
+The architecture reward ceiling is **$50 USDC** per funded epoch, with separate
+bounded gas and no automatic refill. The open-recipe release funds that ceiling
+once and shares it across every campaign, first come first served; refilling
+means retiring the epoch and publishing a new measured release. The completed
+supervised Wise experiment used a measured
 **$5 USDC budget** and one contributor slot after a confirmed $1 recovery test.
 That $5 reward was paid; **that completed test allocation has no remaining capacity**.
 The separate durable Wise tests provide internal validation, not public enrollment. Future campaigns must publish available
@@ -94,9 +107,10 @@ Wise is already an integration/reference and is excluded from new transcript
 incentivization. The completed operator-owned tests used bounded reward transfers
 to validate acquisition, grading, payout and restart recovery; they are not public
 campaigns or a promise of funded slots. See the separately scoped
-[durable evidence](../transcripts/durable-pilot-evidence.json). Other bank rewards
-remain planned and require their own reviewed source/identity checks, release approval and
-reserved funds before enrollment.
+[durable evidence](../transcripts/durable-pilot-evidence.json). The
+`wise-open-validation-*` campaigns in the open-recipe release exist so Peer can
+exercise that flow end to end against a real account; they are not open to
+contributors.
 
 ## Retired provider awards
 
@@ -109,9 +123,8 @@ code and discussion remain preserved. This records a withdrawal, not a reduction
 of an accepted award to the transcript rate. There are no active individual
 Merit award listings.
 The new Bank of America campaign is [#235](https://github.com/zkp2p/peer-link/issues/235),
-at **$10 per accepted transcript**, with 1–5 distinct contributors when enabled.
-It requires authorized Bank of America account access and remains planned,
-not open for submissions.
+at **$10 per accepted transcript**. It is the open-recipe campaign
+`bank-of-america-open-v1` and requires authorized Bank of America account access.
 No new transcript campaigns are enrolled as Merit bounties.
 
 The $50-per-provider/Merit authoring program is retired for new work. Its

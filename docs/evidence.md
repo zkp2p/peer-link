@@ -6,8 +6,9 @@ fixtures, browser self-reports, model inference and bank listings do not prove l
 acceptance. Mercury is an experimental first-contributor source-validation campaign;
 its first positive live API acquisition remains pending. The independently approved
 [release](../transcripts/release.json) and a successful funded reservation must
-permit collection before keys. Other banks remain planned. Wise tests are internal
-validation only and Wise is excluded from reward recruitment.
+permit collection before keys. The other listed banks use open-recipe campaigns,
+described below. Wise tests are internal validation only and Wise is excluded
+from reward recruitment.
 
 ## Source and account identity
 
@@ -23,7 +24,17 @@ establish statement balance membership. All retained live reads bind to the same
 account and job. The Mercury source-validation campaign instead derives organization
 identity and account/history membership from the exact reviewed API descriptor;
 see [source validation](source-validation.md). Organization deduplication is not
-proof of a unique human. Other banks remain planned.
+proof of a unique human.
+
+Open-recipe campaigns establish less about identity and say so in every
+transcript's `limitations`. The measured policy pins only the bank's registrable
+domain; the contributor's recipe chooses the host under it, the paths and the
+selectors. The enclave shows that the identity and history requests are refused
+or return non-JSON without the session and succeed with it, that the history
+response holds at least three records, and that all reads used one host. The
+account identity is the value at the contributor's `identity` selector: it
+prevents the same value being paid twice in a campaign, and it is not evidence
+of account ownership or of a distinct account.
 
 ## Redacted evidence
 
@@ -34,6 +45,13 @@ profile-to-balance-to-history relationships,
 coverage and limitations. Dynamic object keys and URL/query values are redacted.
 No names, credentials, account numbers, balances, exact amounts, memos or transaction
 IDs remain. Code validates the artifact before it reaches the grader.
+
+An open-recipe transcript instead records the contributor-chosen requests as
+path templates with query names, the names of the credential headers, response
+field paths with JSON types and closed-vocabulary format classes, short tokens
+under status-like keys, the selectors, and the contributor's linted notes. Its
+redaction of names and tokens is heuristic and labelled `heuristic_redaction`;
+see [privacy](privacy.md).
 
 The grader receives that redacted artifact and fixed instructions. Its only accepted
 result is the exact versioned rubric, integer score and boolean usefulness. Extra
@@ -46,6 +64,17 @@ NEAR/Chutes. Paid provider-visible schema probes and the supervised one-slot
 Wise pilot exercised this route; that evidence does not approve the changed
 durable release. Returned routing headers are gateway assertions, not independent
 model proof.
+
+For open-recipe campaigns the model is not a grader. It receives PeerLink's
+fixed prefix, the notes and transcript, and PeerLink's fixed output contract, on
+any OpenAI-compatible endpoint the contributor chose, and returns a proposed
+mapping of history fields to payment id, amount, timestamp, counterparty,
+currency and status. Code verifies each proposed path against the live records
+and derives the score from fixed weights; the stored `modelResult` is that
+code-derived assessment. A reply that claims a score, names a path outside the
+history records, or reuses a path is not credited. The receipt's
+`inference.responseDigest` is the digest of the parsed proposal, and
+`inference.baseUrl` names a custom endpoint.
 
 ## Receipts and interpretation
 
@@ -80,6 +109,18 @@ No category substitutes for another. Report scope, exact source/image revision,
 date and remaining limitations accurately. A paid transcript does not prove final
 bank settlement, recipient credit, support for every payment type, or readiness in
 Peer production. Peer engineers separately review metadata and transformers.
+
+## Open-recipe release
+
+`transcripts/tests/test_open_source.py` is credential-free synthetic coverage of
+the open flow: origin pinning, the anonymous-access gate, write refusal for POST
+reads, absence of bank values in transcripts and prompts, forged or wrong model
+output, recomputation of the score at acceptance, duplicate accounts, and the
+archived record. It is not hardware, bank, inference or payment evidence. Those
+are established per release by a fresh Nitro quote against the published
+measurements and by the scoped evidence files under `transcripts/`; where a
+release publishes none for a campaign, treat live acquisition for that bank as
+not yet demonstrated.
 
 ## Internal durable Wise evidence
 

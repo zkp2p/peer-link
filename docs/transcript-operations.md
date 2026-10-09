@@ -3,9 +3,10 @@
 This is a dedicated PeerLink deployment. It does not change a production attestor,
 reuse its signing key, or inherit its approval. The deployment may expose public
 campaign/status/attestation metadata. Mercury is first-contributor source validation;
-its positive live API acquisition is pending. Other bank rewards remain planned and
-Wise tests are internal validation only. Infrastructure creation, a signed EIF and
-a synthetic job do not establish actual bank acquisition or guarantee admission.
+its positive live API acquisition is pending. The other listed banks use open-recipe
+campaigns and Wise tests are internal validation only. Infrastructure creation, a
+signed EIF and a synthetic job do not establish actual bank acquisition or guarantee
+admission.
 
 ## Internal Wise validation; Mercury source-validation campaign
 
@@ -108,19 +109,44 @@ and load balancer can narrow network exposure at additional fixed cost.
 
 Egress uses enclave-to-parent vsock CID 3, port 5101. The enclave sends a bounded
 newline-terminated JSON connection request `{"host":"approved.example","port":443}`.
-The parent checks enclave CID, configured hostname allowlist, public resolved IP
-and port, replies exactly `OK\n`, then forwards opaque bytes. Bank/provider TLS,
-certificate verification, HTTP paths/methods and tool rules live inside the enclave.
-The parent cannot substitute a TLS certificate or read cookies/model content.
+The parent checks enclave CID, the hostname, public resolved IP and port, replies
+exactly `OK\n`, then forwards opaque bytes. With `"egressPolicy": "public_https"`
+in the measured policy, which the open-recipe release sets, the parent accepts any
+lower-case DNS name whose every resolved address is global, because contributors
+choose the bank host under a campaign domain and the inference endpoint; without
+it, only names in `egressHosts` are accepted. IP literals, single-label names and
+ports other than 443 are always refused. Bank/provider TLS, certificate
+verification, origin pinning, HTTP paths/methods and credential routing live inside
+the enclave. The parent cannot substitute a TLS certificate or read cookies/model
+content.
 
 The revised host IAM role allows SSM transport and explicitly scoped
-`kms:GetPublicKey`/`kms:Sign` for the one policy-bound payout key. Production
-secrets, S3, other KMS keys, role assumption and Parameter Store remain outside
-that role. Native KMS signing is not restricted to enclave PCRs; authorized host
+`kms:GetPublicKey`/`kms:Sign` for the one policy-bound payout key. It may also
+`s3:PutObject` to two prefixes of the private transcript archive bucket, write-only,
+so signed records are mirrored off the host; see [transcript archive](transcript-archive.md).
+Production secrets, other S3 access, other KMS keys, role assumption and Parameter
+Store remain outside that role. Native KMS signing is not restricted to enclave PCRs; authorized host
 and operator IAM are part of the custody trust boundary.
 There is no SSH key or port 22. Operators transfer reviewed source/EIF files through
 SSM or a short-lived presigned URL; the URL is access-bearing and must stay out of
 public docs and durable command-output captures.
+
+### Open-recipe campaigns in the measured policy
+
+A campaign with an `openSource` block (`kind: open-json-read-v1`, `maxReads`)
+takes its reads from the contributor's recipe. Its `sources[].origin` is the
+bank's registrable domain written as `https://domain`; any https host equal to
+or under that domain is accepted, with `paths: ["/"]` and `methods` of `["GET"]`
+or `["GET","POST"]`. Its `inferenceRoutes` may list `"*"` as the model and may
+include the `openai_compatible` provider. `rubricVersion` is
+`transcript-mapping-v1`, `safeSchemaFields` is empty, and
+`evidenceRequirements.requiredFields` names the required roles. The policy also
+carries `openPromptDigest`, which the runtime checks against the built-in prefix
+and output contract at boot, and `egressPolicy`. Adding a bank, changing a
+reward or slot count, or changing a domain edits the measured policy and so
+needs a new signed image, a new state namespace and a newly published release
+manifest. `GET /v1/campaigns` additionally returns `availability`: remaining
+slots per campaign and remaining epoch budget.
 
 ## Provision
 

@@ -1,14 +1,89 @@
 # PeerLink transcript contributions
 
-Product decision: 2026-10-09. Status: **Mercury experimental first-contributor source validation;
-internal Wise validation completed**. Mercury #1 is capped at one organization/$10;
+Product decision: 2026-10-09. Status: **open-recipe campaigns for twenty banks;
+Mercury experimental first-contributor source validation; internal Wise validation
+completed**. Mercury #1 is capped at one organization/$10;
 its first positive live API acquisition remains pending. Wise is an existing
 integration and is excluded from rewards. The independently approved
 [release](../transcripts/release.json) and successful funded reservation must permit
-any public collection; other bank rewards remain planned. The earlier enclave-only wallet
+any public collection. The earlier enclave-only wallet
 holds unrecovered $50; the revised KMS candidate is a separate wallet and release.
 This document separates the built pilot, observed evidence and remaining roadmap.
 Infrastructure, a verified candidate quote or a synthetic job does not activate a bank.
+
+## Open-recipe campaigns
+
+Revision of 2026-10-09. The first build required Peer to write and measure a
+source adapter for each bank before anyone could contribute, which inverts the
+purpose of crowdsourcing: the route to a bank's history is the thing being
+collected. Open-recipe campaigns let the contributor's local agent supply that
+route, let the owner choose any OpenAI-compatible model, and keep a transcript
+detailed enough to write an attestation transformer from. The attestation,
+encrypted channel, durable ledger and KMS payout described in the rest of this
+document are unchanged.
+
+```mermaid
+sequenceDiagram
+  participant A as Owner and local agent
+  participant T as PeerLink enclave
+  participant B as Bank (any host under the campaign domain)
+  participant M as Owner's model endpoint
+  participant S as Host archive and S3 mirror
+  participant P as Base USDC
+  A->>A: Find the read requests; preview the transcript locally
+  A->>T: Verify attestation; reserve; encrypt recipe, session, notes, inference key
+  T->>B: Identity and history requests without credentials
+  B-->>T: Refused or not JSON
+  T->>B: Recipe reads with the session headers
+  B-->>T: Fresh JSON responses
+  T->>T: Derive value-free transcript; discard values
+  T->>M: PeerLink prefix + notes and transcript + PeerLink output contract
+  M-->>T: Proposed field for each payment role
+  T->>T: Verify each proposal on the live records; compute score
+  T->>S: Signed record (transcript, verified mapping, score)
+  T->>P: Fixed reward
+  T-->>A: Signed receipt
+```
+
+Decisions:
+
+- **The contributor writes the recipe.** A version-3 recipe lists up to six
+  reads (GET, or POST with a body where the campaign allows it), an `identity`
+  selector and a `history` selector. The measured policy pins only the bank's
+  registrable domain, so adding a bank needs public knowledge only.
+- **The session is used, never prompted.** The original description of the
+  product had the session credential sandwiched between Peer's prompts and sent
+  to the owner's model. The build keeps the sandwich and removes the credential
+  from it: the enclave makes the reads itself, and the prompt is PeerLink's
+  prefix, then the contributor's notes and the value-free transcript, then
+  PeerLink's output contract. A model provider never receives a bank session.
+- **Any OpenAI-compatible endpoint.** `openai`, `openrouter` and `near` use fixed
+  endpoints with any model; `openai_compatible` takes an `inferenceBaseUrl`
+  bound into the reservation. One call, on the contributor's key.
+- **Code decides usefulness.** Because the endpoint is the contributor's, a
+  model's opinion cannot gate money. The model proposes which history field is
+  the payment id, amount, timestamp, counterparty, currency and status; code
+  checks each proposal against the live records (presence, type, uniqueness of
+  ids) and sums fixed weights of 25, 25, 20, 15, 5 and 10. The first four are
+  required and the minimum is 85. The stored result is the code's assessment.
+- **A transcript an engineer can build from.** Field names are kept unless they
+  look like identifiers; values become closed-vocabulary format classes; short
+  tokens under status-like keys are kept; request templates, credential header
+  names and POST body shapes are kept; the contributor's notes are linted and
+  kept. This redaction is heuristic, so the client offers `preview`, which runs
+  the same extraction on the contributor's machine before anything is sent.
+- **Fixed codes an agent can act on.** Every rejection is a specific code such
+  as `anonymous_access_allowed` or `mapping_missing_amount`, and the CLI maps
+  each to a hint.
+- **Records reach engineers.** Accepted signed records are mirrored from the
+  enclave host to a private S3 bucket; see [transcript archive](transcript-archive.md).
+
+Known limits of this revision: the `identity` selector is contributor-declared,
+so deduplication bounds honest repeats rather than a determined claimant, and
+exposure is capped by slots and the epoch budget; the POST write guard refuses
+only obviously named state changes; one epoch funds at most $50 across all
+campaigns and a refill is a new measured release; banks that require a browser
+fingerprint or refuse data-centre addresses cannot be read from the enclave.
 
 ## Internal Wise validation; Mercury source-validation campaign
 
@@ -124,7 +199,9 @@ Bank acquisition and grading are separate calls. Bank/provider TLS terminates
 inside the enclave; the parent relay forwards ciphertext and sees approved
 hostnames, not credentials or response plaintext. Code pins bank origin/path/GET,
 account identity, deadlines, response sizes, source/model policy and money limits.
-The fixed recipe cannot execute contributed code, shell commands or arbitrary URLs.
+A recipe cannot execute contributed code or shell commands; in reviewed campaigns
+it cannot name a URL either, and in open-recipe campaigns its URLs are confined to
+the campaign's bank domain.
 Payout signing is a separate KMS trust boundary. Authorized operator IAM and the
 host broker can sign outside the enclave; measured runtime limits do not constrain
 an operator signing independently. No exclusive-enclave or PCR-restricted KMS
@@ -134,17 +211,18 @@ The pilot has a Wise identity/acquisition adapter. It reads authenticated profil
 checks explicit selection when multiple profiles exist, reads standard balances,
 and proves statement balance membership. The artifact records authenticated profile-to-balance-to-history relationships
 using templated path parameters, and the policy allowlists 59 public schema field
-names. A submitted account ID alone establishes nothing. Generic banks remain
-planned until their source/identity contract and measured release are approved.
+names. A submitted account ID alone establishes nothing. Banks without a reviewed
+adapter use the open-recipe campaigns described above.
 The explicit Mercury [first-contributor source-validation scope](source-validation.md)
 collects its first positive live API evidence from the consenting contributor;
 prior live acquisition is not claimed.
 
-Uploaded local `notes` and `transcript` are untrusted, unused inputs in this pilot:
+In reviewed campaigns, uploaded local `notes` and `transcript` are untrusted, unused inputs:
 they neither authenticate evidence nor enter grading or retained artifacts. The
-validated recipe guides actual acquisition. Endpoint annotations from local notes
-may be considered in a future version only after deterministic privacy validation.
-There is no model-directed bank-tool loop in the built pilot.
+validated recipe guides actual acquisition.
+Open-recipe campaigns do use `notes`: after linting they are placed in the model
+prompt and kept with the transcript. There is no model-directed bank-tool loop
+in either kind of campaign; the enclave executes the recipe, not a model.
 
 ### Privacy and inference modes
 
@@ -157,9 +235,13 @@ pinned provider request; it is not prompt content. Peer enclave protection does 
 establish an external provider's confidentiality or retention policy.
 
 OpenAI and OpenRouter routes use approved exact models; OpenRouter pins its reviewed
-upstream without provider/model fallback. No arbitrary contributor grading endpoint
-is accepted. The adapter checks structured results and reported usage, and stops
-rather than spending again after uncertain failure.
+upstream without provider/model fallback. Reviewed campaigns accept no arbitrary
+contributor grading endpoint; open-recipe campaigns accept any OpenAI-compatible
+endpoint because code, not the model, computes their score. The adapter checks
+structured results and reported usage, and stops rather than spending again after
+uncertain failure. For an open-recipe call the only repeat is one resend with the
+other token-limit parameter name after an HTTP 400, which is a refusal before
+any inference.
 
 The ordinary NEAR route is implemented for canonical `z-ai/glm-5.3-flash`,
 with explicit consent to NEAR and its approved Chutes upstream. It requests no
@@ -353,9 +435,10 @@ slot by selecting a different personal or business profile. These hashes remain
 inside encrypted state. This identifies overlapping bank access, not unique people.
 
 The encrypted payload contains bank credential, selected profile, recipe,
-contributor inference key and bounded unused local notes/transcript fields. Its
-single-use encryption context binds job, reservation, fresh challenge, epoch,
-payout wallet, policy and expiry. No arbitrary code, endpoints or callbacks.
+contributor inference key, notes (used by open-recipe campaigns, ignored by
+reviewed ones) and an unused transcript field. Its single-use encryption context
+binds job, reservation, fresh challenge, epoch, payout wallet, policy and expiry.
+No arbitrary code or callbacks; bank URLs only within the campaign's domain.
 Credentials are transient; errors, logs and receipts contain fixed codes or validated
 public structures only. Cloud-backed local browser agents remain a separate consent
 boundary from PeerLink's model grading.

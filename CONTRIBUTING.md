@@ -1,76 +1,64 @@
 # Contribute a banking transcript
 
-The paid contribution is authenticated, redacted banking evidence from your own
-account. Peer engineers build the integration. You do not implement a provider,
-claim an issue by commenting, or open a provider PR.
+The paid contribution is a value-free transcript of how your bank presents
+transaction history, produced from your own account. Peer engineers build the
+integration. You do not implement a provider, claim an issue by commenting, or
+open a pull request.
 
-**Mercury #1 is first-contributor source validation: one accepted organization,
-$10 USDC.** Positive live API acquisition is pending; the first contributor would
-provide it. Check the [release manifest](transcripts/release.json),
-[verification and recovery guide](docs/transcript-operations.md), and bank campaign before continuing.
-A campaign is usable only with an approved independently verified release, active
-source policy and a successful funded reservation before secret collection.
-Approval does not guarantee remaining capacity.
+## Start
 
-The single [Merit project profile](https://terminal.merit.systems/zkp2p/peer-link) points to PeerLink
-for discovery. Bank-specific rewards and enrollment remain in PeerLink campaign
-issues; contributors do not claim separate Merit bounties. Other bank rewards remain
-planned at the published fixed $5/$10 rates, collecting 1–5 distinct contributors
-when enabled. Wise is an existing integration/reference, excluded from reward
-recruitment. Its paid tests are [internal validation](transcripts/durable-pilot-evidence.json),
-not public enrollment.
+Give your local agent the prompt in [README.md](README.md). It will follow
+[skills/contribute-transcript/SKILL.md](skills/contribute-transcript/SKILL.md)
+and [docs/transcript-recipes.md](docs/transcript-recipes.md). Read
+[privacy](docs/privacy.md) and [reward terms](docs/incentives.md) yourself
+first.
 
-## Entry point
+1. Find your bank with `campaigns --live`. Each campaign has a fixed $5 or $10
+   USDC reward; all campaigns share one funded budget, so check that a slot and
+   budget remain before you start.
+2. Sign in to your bank yourself. Your agent finds the read-only JSON requests
+   the bank's site uses to show your history and writes them into a recipe with
+   notes for engineers.
+3. Run `preview`. It replays the reads from your machine and prints everything
+   that would be kept. Review it; if anything personal appears, stop.
+4. Choose the model your own API key will pay for, on any OpenAI-compatible
+   endpoint. You pay for one call even if the job is rejected.
+5. Run `contribute`. The client verifies the enclave, reserves a job for ten
+   minutes, and encrypts your recipe, session and inference key to the enclave.
+   The enclave repeats the reads, redacts them, asks your model which fields
+   carry payment details, verifies the answer in code, and pays the fixed
+   reward to your Base address when it passes.
+6. Keep the state file and poll `job` until it is paid or rejected. Then log
+   out of the bank session, revoke any dedicated token and revoke or cap the
+   inference key.
 
-Give your local agent the prompt in [README.md](README.md), then follow
-[skills/contribute-transcript/SKILL.md](skills/contribute-transcript/SKILL.md).
-Read [privacy](docs/privacy.md) and [reward terms](docs/incentives.md) first.
-
-1. Find your bank's existing campaign issue. It publishes a fixed $5 or $10 USDC
-   reward, scope, access status and limits. A successful live reservation determines
-   admission; static issue text cannot guarantee remaining capacity. One issue covers
-   the bank; an issue listing alone does not promise funding or readiness.
-2. Confirm your own account access and choose the approved model/provider,
-   privacy consent and payout address. You fund inference, even when rejected.
-   Check costs and capacity before gathering a session.
-3. Reserve the bounded job and save its public recovery handle before keys.
-   Independently verify fresh Nitro attestation and the approved measured policy.
-4. For Mercury, use an authorized dedicated read-only API token and the exact
-   account/date hints in the skill. If the account UUID is unknown, use its SDK
-   reservation-first discovery path, then continue the same reserved job. No
-   payment or account changes. Encrypt the token, recipe and inference key to
-   the verified enclave.
-5. The enclave acquires fresh bank evidence and redacts it before inference.
-   Code checks authenticity, coverage, duplicates and budget. If accepted under
-   an enabled campaign, the service sends the fixed reward once and returns a receipt.
-6. Revoke the dedicated bank API token and inference key afterwards; logging out
-   does not revoke an API token.
-   Never post captures, secrets or banking records to GitHub or chat.
-
-A bank seeks 1–5 distinct contributors, with at most one paid contribution per
-contributor/account per campaign. New wallets or GitHub accounts do not establish
-new contributors. Confidential NEAR mode is not available in the current pilot.
+One contribution per bank account is paid per campaign. New wallets or GitHub
+accounts do not make a new contributor. Mercury is a separate first-contributor
+campaign for one organization using a read-only API token; see
+[source validation](docs/source-validation.md). Wise has no public reward.
 
 ## Requests, bugs and repository maintenance
 
-Propose a bank only if it has no existing campaign issue, using the bank-request
-template. Report public fixed reason codes and redacted structural failures using
-the failure template. Send vulnerabilities or exposures through [SECURITY.md](SECURITY.md).
-Never attach raw captures, identifiers, screenshots, API keys or request headers.
+Propose a bank only if it has no campaign issue, using the bank-request
+template. If your bank's API lives on a domain its campaign does not list, or a
+read-only request is refused, say so on the bank's campaign issue with the
+fixed reason code. Send vulnerabilities or exposures through
+[SECURITY.md](SECURITY.md). Never attach raw captures, identifiers, screenshots,
+API keys or request headers.
 
-Service, documentation and synthetic regression fixes remain normal code maintenance;
-they do not earn a transcript reward. Keep changes focused and original, run the
-relevant credential-free checks, inspect the complete diff, and run:
+Service, documentation and synthetic regression fixes are normal code
+maintenance and do not earn a transcript reward. Keep changes focused and
+original, run the relevant credential-free checks, inspect the complete diff,
+and run:
 
 ```sh
 npm run privacy -- --staged
 npm run privacy -- --range origin/main..HEAD
 ```
 
-Existing adapter tooling and its CI layout checks remain for reference assets.
-Maintainer-reviewed service/layout changes have their own scope; do not treat the
-old bank-folder procedure as a prerequisite for transcript contributions.
-Synthetic fixtures must use invented values, not copied bank records.
+Synthetic fixtures must use invented values, not copied bank records. Existing
+adapter tooling and its CI layout checks remain for reference assets and are
+not a prerequisite for transcript contributions.
 
 ## Legacy contributions
 
