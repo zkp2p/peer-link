@@ -379,4 +379,23 @@ finally:
         self.assertEqual(completed.stdout.strip(),b'tty-no-echo-ok')
 
 
+    def test_terminal_report_has_terminal_hint_but_is_not_verified_payment(self):
+        self.contribute()
+        for state in ('rejected','expired','cancelled'):
+            status=self.status_record(state);status['reason']='cancelled' if state=='cancelled' else 'job_expired'
+            result=self.client.provisional(status)
+            self.assertEqual(result['nextAction'],'terminal_outcome_reported')
+            self.assertEqual(result['state'],'unverified');self.assertFalse(result['verified'])
+    def test_missing_after_local_expiry_is_terminal_unknown_not_paid_claim(self):
+        self.contribute();original=self.call
+        def missing(path,body=None):
+            if path.startswith('/v1/jobs/'):raise Rejected('job_not_found')
+            return original(path,body)
+        with patch.object(self.client,'call',side_effect=missing):
+            with self.assertRaisesRegex(Rejected,'job_not_found'):self.client.status(self.client.job['jobId'])
+            with patch('transcripts.client.time.time',return_value=NOW+601):
+                result=self.client.status(self.client.job['jobId'])
+        self.assertEqual(result['nextAction'],'terminal_record_unavailable')
+        self.assertFalse(result['verified']);self.assertEqual(result['reportedState'],'unavailable_after_expiry')
+
 if __name__=='__main__':unittest.main()

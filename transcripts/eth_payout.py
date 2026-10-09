@@ -98,14 +98,24 @@ class BaseUSDCPayoutTransport:
                 if nonce<pending:
                     require(row['signed_tx'] is not None,'payout_nonce_conflict')
                 if nonce<latest:
-                    require(row['tx_id'] is not None and self.confirmed(row['tx_id'],row['recipient'],row['reward']),'payout_nonce_conflict')
+                    require(row['tx_id'] is not None,'payout_nonce_conflict')
+                    self._continuity_receipt(row['tx_id'],row['recipient'],row['reward'])
                 intents.append(nonce)
         refund=state.get('refundIntent')
         if refund is not None:
             if refund['nonce']<pending:require(self._refund is not None,'payout_nonce_conflict')
-            if refund['nonce']<latest:require(self._refund is not None and self.confirmed_refund(self._refund[1],self._refund[2]),'payout_nonce_conflict')
+            if refund['nonce']<latest:
+                require(self._refund is not None,'payout_nonce_conflict')
+                self._continuity_receipt(self._refund[1],DEPLOYER_REFUND_ADDRESS,self._refund[2])
             intents.append(refund['nonce'])
         require(sorted(intents)==list(range(initial,witness)),'payout_nonce_conflict')
+
+    def _continuity_receipt(self,tx_id,recipient,amount):
+        if self._confirmed(tx_id,recipient,amount):return
+        require(self._confirmed(tx_id,recipient,amount,minimum_confirmations=1),'payout_nonce_conflict')
+        # Matching successful/canonical transfer, still below required depth.
+        # Never sign a new intent yet; bounded settlement retries this same job.
+        raise Rejected('payout_confirmation_pending')
 
     def preflight_recipient(self,recipient,amount):
         self._chain()
@@ -268,7 +278,7 @@ class BaseUSDCPayoutTransport:
         require(type(reward_minor) is int and reward_minor in REWARDS,"invalid_reward")
         return self._confirmed(tx_id,recipient,reward_minor)
 
-    def _confirmed(self, tx_id, recipient, reward_minor):
+    def _confirmed(self, tx_id, recipient, reward_minor,*,minimum_confirmations=MIN_CONFIRMATIONS):
         with self._lock:
             self._chain()
             tx_id,recipient = _hash(tx_id),address(recipient)
@@ -280,7 +290,6 @@ class BaseUSDCPayoutTransport:
                     "payout_receipt_mismatch")
             block_number,block_hash = _quantity(receipt.get("blockNumber")),_hash(receipt.get("blockHash"))
             latest = _quantity(self._call("eth_blockNumber",[]))
-            if latest < block_number+MIN_CONFIRMATIONS-1: return False
             block = self._call("eth_getBlockByNumber",[hex(block_number),False])
             require(isinstance(block,dict) and _hash(block.get("hash"))==block_hash,"payout_receipt_reorg")
             logs = receipt.get("logs")
@@ -298,4 +307,4 @@ class BaseUSDCPayoutTransport:
                         require(isinstance(data,str) and re.fullmatch(r"0x[0-9a-fA-F]{64}",data),"rpc_response_invalid")
                         matches.append(int(data,16))
             require(matches == [reward_minor],"payout_receipt_mismatch")
-            return True
+            return latest >= block_number+minimum_confirmations-1

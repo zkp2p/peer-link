@@ -354,3 +354,239 @@ class DurablePaymentEdges(DurableFixture):
         self.assertEqual(rpc.sent,['0x'+signed.hex()])
         self.assertTrue(second.ledger.retirement_status()['admissionsClosed'])
         with self.assertRaises(Rejected):second.resume_after_operator_verification(second.epoch_id)
+
+class DurableReviewRegressions(DurableFixture):
+    def process_runtime(self,epoch,job,*,bank_failure=None,provider_failure=None,accept_wrapper=None):
+        from transcripts.tests.test_runtime import FakeBank,FakeProvider
+        from unittest.mock import Mock
+        runtime=Runtime(self.policy,epoch,None,FakeArchive([]),attester=lambda nonce,key,user:nonce)
+        bank=Mock();bank.acquire.side_effect=bank_failure or (lambda *_:[read(job,acquired_at=NOW+3)])
+        provider=Mock();grade={'rubricVersion':'rubric-v1','score':90,'useful':True}
+        provider.grade.side_effect=provider_failure or (lambda *_:grade)
+        provider.metadata={'requestDigest':'a'*64,'responseDigest':digest(grade),'provider':'synthetic',
+                           'model':'synthetic-model','privacyMode':'provider_visible','inputTokens':10,'outputTokens':10}
+        runtime.payment.preflight_recipient=Mock()
+        def settled(identity):
+            bank.close.assert_called();provider.close.assert_called()
+            self.assertEqual(payload,{})
+        runtime.settle=Mock(side_effect=settled)
+        payload={'credential':{'value':'SYNTHETIC-BANK-SECRET'},'inferenceKey':'SYNTHETIC-INFERENCE-SECRET',
+                 'profileId':None,'recipe':{},'notes':'','transcript':{}}
+        if accept_wrapper:epoch.accept=accept_wrapper(epoch.accept)
+        runtime.jobs.acquire()
+        with patch('transcripts.runtime.time.time',return_value=NOW+3),\
+                patch('transcripts.transport.BankClient',return_value=bank),patch('transcripts.providers.ProviderClient',return_value=provider):
+            runtime.process(job,payload)
+        self.assertEqual(payload,{})
+        return runtime,bank,provider
+
+    def submitted(self,epoch):
+        cp=self.policy['campaigns'][0];status=epoch.ledger.reserve(cp,request(cp),NOW)
+        epoch.ledger.submit(status['jobId'],status['bindingDigest'],NOW+1)
+        epoch._active=epoch._funded_once=True
+        return status['jobId']
+
+    def test_real_durable_process_bank_and_provider_http_failures_are_terminal(self):
+        for phase in ('bank','provider'):
+            with self.subTest(phase=phase):
+                # Independent namespaces/fixtures for each failure.
+                self.aws=SyntheticAWS();epoch=self.epoch();job=self.submitted(epoch)
+                runtime,bank,provider=self.process_runtime(epoch,job,
+                    bank_failure=Rejected('http_request_failed') if phase=='bank' else None,
+                    provider_failure=Rejected('http_request_failed') if phase=='provider' else None)
+                status=epoch.ledger.status(job)
+                self.assertEqual(status['state'],'rejected')
+                self.assertEqual(status['reason'],'bank_read_failed' if phase=='bank' else 'provider_failed')
+                runtime.settle.assert_not_called()
+                if phase=='bank':provider.grade.assert_not_called()
+                else:provider.grade.assert_called_once()
+                self.assertEqual(epoch.ledger.reserve(self.policy['campaigns'][0],request(self.policy['campaigns'][0]),NOW+4)['state'],'reserved')
+
+    def test_real_durable_process_reconciles_ambiguous_accept_and_autosettles_once(self):
+        epoch=self.epoch();job=self.submitted(epoch)
+        def wrapper(original_accept):
+            def accept(*args,**kwargs):
+                committed=False
+                normal=self.aws.call
+                def ambiguous(service,action,payload):
+                    nonlocal committed
+                    if payload['action']=='commit':
+                        self.aws.server.invoke(payload);committed=True
+                        raise Rejected('http_request_failed')
+                    if committed:raise Rejected('state_unavailable')
+                    return normal(service,action,payload)
+                with patch.object(self.aws,'call',side_effect=ambiguous),patch('transcripts.aws_state.time.sleep'):
+                    return original_accept(*args,**kwargs)
+            return accept
+        runtime,bank,provider=self.process_runtime(epoch,job,accept_wrapper=wrapper)
+        self.assertEqual(epoch.ledger.status(job)['state'],'accepted')
+        runtime.settle.assert_called_once_with(job);provider.grade.assert_called_once();bank.acquire.assert_called_once()
+        self.assertIsNone(epoch.ledger._pending_snapshot)
+        self.assertEqual(runtime.pending_records[job],epoch.ledger.archive_record(job))
+
+    def test_preflight_fund_restart_then_activate_same_cap_and_nonce(self):
+        from transcripts.tests.test_runtime import OPERATOR
+        first=self.epoch();runtime=Runtime(self.policy,first,None,FakeArchive([]),attester=lambda nonce,key,user:nonce)
+        rpc=SyntheticRPC();rpc.balance=0
+        original=rpc.call
+        rpc.call=lambda method,params:('0x'+f'{rpc.balance:064x}') if method=='eth_call' else original(method,params)
+        runtime.rpc=rpc;runtime.payment=BaseUSDCPayoutTransport(first,rpc,pinned_rpc_url=rpc.endpoint)
+        def command(epoch,action,nonce):
+            payload={'action':action,'epochId':epoch.epoch_id,'wallet':epoch.wallet,'nonce':nonce,'expiresAt':NOW+60}
+            return {'payload':payload,'signature':b64(OPERATOR.sign(canonical(payload)))}
+        with patch('transcripts.runtime.time.time',return_value=NOW+5):
+            runtime.operator(command(first,'preflight','a'*64))
+            witness=first.ledger.runtime_state()['fundingPreflight']
+            self.assertEqual(witness,{'descriptorDigest':digest(first.public_descriptor()),'nonce':7})
+            rpc.balance=50_000_000
+            second=self.epoch();new_runtime=Runtime(self.policy,second,None,FakeArchive([]),attester=lambda nonce,key,user:nonce)
+            new_runtime.rpc=rpc;new_runtime.payment=BaseUSDCPayoutTransport(second,rpc,pinned_rpc_url=rpc.endpoint)
+            self.assertEqual(new_runtime.funding_preflight,witness['descriptorDigest'])
+            self.assertTrue(new_runtime.operator(command(second,'activate','b'*64))['accepting'])
+        self.assertTrue(second._funded_once);self.assertTrue(second._active)
+
+    def test_paid_status_poll_does_not_recreate_completed_archive_work(self):
+        epoch=self.epoch();job=self.job(epoch)
+        payment=BaseUSDCPayoutTransport(epoch,SyntheticRPC(),pinned_rpc_url=SyntheticRPC.endpoint)
+        signed,tx=payment.sign(job,'0x'+f'{2:040x}',10_000_000)
+        epoch.ledger.prepare_payout(job,signed,tx);epoch.ledger.mark_paid(job,tx,NOW+4)
+        runtime=Runtime(self.policy,epoch,None,FakeArchive([]),attester=lambda nonce,key,user:nonce)
+        runtime.settle_attempt(job);self.assertFalse(runtime.pending_records)
+        for _ in range(3):self.assertEqual(runtime.dispatch('status',{'jobId':job})['state'],'paid')
+        self.assertFalse(runtime.pending_records)
+
+    def test_two_accepted_jobs_wait_for_matching_first_receipt_second_confirmation(self):
+        import rlp
+        from eth_utils import keccak
+        from transcripts.eth_payout import TRANSFER_TOPIC
+        from transcripts.tests.test_core_eth_payout import BLOCKHASH
+        class MiningRPC(SyntheticRPC):
+            def __init__(self):super().__init__();self.latest=100;self.receipts={}
+            def call(inner,method,params):
+                if method=='eth_getTransactionReceipt':return copy.deepcopy(inner.receipts.get(params[0]))
+                if method=='eth_sendRawTransaction':
+                    raw=bytes.fromhex(params[0][2:]);tx='0x'+keccak(raw).hex();parts=rlp.decode(raw[1:]);nonce=int.from_bytes(parts[1],'big')
+                    calldata=parts[7];recipient='0x'+calldata[16:36].hex();amount=int.from_bytes(calldata[-32:],'big')
+                    block=100 if nonce==7 else 101
+                    log={'address':'0x833589fcd6edb6e08f4c7c32d4f71b54bda02913',
+                         'topics':[TRANSFER_TOPIC,'0x'+epoch.wallet[2:].rjust(64,'0'),'0x'+recipient[2:].rjust(64,'0')],
+                         'data':'0x'+f'{amount:064x}','removed':False,'transactionHash':tx,'blockHash':BLOCKHASH}
+                    inner.receipts[tx]={'transactionHash':tx,'status':'0x1','from':epoch.wallet,'to':log['address'],
+                                       'blockNumber':hex(block),'blockHash':BLOCKHASH,'logs':[log]}
+                    inner.nonce=nonce+1
+                    if nonce!=7:inner.latest=102
+                    inner.sent.append(params[0]);return tx
+                return super().call(method,params)
+        epoch=self.epoch();a=self.job(epoch);b=self.job(epoch,wallet=3,account='private-account-2')
+        rpc=MiningRPC();payment=BaseUSDCPayoutTransport(epoch,rpc,pinned_rpc_url=rpc.endpoint)
+        coordinator=PayoutCoordinator(epoch.ledger,payment)
+        self.assertEqual(coordinator.reconcile(a,now=NOW+4)['state'],'payout_pending')
+        with self.assertRaisesRegex(Rejected,'payout_confirmation_pending'):payment.sign(b,'0x'+f'{3:040x}',10_000_000)
+        self.assertIsNone(epoch.ledger.payout_intent(b))
+        runtime=Runtime(self.policy,epoch,None,FakeArchive([]),attester=lambda nonce,key,user:nonce)
+        runtime.payment=payment;runtime.coordinator=coordinator
+        with patch('transcripts.runtime.time.sleep',side_effect=lambda *_:setattr(rpc,'latest',101)):
+            runtime.settle(b)
+        self.assertEqual(epoch.ledger.status(b)['state'],'paid')
+        self.assertEqual(len(rpc.sent),2);self.assertNotEqual(rpc.sent[0],rpc.sent[1])
+
+    def test_long_accept_outage_later_status_auto_settles_without_thread_storm(self):
+        epoch=self.epoch();job=self.submitted(epoch)
+        def wrapper(original_accept):
+            def accept(*args,**kwargs):
+                normal=self.aws.call;committed=False
+                def ambiguous(service,action,payload):
+                    nonlocal committed
+                    if payload['action']=='commit':
+                        self.aws.server.invoke(payload);committed=True;self.aws.outage=True
+                        raise Rejected('state_unavailable')
+                    if committed:raise Rejected('state_unavailable')
+                    return normal(service,action,payload)
+                with patch.object(self.aws,'call',side_effect=ambiguous),patch('transcripts.aws_state.time.sleep'):
+                    return original_accept(*args,**kwargs)
+            return accept
+        runtime,bank,provider=self.process_runtime(epoch,job,accept_wrapper=wrapper)
+        runtime.settle.assert_not_called();self.assertIn(job,runtime.deferred_jobs)
+        self.assertIsNotNone(epoch.ledger._pending_snapshot);self.aws.outage=False
+        with patch('transcripts.runtime.threading.Thread') as thread:
+            self.assertEqual(runtime.dispatch('status',{'jobId':job})['state'],'accepted')
+            for _ in range(3):runtime.dispatch('status',{'jobId':job})
+            thread.assert_called_once()
+            worker=thread.call_args.kwargs['target']
+            worker()
+        runtime.settle.assert_called_once_with(job);provider.grade.assert_called_once();bank.acquire.assert_called_once()
+        self.assertNotIn(job,runtime.recovery_workers);self.assertNotIn(job,runtime.deferred_jobs)
+
+    def test_later_status_resolves_preaccept_state_outage_to_terminal(self):
+        epoch=self.epoch();job=self.submitted(epoch)
+        runtime=Runtime(self.policy,epoch,None,FakeArchive([]),attester=lambda nonce,key,user:nonce)
+        normal=epoch.ledger.begin_verification
+        def start(*args):
+            original=self.aws.call;committed=False
+            def ambiguous(service,action,payload):
+                nonlocal committed
+                if payload['action']=='commit':
+                    self.aws.server.invoke(payload);committed=True;self.aws.outage=True
+                    raise Rejected('state_unavailable')
+                if committed:raise Rejected('state_unavailable')
+                return original(service,action,payload)
+            with patch.object(self.aws,'call',side_effect=ambiguous),patch('transcripts.aws_state.time.sleep'):return normal(*args)
+        runtime.jobs.acquire();payload={'credential':{},'profileId':None,'recipe':{},'inferenceKey':'SYNTHETIC-SECRET','notes':'','transcript':{}}
+        with patch.object(epoch.ledger,'begin_verification',side_effect=start),patch('transcripts.runtime.time.time',return_value=NOW+3),\
+                patch('transcripts.transport.BankClient') as bank,patch('transcripts.providers.ProviderClient') as provider:
+            runtime.process(job,payload)
+        bank.assert_not_called();provider.assert_not_called();self.assertEqual(payload,{})
+        self.aws.outage=False
+        status=runtime.dispatch('status',{'jobId':job})
+        self.assertEqual((status['state'],status['reason']),('rejected','storage_unavailable'))
+        self.assertFalse(runtime.deferred_jobs)
+
+class WiseOverlapTests(DurableFixture):
+    def test_authenticated_profile_overlap_rejects_before_paid_grade_and_survives_restart(self):
+        from dataclasses import replace
+        from transcripts.tests.test_artifacts import ArtifactTests
+        from unittest.mock import Mock
+        fixture=ArtifactTests();fixture.setUp()
+        cp=copy.deepcopy(fixture.campaign)
+        cp['inferenceRoutes']=[{'provider':'synthetic','models':['synthetic-model'],'privacyModes':['provider_visible']}]
+        self.policy['campaigns']=[cp]
+        first=self.epoch();first._active=first._funded_once=True
+        def start(epoch,wallet,profile,verify=True):
+            req=request(cp,wallet);status=epoch.ledger.reserve(cp,req,NOW);job=status['jobId']
+            epoch.ledger.submit(job,status['bindingDigest'],NOW+1)
+            if verify:epoch.ledger.begin_verification(job,NOW+1)
+            fixture.job=job;fixture.profile=profile
+            reads=fixture.reads();profiles=[{'id':9100001},{'id':9100002}]
+            reads=[replace(item,acquired_at=NOW+2) for item in reads]
+            reads[0]=replace(reads[0],body=profiles)
+            return job,reads
+        a,reads=start(first,2,9100001)
+        grade={'rubricVersion':cp['rubricVersion'],'score':90,'useful':True}
+        evidence={'epoch':first.public_descriptor(),'modelResult':grade,'policyDigest':digest(self.policy),
+                  'inference':{'requestDigest':'a'*64,'responseDigest':digest(grade),'provider':'synthetic',
+                               'model':'synthetic-model','privacyMode':'provider_visible','inputTokens':10,'outputTokens':10}}
+        first.accept(a,reads,grade,now=NOW+3,evidence=evidence,policy=self.policy)
+        second=self.epoch();b,other=start(second,3,9100002)
+        with self.assertRaisesRegex(Rejected,'duplicate_account'):
+            second.ledger.check_account(b,other,dedup_key=second._dedup_key,now=NOW+3)
+        evidence['epoch']=second.public_descriptor()
+        second._active=second._funded_once=True
+        with self.assertRaisesRegex(Rejected,'duplicate_account'):
+            second.accept(b,other,grade,now=NOW+3,evidence=evidence,policy=self.policy)
+        snapshot=canonical(second.ledger._snapshot()).decode()
+        self.assertNotIn('wise-profile:910000',snapshot);self.assertNotIn('9100001',snapshot);self.assertNotIn('9100002',snapshot)
+        self.assertEqual(len(__import__('json').loads(next(row for row in second.ledger.payment_rows() if row['id']==a)['account_aliases'])),2)
+        public=second.ledger.archive_record(a)
+        self.assertNotIn('account_aliases',canonical(public).decode())
+        second.ledger.reject(b,'duplicate_account')
+        c,third=start(second,4,9100002,verify=False)
+        runtime=Runtime(self.policy,second,None,FakeArchive([]),attester=lambda nonce,key,user:nonce)
+        bank=Mock();bank.acquire.return_value=third
+        runtime.payment.preflight_recipient=Mock()
+        runtime.jobs.acquire();payload={'credential':{'value':'SYNTHETIC-SECRET'},'inferenceKey':'SYNTHETIC-SECRET',
+                                      'profileId':'9100002','recipe':{},'notes':'','transcript':{}}
+        with patch('transcripts.runtime.time.time',return_value=NOW+3),patch('transcripts.transport.BankClient',return_value=bank),\
+                patch('transcripts.providers.ProviderClient') as provider:
+            runtime.process(c,payload)
+        provider.assert_not_called();runtime.payment.preflight_recipient.assert_not_called()
+        self.assertEqual(second.ledger.status(c)['reason'],'duplicate_account');self.assertEqual(payload,{})

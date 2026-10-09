@@ -166,8 +166,10 @@ def main():
     except Rejected as error:
         result={'error':str(error)}
         if client is not None and client.job is not None:
+            terminal=str(error)=='job_not_found' and time.time()>=client.job['request']['expiresAt']
             result.update({'jobId':client.job['jobId'],'bindingDigest':client.job['bindingDigest'],
-                           'nextAction':'poll_same_job_do_not_resubmit'})
+                           'nextAction':'terminal_record_unavailable' if terminal else
+                                        'check_existing_job_outcome' if str(error)=='job_expired' else 'poll_same_job_do_not_resubmit'})
         print(json.dumps(result));raise SystemExit(1)
     except Exception:
         result={'error':'client_failed'}

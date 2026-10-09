@@ -14,7 +14,7 @@ from functools import wraps
 from contextlib import contextmanager
 from .common import canonical, digest, fields, hex_digest, integer, opaque_id, require
 from .policy import MAX_BUDGET, validate_reservation
-from .artifacts import account_fingerprint, extract_artifact
+from .artifacts import account_fingerprint, account_fingerprints, extract_artifact
 from .recipe import validate_live_reads
 
 NONPAYMENT = {"rejected", "expired", "cancelled"}
@@ -55,7 +55,7 @@ class Ledger:
           created_at INTEGER NOT NULL, submitted_at INTEGER, expires_at INTEGER NOT NULL,
           reward INTEGER NOT NULL, recipient TEXT NOT NULL, reason TEXT, account_hmac TEXT,
           artifact TEXT, artifact_digest TEXT, tx_id TEXT UNIQUE, signed_tx BLOB, paid_at INTEGER,
-          evidence TEXT, receipt_job TEXT, receipt_signature TEXT, payout_intent TEXT);
+          evidence TEXT, receipt_job TEXT, receipt_signature TEXT, payout_intent TEXT, account_aliases TEXT);
         CREATE TABLE IF NOT EXISTS retirement (id INTEGER PRIMARY KEY CHECK(id=1), state TEXT NOT NULL,
           amount INTEGER, tx_id TEXT, signed_tx BLOB);
         CREATE TABLE IF NOT EXISTS runtime (id INTEGER PRIMARY KEY CHECK(id=1), value TEXT NOT NULL);
@@ -313,11 +313,13 @@ class Ledger:
             require(model_result["useful"] and model_result["score"] >= campaign["evidenceRequirements"]["minScore"],
                     "model_rejected")
             fingerprint = account_fingerprint(dedup_key, campaign["id"], account_id)
+            aliases=account_fingerprints(dedup_key,campaign,reads,account_id)
+            self._check_aliases(campaign['id'],aliases)
             require(self.db.execute("SELECT 1 FROM jobs WHERE campaign_id=? AND account_hmac=? AND state IN "
                                     "('accepted','payout_pending','paid')", (campaign["id"],fingerprint)).fetchone() is None,
                     "duplicate_account")
-            self.db.execute("UPDATE jobs SET state='accepted',account_hmac=?,artifact=?,artifact_digest=? WHERE id=?",
-                            (fingerprint,canonical(artifact).decode(),digest(artifact),job_id))
+            self.db.execute("UPDATE jobs SET state='accepted',account_hmac=?,artifact=?,artifact_digest=?,account_aliases=? WHERE id=?",
+                            (fingerprint,canonical(artifact).decode(),digest(artifact),canonical(aliases).decode(),job_id))
             if getattr(self.anchor,'durable',False):
                 require(evidence is not None,'state_evidence_missing')
                 fields(evidence,{'epoch','modelResult','inference','policyDigest'})
@@ -342,8 +344,15 @@ class Ledger:
             campaign,request=json.loads(row['campaign']),json.loads(row['request'])
             account=validate_live_reads(campaign,reads,job_id,row['submitted_at'],now,request['limits']['maxBankReads'])
             fingerprint=account_fingerprint(dedup_key,campaign['id'],account)
+            self._check_aliases(campaign['id'],account_fingerprints(dedup_key,campaign,reads,account))
             require(self.db.execute("SELECT 1 FROM jobs WHERE campaign_id=? AND account_hmac=? AND state IN ('accepted','payout_pending','paid')",
                                     (campaign['id'],fingerprint)).fetchone() is None,'duplicate_account')
+
+    def _check_aliases(self,campaign_id,aliases):
+        fingerprints=set(aliases)
+        for row in self.db.execute("SELECT account_hmac,account_aliases FROM jobs WHERE campaign_id=? AND state IN ('accepted','payout_pending','paid')",(campaign_id,)):
+            old=json.loads(row['account_aliases']) if row['account_aliases'] is not None else [row['account_hmac']]
+            require(not fingerprints.intersection(old),'duplicate_account')
 
     @_locked
     def runtime_state(self):

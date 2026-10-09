@@ -64,6 +64,28 @@ def account_fingerprint(key, campaign_id, live_account_id):
                     hashlib.sha256).hexdigest()
 
 
+def account_fingerprints(key,campaign,reads,account_id):
+    """Private overlap witnesses, never a proof of one human or exported count.
+
+    Wise's authenticated profile discovery proves the set reachable by this
+    credential. Selecting another profile cannot earn a second overlapping slot.
+    Other source adapters retain their independently authenticated account ID.
+    """
+    identities={account_id}
+    if any(source['origin']=='https://api.wise.com' for source in campaign['sources']):
+        discovery=[read for read in reads if read.url=='https://api.wise.com/v1/profiles' and read.method=='GET']
+        require(len(discovery)==1,'account_evidence_missing')
+        body=discovery[0].body
+        require(isinstance(body,list) and 1<=len(body)<=100,'account_evidence_missing')
+        identities=set()
+        for profile in body:
+            require(isinstance(profile,dict) and type(profile.get('id')) is int and 0<profile['id']<10**20,
+                    'account_evidence_missing')
+            identities.add('wise-profile:'+str(profile['id']))
+        require(len(identities)==len(body) and account_id in identities,'account_evidence_missing')
+    return sorted(account_fingerprint(key,campaign['id'],identity) for identity in identities)
+
+
 def _type(value):
     if value is None: return "null"
     if type(value) is bool: return "boolean"

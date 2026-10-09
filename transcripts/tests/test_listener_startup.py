@@ -90,7 +90,8 @@ class StartupTests(unittest.TestCase):
         self.assertIn("Type=notify", relay)
         credential = Path("transcripts/infra/install_credentials.sh").read_text()
         self.assertIn("Type=notify", credential)
-        self.assertIn('"Requires=$durable_dependencies"', source)
+        self.assertIn('Requires=$durable_dependencies', source)
+        self.assertIn('TimeoutStopSec=75', source)
 
 
 if __name__ == "__main__":

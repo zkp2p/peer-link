@@ -298,7 +298,8 @@ The v3 descriptor retains `epochId`, `payoutWallet`, `chainId`, `usdcContract`,
 Lambda version. Clients must bind these fields to the approved measured policy;
 old v2 evidence cannot approve this new contract.
 
-A stable HKDF master derives integrity, deduplication and state-encryption keys.
+A stable HKDF master derives integrity, deduplication, state-encryption and
+write-authorization keys.
 The durable RSA-3072 receipt signer is encrypted in the snapshot. A separate
 RSA-3072 ingress key is fresh per boot and never persisted; KMS uses another
 ephemeral RSA-2048 Recipient key. Canonical snapshot encryption
@@ -327,6 +328,11 @@ A campaign specifies version, bank/country/issue, integer USDC reward minor unit
 1–5 contributor capacity, approved origins/paths/methods, provider/model/privacy
 routes, rubric and structural evidence requirements. Bound reservation terms do
 not change retroactively when the catalog changes. USDC has 6 decimals.
+
+Wise duplicate checks compare private keyed hashes of every profile ID returned by
+the authenticated profile endpoint. An overlapping profile set cannot earn another
+slot by selecting a different personal or business profile. These hashes remain
+inside encrypted state. This identifies overlapping bank access, not unique people.
 
 The encrypted payload contains bank credential, selected profile, recipe,
 contributor inference key and bounded unused local notes/transcript fields. Its

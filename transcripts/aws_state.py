@@ -74,7 +74,7 @@ class Credentials:
             fields(value,{'version','accessKeyId','secretAccessKey','sessionToken','expiration','roleArn','instanceId'})
             require(type(value['version']) is int and value['version']==1
                     and value['roleArn']==self.role_arn
-                    and type(value['expiration']) is int and time.time()+60<=value['expiration']<=time.time()+21600
+                    and type(value['expiration']) is int and time.time()+60<=value['expiration']<=time.time()+43200
                     and re.fullmatch(r'i-[0-9a-f]{8,17}',value['instanceId']),'credentials_unavailable')
             require(all(isinstance(value[key],str) and 1<=len(value[key])<=8192
                         and all(33<=ord(char)<127 for char in value[key])
@@ -193,7 +193,7 @@ def pack_snapshot(snapshot):
     for row in value['jobs']:
         campaign=strict_json(row['campaign'],maximum=100000);identity=digest(campaign)
         campaigns[identity]=campaign;row['campaign']=identity
-        for field in ('request','artifact','evidence','receipt_job','payout_intent'):
+        for field in ('request','artifact','evidence','receipt_job','payout_intent','account_aliases'):
             if row.get(field) is not None:row[field]=strict_json(row[field],maximum=MAX_RECORD)
     value['campaigns']=campaigns
     return value
@@ -205,7 +205,7 @@ def unpack_snapshot(value):
     for row in value['jobs']:
         campaign=campaigns.get(row['campaign']);require(campaign is not None,'state_invalid')
         require(digest(campaign)==row['campaign'],'state_invalid');row['campaign']=canonical(campaign).decode()
-        for field in ('request','artifact','evidence','receipt_job','payout_intent'):
+        for field in ('request','artifact','evidence','receipt_job','payout_intent','account_aliases'):
             if row.get(field) is not None:row[field]=canonical(row[field]).decode()
     return value
 

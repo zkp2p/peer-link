@@ -109,6 +109,8 @@ class AWSStateTests(unittest.TestCase):
             with patch('transcripts.aws_state.socket.socket',return_value=connection),patch('transcripts.aws_state.socket.AF_VSOCK',40,create=True),patch('transcripts.aws_state.time.time',return_value=1000):
                 return Credentials(CONFIG['credentialRoleArn']).get()
         self.assertEqual(get(value),value)
+        self.assertEqual(get({**value,'expiration':1000+21900})['expiration'],22900)
+        with self.assertRaisesRegex(Rejected,'credentials_unavailable'):get({**value,'expiration':1000+43201})
         for changed in ({'roleArn':'arn:aws:iam::000000000000:role/wrong'},{'expiration':1001},{'version':True},{'extra':'secret'}):
             with self.assertRaisesRegex(Rejected,'credentials_unavailable'):get({**value,**changed})
         with self.assertRaisesRegex(Rejected,'credentials_unavailable'):get(value,8193)

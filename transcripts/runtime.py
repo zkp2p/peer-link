@@ -28,7 +28,9 @@ SETTLEMENT_RETRY_DELAY=2
 TRANSIENT_SETTLEMENT_ERRORS=frozenset({'payout_rpc_unavailable','http_transport_failed',
     'storage_unavailable','kms_broker_unavailable','request_timeout','response_incomplete',
     'egress_unavailable','http_request_failed','relay_refused','connection_closed',
-    'state_unavailable','state_authority_unavailable','credentials_unavailable','state_commit_uncertain'})
+    'state_unavailable','state_authority_unavailable','credentials_unavailable','state_commit_uncertain',
+    'payout_confirmation_pending'})
+STATE_ERRORS=frozenset({'state_unavailable','state_authority_unavailable','credentials_unavailable','state_commit_uncertain'})
 
 class RPC:
     def __init__(self,endpoint,transport):self.endpoint,self.transport=endpoint,transport
@@ -67,19 +69,50 @@ class Runtime:
         self.durable=getattr(epoch,"durable",False)
         self.receipt_signer=epoch.receipt_signer if self.durable else self.channel
         self.receipts={};self.pending_records={};self.settlement_lock=threading.Lock();self.operator_nonces=set();self.operator_lock=threading.Lock()
+        self.deferred_jobs=set();self.executing_jobs=set();self.recovery_workers=set();self.recovery_lock=threading.Lock()
         self.jobs=threading.BoundedSemaphore(2)
-        self.funding_preflight=None
+        self.funding_preflight=None;self.funding_preflight_nonce=None
+        if self.durable:
+            authorization=self.ledger.runtime_state().get('fundingPreflight')
+            if authorization is not None:
+                fields(authorization,{'descriptorDigest','nonce'})
+                self.funding_preflight=authorization['descriptorDigest'];self.funding_preflight_nonce=authorization['nonce']
         self.rpc=RPC(policy['payoutRpc'],transport)
         self.payment=BaseUSDCPayoutTransport(epoch,self.rpc,pinned_rpc_url=policy['payoutRpc'])
         self.coordinator=PayoutCoordinator(self.ledger,self.payment)
         self.retirement=RetirementCoordinator(epoch,self.payment)
         if self.durable:self.restore_records()
 
-    def restore_records(self):
+    def restore_records(self,*,include_paid=True):
         for job in self.ledger.recovery_jobs():
-            self.pending_records[job]=self.ledger.archive_record(job)
+            record=self.ledger.archive_record(job)
+            if include_paid or record['job']['state']!='paid':self.pending_records.setdefault(job,record)
             signed=self.ledger.restored_receipt(job)
             if signed is not None:self.receipts[job]=signed
+
+    def recover_deferred(self,job_id):
+        with self.recovery_lock:
+            if job_id in self.executing_jobs:return
+        status=self.ledger.status(job_id)
+        if status['state'] in {'reserved','submitted','verifying'}:
+            if job_id in self.deferred_jobs:
+                self.ledger.reject(job_id,'storage_unavailable');self.deferred_jobs.discard(job_id)
+            return
+        if status['state'] not in {'accepted','payout_pending','paid'}:return
+        self.pending_records.setdefault(job_id,self.ledger.archive_record(job_id))
+        self.deferred_jobs.discard(job_id)
+        with self.recovery_lock:
+            if job_id in self.executing_jobs or job_id in self.recovery_workers:return
+            self.recovery_workers.add(job_id)
+        def work():
+            try:self.settle(job_id)
+            except Exception:pass
+            finally:
+                with self.recovery_lock:self.recovery_workers.discard(job_id)
+        try:threading.Thread(target=work,daemon=True).start()
+        except BaseException:
+            with self.recovery_lock:self.recovery_workers.discard(job_id)
+            raise
 
     def restore_funding_gate(self):
         self.payment.check_continuity()
@@ -143,8 +176,11 @@ class Runtime:
         fields(body,{'jobId'})
         if command=='status':
             status=self.ledger.status(body['jobId'])
-            if self.durable and status['state'] in {'accepted','payout_pending','paid'}:
-                self.restore_records()
+            if self.durable:
+                newly_recovered=status['state'] in {'accepted','payout_pending'} and body['jobId'] not in self.pending_records
+                if body['jobId'] in self.deferred_jobs or newly_recovered:
+                    self.recover_deferred(body['jobId'])
+                    status=self.ledger.status(body['jobId'])
             return status
         if command=='artifact':return self.ledger.artifact(body['jobId'])
         if command=='receipt':
@@ -171,8 +207,11 @@ class Runtime:
                 usdc,gas=self.payment.funding_balances()
                 require(usdc==0,'preflight_requires_unfunded')
                 nonce=int(self.rpc.call('eth_getTransactionCount',[self.epoch.wallet,'pending']),16)
+                if self.durable:self.payment.check_continuity()
                 probe=self.epoch.check_payout_signing(nonce)
-                self.funding_preflight=digest(self.epoch.public_descriptor())
+                descriptor=digest(self.epoch.public_descriptor())
+                if self.durable:self.ledger.update_runtime({'fundingPreflight':{'descriptorDigest':descriptor,'nonce':nonce}})
+                self.funding_preflight=descriptor;self.funding_preflight_nonce=nonce
                 return {'health':self.dispatch('health',{}),'preflight':{
                     **probe,'usdcBalanceMinor':usdc,'gasBalanceWei':gas,'pendingNonce':nonce}}
             if value['action']=='pause':self.epoch.pause()
@@ -186,8 +225,14 @@ class Runtime:
                 self.epoch.begin_retirement_after_operator_verification(self.epoch.epoch_id,now=int(time.time()))
                 threading.Thread(target=self.reconcile_retirement,daemon=True).start()
             else:
+                if self.durable:
+                    authorization=self.ledger.runtime_state().get('fundingPreflight')
+                    require(authorization is not None and authorization['descriptorDigest']==digest(self.epoch.public_descriptor()),'funding_preflight_required')
+                    self.funding_preflight=authorization['descriptorDigest'];self.funding_preflight_nonce=authorization['nonce']
+                    self.payment.check_continuity()
+                    require(all(int(self.rpc.call('eth_getTransactionCount',[self.epoch.wallet,tag]),16)==self.funding_preflight_nonce
+                                for tag in ('latest','pending')),'funding_preflight_required')
                 require(self.funding_preflight==digest(self.epoch.public_descriptor()),'funding_preflight_required')
-                if self.durable:self.payment.check_continuity()
                 usdc,gas=self.payment.funding_balances()
                 self.epoch.activate_after_operator_verification(self.epoch.epoch_id,self.epoch.wallet,usdc_balance_minor=usdc,gas_balance_wei=gas)
         return self.dispatch('health',{})
@@ -246,7 +291,7 @@ class Runtime:
             time.sleep(min(SETTLEMENT_RETRY_DELAY,remaining))
 
     def reconcile_pending(self):
-        if self.durable:self.restore_records()
+        if self.durable:self.restore_records(include_paid=False)
         for job_id in tuple(self.pending_records):
             try:self.settle(job_id)
             except Exception:pass
@@ -266,22 +311,29 @@ class Runtime:
     def process(self,job_id,payload):
         from .transport import BankClient
         from .providers import ProviderClient
+        phase='state'
+        with self.recovery_lock:self.executing_jobs.add(job_id)
         try:
             terms=self.ledger.terms(job_id);campaign,request=terms['campaign'],terms['request']
             start=int(time.time());self.ledger.begin_verification(job_id,start)
+            phase='bank'
             bank=BankClient(campaign,payload['credential'],transport=self.transport,profile_id=payload['profileId'],max_reads=request['limits']['maxBankReads'])
             reads=bank.acquire(job_id,payload['recipe'],start)
             artifact=extract_artifact(campaign,reads)
             if self.durable:
                 from .aws_state import MAX_RECORD
                 require(len(canonical(artifact))<=MAX_RECORD-8192,'unsafe_artifact')
+                phase='state'
                 self.ledger.check_account(job_id,reads,dedup_key=self.epoch._dedup_key,now=int(time.time()))
+                phase='payout_preflight'
                 self.payment.preflight_recipient(request['payoutAddress'],campaign['rewardMinor'])
+            phase='provider'
             provider=ProviderClient(campaign,request,payload['inferenceKey'],transport=self.transport)
             grade=provider.grade(artifact,int(time.time()))
             require(time.time()-start<=request['limits']['deadlineSeconds'],'limits_exceeded')
             evidence={'epoch':self.epoch.public_descriptor(),'modelResult':grade,
                       'inference':provider.metadata,'policyDigest':self.policy_digest}
+            phase='state'
             if self.durable:self.epoch.accept(job_id,reads,grade,now=int(time.time()),evidence=evidence,policy=self.policy)
             else:self.epoch.accept(job_id,reads,grade,now=int(time.time()))
             record={'version':1,'epoch':self.epoch.public_descriptor(),'job':self.ledger.status(job_id),
@@ -290,15 +342,31 @@ class Runtime:
             # Settlement needs only the redacted record and ledger payment.
             # Release credentials/raw history before any potentially long retry.
             bank.close();provider.close();payload.clear();reads=None
+            phase='settlement'
             self.settle(job_id)
         except Rejected as error:
-            if str(error) in TRANSIENT_SETTLEMENT_ERRORS and self.durable:
-                # An uncertain accepted CAS is retained by Ledger. Do not turn a
-                # paid grade into a rejection while its durable outcome is unknown.
+            pending=getattr(self.ledger,'_pending_snapshot',None) is not None
+            state_outage=str(error) in STATE_ERRORS or phase=='state' and str(error) in TRANSIENT_SETTLEMENT_ERRORS
+            if self.durable and (pending or state_outage):
+                self.deferred_jobs.add(job_id)
+                # Only a state dependency/pending CAS can defer classification.
+                # Ordinary bank/provider HTTP errors are terminal, never replayed.
+                if 'bank' in locals():bank.close()
+                if 'provider' in locals():provider.close()
+                payload.clear();reads=None
+                try:
+                    status=self.ledger.status(job_id) # Reconcile the original exact opId.
+                    if status['state'] in {'accepted','payout_pending','paid'}:
+                        self.pending_records[job_id]=self.ledger.archive_record(job_id)
+                        self.settle(job_id);self.deferred_jobs.discard(job_id)
+                    elif status['state'] in {'reserved','submitted','verifying'}:
+                        self.ledger.reject(job_id,'storage_unavailable');self.deferred_jobs.discard(job_id)
+                except Exception:pass
                 return
             status=self.ledger.status(job_id)
             if status['state'] in {'reserved','submitted','verifying'}:
-                code=str(error) if str(error) in REASONS else 'invalid_submission'
+                code=str(error) if str(error) in REASONS else ('bank_read_failed' if phase=='bank' else
+                       'provider_failed' if phase=='provider' else 'invalid_submission')
                 self.ledger.reject(job_id,code)
             # Accepted/pending jobs retain their obligation. No exception message can leak data.
         except Exception:
@@ -307,7 +375,8 @@ class Runtime:
         finally:
             if 'bank' in locals():bank.close()
             if 'provider' in locals():provider.close()
-            payload.clear();self.jobs.release()
+            payload.clear();reads=None;self.jobs.release()
+            with self.recovery_lock:self.executing_jobs.discard(job_id)
 
 
 def main():

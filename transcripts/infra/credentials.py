@@ -58,7 +58,9 @@ class CredentialSource:
             raw = strict_json(self._fetch("meta-data/iam/security-credentials/" + self.role_name, token=token), MAX_RESPONSE)
             require(raw.get("Code") == "Success" and raw.get("Type") == "AWS-HMAC")
             expiration = int(datetime.datetime.fromisoformat(raw["Expiration"].replace("Z", "+00:00")).timestamp())
-            require(self.clock() + 60 <= expiration <= self.clock() + 21600)
+            # IMDS rotation can publish credentials lasting slightly beyond6h.
+            # Bound the horizon without rejecting legitimate refreshed sessions.
+            require(self.clock() + 60 <= expiration <= self.clock() + 43200)
             access, secret, session = raw["AccessKeyId"], raw["SecretAccessKey"], raw["Token"]
             require(isinstance(access, str) and re.fullmatch("ASIA[A-Z0-9]{16}", access))
             require(isinstance(secret, str) and 16 <= len(secret) <= 128)

@@ -67,6 +67,17 @@ class CredentialTests(unittest.TestCase):
             with self.assertRaisesRegex(CredentialsUnavailable, "^credentials_unavailable$"):
                 self.source.credentials()
 
+    def test_rotated_six_hour_plus_session_and_bounded_expiry(self):
+        for seconds in [6 * 3600 + 5 * 60, 12 * 3600]:
+            self.imds.data['Expiration'] = datetime.datetime.fromtimestamp(
+                NOW + seconds, datetime.timezone.utc).isoformat()
+            self.assertEqual(self.source.credentials()['expiration'], NOW + seconds)
+        for seconds in [-1, 59, 12 * 3600 + 1]:
+            self.imds.data['Expiration'] = datetime.datetime.fromtimestamp(
+                NOW + seconds, datetime.timezone.utc).isoformat()
+            with self.assertRaisesRegex(CredentialsUnavailable, '^credentials_unavailable$'):
+                self.source.credentials()
+
     def exchange(self, value, cid=16):
         client, server = socket.socketpair()
         source = Mock(); source.credentials.return_value = {"version": 1, "synthetic": True}

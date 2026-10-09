@@ -93,32 +93,62 @@ LambdaEnvironmentKeyArn parameter after verifying KeyManager=AWS and aws/lambda.
 Published authority and $LATEST runtime management must independently report
 FunctionUpdate; CloudFormation import does not apply unchanged configuration.
 
-The current finite guard and Restart=no remain active. After durable hardware
-restore, budget/nonce/payout gates and explicit deployment review:
+The default finite guard and Restart=no remain active. The durable installer uses
+`supervise_enclave.py` with Type=notify: it refuses an existing enclave, launches
+CID16/2CPU/2048MiB, records the exact host-prefixed enclave ID and requires paused
+policy-bound health within90seconds. After readiness it polls actual Nitro
+liveness every5seconds. Startup/liveness failure cleans up only that ID; each
+Nitro command is bounded30seconds and systemd stop allows75seconds. No terminate-all,
+autoactivation, auto-funding or signed operator action is used. Transient HTTP
+failures produce alarms instead of monitor-driven enclave replacement.
 
-1. On ONLY the new KMS host, add service drop-ins for enclave/relay/credentials
-   with Restart=on-failure, bounded RestartSec and StartLimitBurst; enable the
-   units with the credential -> enclave -> relay dependency order. An enclave
-   process needs an actual liveness/watchdog check: its oneshot launcher remains
-   active after launch and Restart alone does not detect a dead enclave.
-2. Startup acquires a new writer generation and restores/reconciles the durable
-   head before accepting jobs. Service restarts must not create another funded
-   logical ledger or accept blank state. An expired/fenced/error head pauses
-   admissions/payments; persisted exact transactions may be reconciled.
-3. Remove only the new stack's finite ExpirySchedule through a reviewed change
-   set. Do not change the old ephemeral-wallet stop guard. Retain a deliberate
-   shutdown path: close admissions, settle/reconcile obligations, archive and
-   refund/recover under operator custody before stopping.
-4. Add payload-free health/last-durable-commit-age and restore/fence/error counts.
-   Prefer existing AWS/DynamoDB ConditionalCheckFailedRequests/UserErrors and
-   AWS/Lambda Errors/Throttles alarms plus authenticated public-health probes.
-   A successful Lambda Invoke can still return state_unavailable, so native
-   Lambda Errors alone is insufficient. No secrets/headers/ciphertext/request
-   bodies in counters or logs. Do not invent SNS subscriptions; use only an
-   established, tested destination or clearly supervised alarms with no actions.
-5. Keep a capped single-writer rollout. One EC2 host is an availability dependency,
-   despite multi-AZ managed state. A later second-AZ standby needs demonstrated
-   fencing and exact-payout recovery, never active-active wallet signing.
+After durable hardware restore, budget/nonce/payout gates and deployment review:
+
+1. Prepare a NEW-host-only CloudFormation change set from `template.py`, preserving
+   the current resolved ImageId, network, payout key and exact StateAuthorityVersionArn,
+   StateKeyArn and StateNamespace grants. `ContinuousServiceEnabled=true` requires
+   all state/custody pins, disables only this stack's ExpirySchedule and removes its
+   expiry-heartbeat alarm. Review for no EC2 replacement, no old-stack changes and
+   only intended IAM/schedule/alarm changes before execution. Default false preserves
+   finite RAM pilot behavior; NEVER apply this opt-out to the old funded RAM host.
+2. After independent genuine quote/Recipient/CMS bootstrap + hardware restart proof,
+   run `install_continuous.sh INSTANCE_ID REGION POLICY_DIGEST` on the reviewed NEW
+   host with PEERLINK_CONTINUOUS_APPROVED equal to that digest. This workflow token
+   records operator intent; it is not cryptographic release approval. Verify the
+   finite guard was disabled and release approval completed separately. The helper
+   checks paused durable policy-bound health, installs10second Restart=on-failure
+   backoff/maximum3starts in300seconds and enables relay/credentials/enclave boot.
+   On boot, allocator + relay listeners + credentials must be ready before enclave
+   restore. Exhausted retries need operator attention. A helper-service outage may
+   stop its dependent enclave; inspect/restart the group manually after correction.
+3. Every restored runtime remains paused, preserving durable obligations, nonce
+   witness, receipt key and logical epoch. Resume requires a fresh signed operator
+   action after chain/head continuity checks. Unknown/fenced/pending state fails
+   closed; do not initialize blank state, lower generation or discard obligations.
+4. The separate health publisher checks only localhost public health (5second HTTP
+   timeout) once per minute and emits RuntimeHealth/AdmissionsOpen numerical0/1
+   metrics with InstanceId. AWS CLI is bounded20seconds/one attempt, uses only
+   instance credentials and the official regional endpoint; overrides are removed.
+   Role permission is only PutMetricData in PeerLink/Transcripts. Alarms trigger
+   after3unhealthy/missing samples. Paused restore produces RuntimeHealth1 and
+   AdmissionsOpen0, intentionally requesting manual signed resume. No request,
+   credential, bank/model, ciphertext or private state payloads are logged or probed.
+   No automatic reboot, activation or new notification subscription is configured.
+   Without a tested AlarmTopicArn these are operator-supervised console alarms.
+5. Before deliberate shutdown, close admissions, settle/reconcile obligations,
+   preserve signed archives off-host and refund/recover with operator custody.
+   Managed encrypted state survives host failure; one EC2 host still means downtime
+   and manual recovery after start-limit exhaustion or an instance stop. HA, standby,
+   automatic operator resume and generalized policy migration are optional later work.
+
+Hardware evidence must demonstrate stable receipt key/logical epoch, fresh ingress,
+writer-generation+1, monotonic revision, exact head/master binding and unchanged
+zero-USDC/pending nonce anchor. Local tests cover stale capability/CAS fencing; do
+not claim a hardware stale-writer rejection or submit synthetic negative commits to
+the public namespace. Health metrics do not prove each commit or replace that proof.
+
+CloudWatch namespace permission uses the documented
+[namespace condition](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/iam-cw-condition-keys-namespace.html).
 
 ## Backups and rollback
 

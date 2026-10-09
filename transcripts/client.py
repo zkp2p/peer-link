@@ -177,11 +177,17 @@ class Client:
         require(status['reason'] is None or isinstance(status['reason'],str) and status['reason'] in SAFE_ERRORS,'service_unavailable')
         # Return no unsigned server free text or a misleading terminal paid state.
         return {'jobId':self.job['jobId'],'state':'unverified','reportedState':status['state'],
-                'verified':False,'reason':status['reason'],'nextAction':'verify_receipt' if status['state']=='paid' else 'poll_same_job'}
+                'verified':False,'reason':status['reason'],'nextAction':'verify_receipt' if status['state']=='paid' else
+                    'terminal_outcome_reported' if status['state'] in {'rejected','expired','cancelled'} else 'poll_same_job'}
     def status(self,job_id):
         require(self.job is not None and job_id==self.job['jobId'],'job_context_required')
         self.preflight()
-        result=self.provisional(self.call('/v1/jobs/'+job_id))
+        try:result=self.provisional(self.call('/v1/jobs/'+job_id))
+        except Rejected as error:
+            if str(error)=='job_not_found' and time.time()>=self.job['request']['expiresAt']:
+                return {'jobId':job_id,'state':'unverified','reportedState':'unavailable_after_expiry','verified':False,
+                        'reason':'job_not_found','nextAction':'terminal_record_unavailable'}
+            raise
         if result['reportedState']=='paid':
             signed=self.receipt(job_id)
             return {'jobId':job_id,'state':signed['payload']['job']['state'],'verified':True,'receipt':signed}

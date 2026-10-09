@@ -104,8 +104,20 @@ StandardError=null
 UNIT
 if [[ -n "$durable_dependencies" ]]; then
   install -d -m 700 /etc/systemd/system/peer-link-transcript-enclave.service.d
-  printf '%s\n' '[Unit]' "After=$durable_dependencies" "Requires=$durable_dependencies" \
-    > /etc/systemd/system/peer-link-transcript-enclave.service.d/durable-state.conf
+  cat > /etc/systemd/system/peer-link-transcript-enclave.service.d/durable-state.conf <<UNIT
+[Unit]
+After=$durable_dependencies
+Requires=$durable_dependencies
+[Service]
+Type=notify
+NotifyAccess=main
+RemainAfterExit=no
+TimeoutStartSec=150
+TimeoutStopSec=75
+ExecStart=
+ExecStart=$base/venv/bin/python -m transcripts.infra.supervise_enclave --root $base/current --instance-id $4 --record /run/peer-link-transcripts/enclave.json
+ExecStop=
+UNIT
 else
   # An explicitly reviewed non-durable install cannot inherit a stale drop-in.
   rm -f /etc/systemd/system/peer-link-transcript-enclave.service.d/durable-state.conf
@@ -133,6 +145,11 @@ RestrictAddressFamilies=AF_INET AF_INET6 AF_VSOCK AF_UNIX
 StandardOutput=null
 StandardError=null
 UNIT
+# Continuous service needs a separate hardware/nonce/release gate for this image.
+for unit in enclave relay credentials; do
+  rm -f "/etc/systemd/system/peer-link-transcript-$unit.service.d/continuous.conf"
+done
+systemctl disable peer-link-transcript-enclave.service peer-link-transcript-relay.service peer-link-transcript-credentials.service peer-link-transcript-health.service 2>/dev/null || true
 systemctl daemon-reload
 # Deliberately do not enable: a host reboot must not silently create a new RAM epoch.
 # Type=notify waits for egress5101/archive5102/KMS5103 bind/listen. The separate
@@ -144,7 +161,7 @@ import signal, sys, time
 from pathlib import Path
 from urllib.request import build_opener, ProxyHandler
 
-deadline = time.monotonic() + 30
+deadline = time.monotonic() + 90
 
 def deadline_expired(*_):
     raise TimeoutError('candidate_health_failed')
@@ -160,7 +177,7 @@ def check_health():
     while time.monotonic() < deadline:
         try:
             with opener.open('http://127.0.0.1:8080/health',
-                             timeout=min(1, max(0.01, deadline-time.monotonic()))) as response:
+                             timeout=min(5, max(0.01, deadline-time.monotonic()))) as response:
                 require(response.status == 200, 'candidate_health_failed')
                 health = strict_json(response.read(16_385), 16_384)
             require(health.get('service') == 'peerlink-transcripts'
@@ -176,7 +193,7 @@ def check_health():
 
 try:
     signal.signal(signal.SIGALRM, deadline_expired)
-    signal.alarm(30)
+    signal.alarm(90)
     check_health()
 except Exception:
     print('Candidate health verification failed.', file=sys.stderr)

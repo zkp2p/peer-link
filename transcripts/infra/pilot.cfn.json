@@ -31,6 +31,27 @@
       "Default": "",
       "AllowedPattern": "(arn:(aws|aws-us-gov|aws-cn):kms:[a-z0-9-]+:[0-9]{12}:key/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|mrk-[0-9a-f]{32}))?",
       "Description": "Exact dedicated nonexportable ECC_SECG_P256K1 SIGN_VERIFY key; authorized host/operator custody, no native PCR authorization for KMS Sign"
+    },
+    "StateAuthorityVersionArn": {
+      "Type": "String",
+      "Default": "",
+      "AllowedPattern": "(arn:aws:lambda:[a-z0-9-]+:[0-9]{12}:function:[A-Za-z0-9_-]+:[1-9][0-9]*)?"
+    },
+    "StateKeyArn": {
+      "Type": "String",
+      "Default": "",
+      "AllowedPattern": "(arn:aws:kms:[a-z0-9-]+:[0-9]{12}:key/[a-f0-9-]{36})?"
+    },
+    "StateNamespace": {
+      "Type": "String",
+      "Default": "",
+      "AllowedPattern": "([a-z0-9][a-z0-9-]{0,63})?"
+    },
+    "ContinuousServiceEnabled": {
+      "Type": "String",
+      "Default": "false",
+      "AllowedValues": ["false", "true"],
+      "Description": "NEW durable host only, after hardware restore and nonce/payout/release gates; disables finite expiry and enables health metrics"
     }
   },
   "Conditions": {
@@ -55,6 +76,136 @@
             },
             ""
           ]
+        }
+      ]
+    },
+    "HasStateAuthority": {
+      "Fn::And": [
+        {
+          "Fn::Not": [
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "StateAuthorityVersionArn"
+                },
+                ""
+              ]
+            }
+          ]
+        },
+        {
+          "Fn::Not": [
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "StateKeyArn"
+                },
+                ""
+              ]
+            }
+          ]
+        },
+        {
+          "Fn::Not": [
+            {
+              "Fn::Equals": [
+                {
+                  "Ref": "StateNamespace"
+                },
+                ""
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "IsContinuous": {
+      "Fn::Equals": [
+        {
+          "Ref": "ContinuousServiceEnabled"
+        },
+        "true"
+      ]
+    },
+    "IsFinitePilot": {
+      "Fn::Equals": [
+        {
+          "Ref": "ContinuousServiceEnabled"
+        },
+        "false"
+      ]
+    }
+  },
+  "Rules": {
+    "ContinuousRequiresDurability": {
+      "RuleCondition": {
+        "Fn::Equals": [
+          {
+            "Ref": "ContinuousServiceEnabled"
+          },
+          "true"
+        ]
+      },
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Equals": [
+                  {
+                    "Ref": "StateAuthorityVersionArn"
+                  },
+                  ""
+                ]
+              }
+            ]
+          },
+          "AssertDescription": "Continuous mode requires pinned durable state and KMS custody"
+        },
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Equals": [
+                  {
+                    "Ref": "StateKeyArn"
+                  },
+                  ""
+                ]
+              }
+            ]
+          },
+          "AssertDescription": "Continuous mode requires pinned durable state and KMS custody"
+        },
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Equals": [
+                  {
+                    "Ref": "StateNamespace"
+                  },
+                  ""
+                ]
+              }
+            ]
+          },
+          "AssertDescription": "Continuous mode requires pinned durable state and KMS custody"
+        },
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Equals": [
+                  {
+                    "Ref": "PayoutKmsKeyArn"
+                  },
+                  ""
+                ]
+              }
+            ]
+          },
+          "AssertDescription": "Continuous mode requires pinned durable state and KMS custody"
         }
       ]
     }
@@ -127,35 +278,165 @@
                   "Effect": "Deny",
                   "NotAction": {
                     "Fn::If": [
-                      "HasPayoutKmsKey",
-                      [
-                        "ssm:UpdateInstanceInformation",
-                        "ssmmessages:CreateControlChannel",
-                        "ssmmessages:CreateDataChannel",
-                        "ssmmessages:OpenControlChannel",
-                        "ssmmessages:OpenDataChannel",
-                        "ec2messages:AcknowledgeMessage",
-                        "ec2messages:DeleteMessage",
-                        "ec2messages:FailMessage",
-                        "ec2messages:GetEndpoint",
-                        "ec2messages:GetMessages",
-                        "ec2messages:SendReply",
-                        "kms:GetPublicKey",
-                        "kms:Sign"
-                      ],
-                      [
-                        "ssm:UpdateInstanceInformation",
-                        "ssmmessages:CreateControlChannel",
-                        "ssmmessages:CreateDataChannel",
-                        "ssmmessages:OpenControlChannel",
-                        "ssmmessages:OpenDataChannel",
-                        "ec2messages:AcknowledgeMessage",
-                        "ec2messages:DeleteMessage",
-                        "ec2messages:FailMessage",
-                        "ec2messages:GetEndpoint",
-                        "ec2messages:GetMessages",
-                        "ec2messages:SendReply"
-                      ]
+                      "IsContinuous",
+                      {
+                        "Fn::If": [
+                          "HasStateAuthority",
+                          {
+                            "Fn::If": [
+                              "HasPayoutKmsKey",
+                              [
+                                "ssm:UpdateInstanceInformation",
+                                "ssmmessages:CreateControlChannel",
+                                "ssmmessages:CreateDataChannel",
+                                "ssmmessages:OpenControlChannel",
+                                "ssmmessages:OpenDataChannel",
+                                "ec2messages:AcknowledgeMessage",
+                                "ec2messages:DeleteMessage",
+                                "ec2messages:FailMessage",
+                                "ec2messages:GetEndpoint",
+                                "ec2messages:GetMessages",
+                                "ec2messages:SendReply",
+                                "kms:GetPublicKey",
+                                "kms:Sign",
+                                "lambda:InvokeFunction",
+                                "kms:GenerateDataKey",
+                                "kms:Decrypt",
+                                "cloudwatch:PutMetricData"
+                              ],
+                              [
+                                "ssm:UpdateInstanceInformation",
+                                "ssmmessages:CreateControlChannel",
+                                "ssmmessages:CreateDataChannel",
+                                "ssmmessages:OpenControlChannel",
+                                "ssmmessages:OpenDataChannel",
+                                "ec2messages:AcknowledgeMessage",
+                                "ec2messages:DeleteMessage",
+                                "ec2messages:FailMessage",
+                                "ec2messages:GetEndpoint",
+                                "ec2messages:GetMessages",
+                                "ec2messages:SendReply",
+                                "lambda:InvokeFunction",
+                                "kms:GenerateDataKey",
+                                "kms:Decrypt",
+                                "cloudwatch:PutMetricData"
+                              ]
+                            ]
+                          },
+                          {
+                            "Fn::If": [
+                              "HasPayoutKmsKey",
+                              [
+                                "ssm:UpdateInstanceInformation",
+                                "ssmmessages:CreateControlChannel",
+                                "ssmmessages:CreateDataChannel",
+                                "ssmmessages:OpenControlChannel",
+                                "ssmmessages:OpenDataChannel",
+                                "ec2messages:AcknowledgeMessage",
+                                "ec2messages:DeleteMessage",
+                                "ec2messages:FailMessage",
+                                "ec2messages:GetEndpoint",
+                                "ec2messages:GetMessages",
+                                "ec2messages:SendReply",
+                                "kms:GetPublicKey",
+                                "kms:Sign",
+                                "cloudwatch:PutMetricData"
+                              ],
+                              [
+                                "ssm:UpdateInstanceInformation",
+                                "ssmmessages:CreateControlChannel",
+                                "ssmmessages:CreateDataChannel",
+                                "ssmmessages:OpenControlChannel",
+                                "ssmmessages:OpenDataChannel",
+                                "ec2messages:AcknowledgeMessage",
+                                "ec2messages:DeleteMessage",
+                                "ec2messages:FailMessage",
+                                "ec2messages:GetEndpoint",
+                                "ec2messages:GetMessages",
+                                "ec2messages:SendReply",
+                                "cloudwatch:PutMetricData"
+                              ]
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "Fn::If": [
+                          "HasStateAuthority",
+                          {
+                            "Fn::If": [
+                              "HasPayoutKmsKey",
+                              [
+                                "ssm:UpdateInstanceInformation",
+                                "ssmmessages:CreateControlChannel",
+                                "ssmmessages:CreateDataChannel",
+                                "ssmmessages:OpenControlChannel",
+                                "ssmmessages:OpenDataChannel",
+                                "ec2messages:AcknowledgeMessage",
+                                "ec2messages:DeleteMessage",
+                                "ec2messages:FailMessage",
+                                "ec2messages:GetEndpoint",
+                                "ec2messages:GetMessages",
+                                "ec2messages:SendReply",
+                                "kms:GetPublicKey",
+                                "kms:Sign",
+                                "lambda:InvokeFunction",
+                                "kms:GenerateDataKey",
+                                "kms:Decrypt"
+                              ],
+                              [
+                                "ssm:UpdateInstanceInformation",
+                                "ssmmessages:CreateControlChannel",
+                                "ssmmessages:CreateDataChannel",
+                                "ssmmessages:OpenControlChannel",
+                                "ssmmessages:OpenDataChannel",
+                                "ec2messages:AcknowledgeMessage",
+                                "ec2messages:DeleteMessage",
+                                "ec2messages:FailMessage",
+                                "ec2messages:GetEndpoint",
+                                "ec2messages:GetMessages",
+                                "ec2messages:SendReply",
+                                "lambda:InvokeFunction",
+                                "kms:GenerateDataKey",
+                                "kms:Decrypt"
+                              ]
+                            ]
+                          },
+                          {
+                            "Fn::If": [
+                              "HasPayoutKmsKey",
+                              [
+                                "ssm:UpdateInstanceInformation",
+                                "ssmmessages:CreateControlChannel",
+                                "ssmmessages:CreateDataChannel",
+                                "ssmmessages:OpenControlChannel",
+                                "ssmmessages:OpenDataChannel",
+                                "ec2messages:AcknowledgeMessage",
+                                "ec2messages:DeleteMessage",
+                                "ec2messages:FailMessage",
+                                "ec2messages:GetEndpoint",
+                                "ec2messages:GetMessages",
+                                "ec2messages:SendReply",
+                                "kms:GetPublicKey",
+                                "kms:Sign"
+                              ],
+                              [
+                                "ssm:UpdateInstanceInformation",
+                                "ssmmessages:CreateControlChannel",
+                                "ssmmessages:CreateDataChannel",
+                                "ssmmessages:OpenControlChannel",
+                                "ssmmessages:OpenDataChannel",
+                                "ec2messages:AcknowledgeMessage",
+                                "ec2messages:DeleteMessage",
+                                "ec2messages:FailMessage",
+                                "ec2messages:GetEndpoint",
+                                "ec2messages:GetMessages",
+                                "ec2messages:SendReply"
+                              ]
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   },
                   "Resource": "*"
@@ -168,6 +449,134 @@
                       "Action": ["kms:GetPublicKey", "kms:Sign"],
                       "NotResource": {
                         "Ref": "PayoutKmsKeyArn"
+                      }
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                },
+                {
+                  "Fn::If": [
+                    "HasStateAuthority",
+                    {
+                      "Sid": "InvokeOnlyPinnedStateAuthority",
+                      "Effect": "Allow",
+                      "Action": "lambda:InvokeFunction",
+                      "Resource": {
+                        "Ref": "StateAuthorityVersionArn"
+                      }
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                },
+                {
+                  "Fn::If": [
+                    "HasStateAuthority",
+                    {
+                      "Sid": "DenyOtherStateAuthority",
+                      "Effect": "Deny",
+                      "Action": "lambda:InvokeFunction",
+                      "NotResource": {
+                        "Ref": "StateAuthorityVersionArn"
+                      }
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                },
+                {
+                  "Fn::If": [
+                    "HasStateAuthority",
+                    {
+                      "Sid": "OnlyRecipientStateKey",
+                      "Effect": "Allow",
+                      "Action": ["kms:GenerateDataKey", "kms:Decrypt"],
+                      "Resource": {
+                        "Ref": "StateKeyArn"
+                      },
+                      "Condition": {
+                        "StringEquals": {
+                          "kms:EncryptionContext:Namespace": {
+                            "Ref": "StateNamespace"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                },
+                {
+                  "Fn::If": [
+                    "HasStateAuthority",
+                    {
+                      "Sid": "DenyOtherStateKeys",
+                      "Effect": "Deny",
+                      "Action": ["kms:GenerateDataKey", "kms:Decrypt"],
+                      "NotResource": {
+                        "Ref": "StateKeyArn"
+                      }
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                },
+                {
+                  "Fn::If": [
+                    "HasStateAuthority",
+                    {
+                      "Sid": "DenyNonRecipientStateKey",
+                      "Effect": "Deny",
+                      "Action": ["kms:GenerateDataKey", "kms:Decrypt"],
+                      "Resource": {
+                        "Ref": "StateKeyArn"
+                      },
+                      "Condition": {
+                        "Null": {
+                          "kms:RecipientAttestation:ImageSha384": "true"
+                        }
+                      }
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                },
+                {
+                  "Fn::If": [
+                    "IsContinuous",
+                    {
+                      "Effect": "Allow",
+                      "Action": "cloudwatch:PutMetricData",
+                      "Resource": "*",
+                      "Condition": {
+                        "StringEquals": {
+                          "cloudwatch:namespace": "PeerLink/Transcripts"
+                        }
+                      }
+                    },
+                    {
+                      "Ref": "AWS::NoValue"
+                    }
+                  ]
+                },
+                {
+                  "Fn::If": [
+                    "IsContinuous",
+                    {
+                      "Effect": "Deny",
+                      "Action": "cloudwatch:PutMetricData",
+                      "Resource": "*",
+                      "Condition": {
+                        "StringNotEquals": {
+                          "cloudwatch:namespace": "PeerLink/Transcripts"
+                        }
                       }
                     },
                     {
@@ -438,7 +847,9 @@
       "Type": "AWS::Events::Rule",
       "Properties": {
         "ScheduleExpression": "rate(5 minutes)",
-        "State": "ENABLED",
+        "State": {
+          "Fn::If": ["IsContinuous", "DISABLED", "ENABLED"]
+        },
         "Targets": [
           {
             "Arn": {
@@ -575,6 +986,7 @@
       }
     },
     "ExpiryNotRunning": {
+      "Condition": "IsFinitePilot",
       "Type": "AWS::CloudWatch::Alarm",
       "Properties": {
         "Metrics": [
@@ -604,6 +1016,80 @@
             "ReturnData": true
           }
         ],
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 3,
+        "Threshold": 1,
+        "ComparisonOperator": "LessThanThreshold",
+        "TreatMissingData": "breaching",
+        "AlarmActions": {
+          "Fn::If": [
+            "HasAlarmTopic",
+            [
+              {
+                "Ref": "AlarmTopicArn"
+              }
+            ],
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        }
+      }
+    },
+    "RuntimeHealthAlarm": {
+      "Condition": "IsContinuous",
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Single-host durable pilot unavailable or paused. Inspect and manually sign resume after recovery; no automated reboot or activation.",
+        "Namespace": "PeerLink/Transcripts",
+        "MetricName": "RuntimeHealth",
+        "Dimensions": [
+          {
+            "Name": "InstanceId",
+            "Value": {
+              "Ref": "Host"
+            }
+          }
+        ],
+        "Statistic": "Minimum",
+        "Period": 60,
+        "EvaluationPeriods": 3,
+        "DatapointsToAlarm": 3,
+        "Threshold": 1,
+        "ComparisonOperator": "LessThanThreshold",
+        "TreatMissingData": "breaching",
+        "AlarmActions": {
+          "Fn::If": [
+            "HasAlarmTopic",
+            [
+              {
+                "Ref": "AlarmTopicArn"
+              }
+            ],
+            {
+              "Ref": "AWS::NoValue"
+            }
+          ]
+        }
+      }
+    },
+    "AdmissionsOpenAlarm": {
+      "Condition": "IsContinuous",
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Single-host durable pilot unavailable or paused. Inspect and manually sign resume after recovery; no automated reboot or activation.",
+        "Namespace": "PeerLink/Transcripts",
+        "MetricName": "AdmissionsOpen",
+        "Dimensions": [
+          {
+            "Name": "InstanceId",
+            "Value": {
+              "Ref": "Host"
+            }
+          }
+        ],
+        "Statistic": "Minimum",
+        "Period": 60,
         "EvaluationPeriods": 3,
         "DatapointsToAlarm": 3,
         "Threshold": 1,

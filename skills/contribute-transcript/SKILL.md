@@ -205,6 +205,13 @@ artifact, grade digest and inference limits. A state report alone is not authent
 payment proof. Paid evidence requires the exact Base USDC receipt and canonical
 L2 confirmations; it is not a claim of Ethereum economic finality.
 
+Follow `nextAction`: `poll_same_job` continues recovery, while
+`terminal_outcome_reported` stops polling a reported rejected, expired or cancelled
+job. `terminal_record_unavailable` means the saved reservation has expired and its
+record is no longer available. These unsigned terminal hints are not payment proof
+or permission to repeat a possibly paid contribution. Resolve any payment uncertainty
+before starting a new attempt.
+
 `contribute` creates a new reservation and refuses an existing state file. To
 continue an existing **reserved, unexpired** job after interruption, use its saved
 handle with explicit owner consent and new transient keys:

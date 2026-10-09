@@ -1,9 +1,10 @@
-"""RAM-only job epoch with an operator-recoverable AWS KMS payout authority.
+"""Paused Nitro epoch with recoverable KMS payout custody and optional durable state.
 
-Restart loses account dedup and pending-payment state, but not the payout key.
-Every boot starts paused. Operators must reconcile the previous epoch before
-funding or activating a new one; key recovery does not restore the job ledger.
-The public descriptor MUST be bound into independently verified Nitro attestation.
+Durable v3 encrypts the authoritative job/dedup/payment snapshot under a Recipient
+KMS key and uses fenced, capability-authenticated Lambda CAS. Restart restores
+that exact policy/namespace, keeps the receipt signer, creates fresh ingress keys,
+and requires signed operator review before new admissions or payment signing.
+Legacy v2 remains explicitly RAM-only. Every descriptor is attestation-bound.
 """
 import hashlib
 import os
@@ -228,8 +229,8 @@ class BootEpoch:
                 self._active, self._alive = False, False
                 self.ledger.close()
                 self._anchor._close()
-                # Drop local references. The KMS key remains recoverable through
-                # operator IAM; only local job/dedup secrets die with this epoch.
+                # Drop local references. Payout custody remains in operator KMS;
+                # durable private state stays encrypted under Recipient-only KMS.
                 self._signer = self._integrity_key = self._dedup_key = None
 
     def __repr__(self):
