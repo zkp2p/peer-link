@@ -48,6 +48,19 @@
       "formatter": {
         "enabled": false
       }
+    },
+    {
+      "includes": ["app/public/logos/mercury.svg"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "noSvgWithoutTitle": "off"
+          }
+        }
+      },
+      "formatter": {
+        "enabled": false
+      }
     }
   ]
 }

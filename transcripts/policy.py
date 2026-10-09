@@ -40,7 +40,7 @@ def safe_name(value):
 
 
 def validate_campaign(campaign):
-    fields(campaign, CAMPAIGN_FIELDS)
+    fields(campaign, CAMPAIGN_FIELDS | ({"sourceDescriptor"} if isinstance(campaign, dict) and "sourceDescriptor" in campaign else set()))
     require(campaign["version"] == 1, "policy_version")
     for name in ("id", "rubricVersion"):
         opaque_id(campaign[name])
@@ -90,6 +90,9 @@ def validate_campaign(campaign):
     integer(requirements["minScore"], 0, 100, "invalid_policy")
     require(isinstance(requirements["requiredFields"], list) and bool(requirements["requiredFields"])
             and all(field in campaign["safeSchemaFields"] for field in requirements["requiredFields"]), "invalid_policy")
+    if "sourceDescriptor" in campaign:
+        from .acquisition import validate_descriptor
+        validate_descriptor(campaign)
     require(len(canonical(campaign)) <= 32768, "policy_size")
     return campaign
 

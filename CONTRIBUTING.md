@@ -4,8 +4,9 @@ The paid contribution is authenticated, redacted banking evidence from your own
 account. Peer engineers build the integration. You do not implement a provider,
 claim an issue by commenting, or open a provider PR.
 
-**No public paid campaign is currently available. Stop before collecting secrets
-or spending on inference.** Check the [release manifest](transcripts/release.json),
+**Mercury #1 is first-contributor source validation: one accepted organization,
+$10 USDC.** Positive live API acquisition is pending; the first contributor would
+provide it. Check the [release manifest](transcripts/release.json),
 [verification and recovery guide](docs/transcript-operations.md), and bank campaign before continuing.
 A campaign is usable only with an approved independently verified release, active
 source policy and a successful funded reservation before secret collection.
@@ -13,7 +14,7 @@ Approval does not guarantee remaining capacity.
 
 The single [Merit project profile](https://terminal.merit.systems/zkp2p/peer-link) points to PeerLink
 for discovery. Bank-specific rewards and enrollment remain in PeerLink campaign
-issues; contributors do not claim separate Merit bounties. Bank rewards remain
+issues; contributors do not claim separate Merit bounties. Other bank rewards remain
 planned at the published fixed $5/$10 rates, collecting 1–5 distinct contributors
 when enabled. Wise is an existing integration/reference, excluded from reward
 recruitment. Its paid tests are [internal validation](transcripts/durable-pilot-evidence.json),
@@ -32,15 +33,18 @@ Read [privacy](docs/privacy.md) and [reward terms](docs/incentives.md) first.
 2. Confirm your own account access and choose the approved model/provider,
    privacy consent and payout address. You fund inference, even when rejected.
    Check costs and capacity before gathering a session.
-3. Sign in and complete MFA yourself. Your agent records the read-only history
-   route and relevant existing transaction details. No payment or account changes.
-4. Reserve the bounded job. Independently verify fresh Nitro attestation, the
-   approved measured release, policy and encryption key before encrypting your
-   session, recipe and inference key directly to the enclave.
+3. Reserve the bounded job and save its public recovery handle before keys.
+   Independently verify fresh Nitro attestation and the approved measured policy.
+4. For Mercury, use an authorized dedicated read-only API token and the exact
+   account/date hints in the skill. If the account UUID is unknown, use its SDK
+   reservation-first discovery path, then continue the same reserved job. No
+   payment or account changes. Encrypt the token, recipe and inference key to
+   the verified enclave.
 5. The enclave acquires fresh bank evidence and redacts it before inference.
    Code checks authenticity, coverage, duplicates and budget. If accepted under
    an enabled campaign, the service sends the fixed reward once and returns a receipt.
-6. Revoke the inference key and use your bank's logout/session controls afterwards.
+6. Revoke the dedicated bank API token and inference key afterwards; logging out
+   does not revoke an API token.
    Never post captures, secrets or banking records to GitHub or chat.
 
 A bank seeks 1–5 distinct contributors, with at most one paid contribution per

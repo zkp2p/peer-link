@@ -3,9 +3,14 @@
 > Historical provider-verifier workflow. The status and rules below describe that
 > separate Mercury experiment. The transcript workflow is documented in the
 > [contribution skill](../skills/contribute-transcript/SKILL.md),
-> [unreleased public manifest](../transcripts/release.json) and
-> [internal Wise validation evidence](../transcripts/durable-pilot-evidence.json).
-> Wise is excluded from incentives; no public paid campaign is currently available.
+> [approved transcript release](../transcripts/release.json),
+> [Mercury source-validation scope](source-validation.md) and
+> [release evidence](../transcripts/mercury-source-evidence.json).
+> Mercury #1 is experimental first-contributor source validation: one organization,
+> $10 USDC if accepted, with its first positive live API acquisition still pending.
+> Fresh attestation and a funded reservation govern admission; other banks remain
+> planned and Wise is excluded from incentives. Historical details below do not
+> approve or describe the new transcript source.
 
 ## October 4 operational activation
 
@@ -41,12 +46,13 @@ secrets inside an independently verifiable enclave. Agents can inspect the code,
 public prompts, policies and release measurements before asking an account owner
 to consent. AI advice does not independently authorize acceptance or payment.
 
-## Current status
+## Historical provider-verifier status
 
 The repository includes a development implementation of transactional admission,
 bounded budgets, agent judgments, AWS attestation verification, encrypted one-use
 sessions, approved-operation acquisition, and a closed AI evaluation protocol.
-The release manifest is deliberately **unreleased**, the Mercury acquisition policy
+The historical [provider-verifier release](../verification/release.json) is
+deliberately **unreleased**, its Mercury acquisition policy
 is **disabled**, and there is **no public live verification endpoint yet**. No bank
 secrets should be sent until the release and end-to-end checks are complete.
 

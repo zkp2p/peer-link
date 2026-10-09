@@ -8,14 +8,15 @@
   "contributionSkill": "https://github.com/zkp2p/peer-link/blob/main/skills/contribute-transcript/SKILL.md",
   "campaigns": "https://github.com/zkp2p/peer-link/issues",
   "verification": {
-    "status": "no_public_paid_campaign",
-    "endpoint": null,
+    "status": "approved_first_contributor_source_validation",
+    "endpoint": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
     "scheduledJudgment": false,
-    "automaticPayout": false,
+    "automaticPayout": true,
     "release": "https://github.com/zkp2p/peer-link/blob/main/transcripts/release.json",
-    "secretSubmissionRequirement": "future_approved_campaign_fresh_attestation_and_successful_reservation",
+    "secretSubmissionRequirement": "approved_campaign_fresh_attestation_and_successful_funded_reservation",
     "payoutScope": "accepted_reserved_jobs",
-    "acceptsSecrets": false
+    "acceptsSecrets": true,
+    "serviceDiscovery": "independently_approved_release_manifest_only"
   },
   "rewards": {
     "currency": "USDC",
@@ -27,7 +28,7 @@
     "paidContributionsPerAccountPerCampaign": 1,
     "allCampaignsFunded": false,
     "automaticRefill": false,
-    "publicCampaignsAvailable": false,
+    "publicCampaignsAvailable": true,
     "wiseIncentivized": false
   },
   "inference": {
@@ -47,9 +48,48 @@
       "creditFundingStatus": "merchant_credit_verified",
       "billableInferenceVerified": true,
       "strictJsonProbeVerified": true
-    }
+    },
+    "approvedRoutes": [
+      {
+        "provider": "openai",
+        "models": ["gpt-4o-mini-2024-07-18"],
+        "privacyModes": ["provider_visible"]
+      },
+      {
+        "provider": "openrouter",
+        "models": ["openai/gpt-4o-mini-2024-07-18"],
+        "privacyModes": ["provider_visible"]
+      },
+      {
+        "provider": "near",
+        "models": ["z-ai/glm-5.3-flash"],
+        "privacyModes": ["provider_visible"]
+      }
+    ]
   },
-  "pilot": {
+  "discovery": {
+    "meritProjectProfile": "https://terminal.merit.systems/zkp2p/peer-link",
+    "individualMeritBounties": false
+  },
+  "internalValidation": {
+    "status": "completed_internal_validation_not_public_enrollment",
+    "bank": "wise",
+    "otherBanks": "planned",
+    "durableState": "encrypted_snapshot_immutable_lambda_cas_verified_scope",
+    "descriptorVersion": 3,
+    "restartRequiresOperatorReview": true,
+    "credentialsPersisted": false,
+    "ingressKeyPersisted": false,
+    "receiptSignerPersistedEncrypted": true,
+    "submissionEnvelopesPersisted": false,
+    "historicalIngressKeysRecoverableFromSnapshot": false,
+    "measuredSource": "629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e",
+    "evidence": "https://github.com/zkp2p/peer-link/blob/main/transcripts/durable-pilot-evidence.json",
+    "ledgerPersistence": "aws_dynamodb_encrypted_snapshot",
+    "hardwarePaidRestartProof": "verified_scoped",
+    "excludedFromRewardRecruitment": true
+  },
+  "historicalRamOnlyPilot": {
     "publicAcceptanceEnabled": false,
     "retirement": {
       "status": "implemented_not_live_verified",
@@ -83,26 +123,24 @@
     "remainingUsdcMinor": 0,
     "scope": "completed_supervised_one_slot_pilot"
   },
-  "discovery": {
-    "meritProjectProfile": "https://terminal.merit.systems/zkp2p/peer-link",
-    "individualMeritBounties": false
-  },
-  "internalValidation": {
-    "status": "completed_internal_validation_not_public_enrollment",
-    "bank": "wise",
-    "otherBanks": "planned",
-    "durableState": "encrypted_snapshot_immutable_lambda_cas_verified_scope",
+  "publicCampaign": {
+    "bank": "mercury",
+    "campaignId": "mercury-api-source-v1",
+    "issue": "https://github.com/zkp2p/peer-link/issues/1",
+    "scope": "first_contributor_source_validation",
+    "rewardUSDC": 10,
+    "maximumContributorOrganizations": 1,
+    "positiveLiveAcquisitionVerified": false,
+    "availability": "fresh_reservation_required",
+    "sourceDetails": "https://github.com/zkp2p/peer-link/blob/main/docs/source-validation.md",
+    "evidence": "https://github.com/zkp2p/peer-link/blob/main/transcripts/mercury-source-evidence.json",
     "descriptorVersion": 3,
+    "ledgerPersistence": "aws_dynamodb_encrypted_snapshot",
     "restartRequiresOperatorReview": true,
+    "payoutKeyCustody": "aws_kms",
+    "operatorRecovery": true,
     "credentialsPersisted": false,
     "ingressKeyPersisted": false,
-    "receiptSignerPersistedEncrypted": true,
-    "submissionEnvelopesPersisted": false,
-    "historicalIngressKeysRecoverableFromSnapshot": false,
-    "measuredSource": "629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e",
-    "evidence": "https://github.com/zkp2p/peer-link/blob/main/transcripts/durable-pilot-evidence.json",
-    "ledgerPersistence": "aws_dynamodb_encrypted_snapshot",
-    "hardwarePaidRestartProof": "verified_scoped",
-    "excludedFromRewardRecruitment": true
+    "receiptSignerPersistedEncrypted": true
   }
 }

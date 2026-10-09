@@ -1,20 +1,24 @@
 # PeerLink transcript contributions
 
-Product decision: 2026-10-09. Status: **internal Wise validation completed; public incentives planned**.
-No public paid campaign is currently available. Wise is an existing integration
-and is excluded from reward recruitment; the [release](../transcripts/release.json)
-and future campaign funding/verification gates must permit any public collection. The earlier enclave-only wallet
+Product decision: 2026-10-09. Status: **Mercury experimental first-contributor source validation;
+internal Wise validation completed**. Mercury #1 is capped at one organization/$10;
+its first positive live API acquisition remains pending. Wise is an existing
+integration and is excluded from rewards. The independently approved
+[release](../transcripts/release.json) and successful funded reservation must permit
+any public collection; other bank rewards remain planned. The earlier enclave-only wallet
 holds unrecovered $50; the revised KMS candidate is a separate wallet and release.
 This document separates the built pilot, observed evidence and remaining roadmap.
 Infrastructure, a verified candidate quote or a synthetic job does not activate a bank.
 
-## Internal Wise validation; public incentives planned
+## Internal Wise validation; Mercury source-validation campaign
 
-**No public paid campaign is currently available.** Bank transcript rewards remain
-planned at the published fixed $5/$10 rates, with 1–5 distinct contributors per bank
-when enabled. Wise is an existing integration/reference, excluded from reward
-recruitment. Its completed paid tests are internal validation, not public enrollment.
-Do not collect credentials or spend on inference for a planned campaign.
+**Mercury first-contributor source validation:** [$10 USDC for one accepted
+organization](https://github.com/zkp2p/peer-link/issues/1). Its first positive live
+API acquisition is pending and would come from the contributor; this is not a
+completed Peer integration. Other bank rewards remain planned. Wise is an existing
+integration/reference and is excluded from rewards; its paid tests are internal
+validation only. Independently verify the approved release and obtain a funded
+reservation before keys or inference. Static copy cannot guarantee capacity.
 
 The internal validation service was `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
 with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
@@ -130,8 +134,11 @@ The pilot has a Wise identity/acquisition adapter. It reads authenticated profil
 checks explicit selection when multiple profiles exist, reads standard balances,
 and proves statement balance membership. The artifact records authenticated profile-to-balance-to-history relationships
 using templated path parameters, and the policy allowlists 59 public schema field
-names. A submitted account ID alone establishes nothing. Generic banks remain in source review until they have their own demonstrated
-safe acquisition and identity extraction.
+names. A submitted account ID alone establishes nothing. Generic banks remain
+planned until their source/identity contract and measured release are approved.
+The explicit Mercury [first-contributor source-validation scope](source-validation.md)
+collects its first positive live API evidence from the consenting contributor;
+prior live acquisition is not claimed.
 
 Uploaded local `notes` and `transcript` are untrusted, unused inputs in this pilot:
 they neither authenticate evidence nor enter grading or retained artifacts. The
@@ -481,7 +488,7 @@ acceptance remains closed until the measured-release and remaining evidence gate
 | Rewards and custody | New-host KMS signing and independent signature verification passed. A separately funded $1 external operator recovery confirmed its exact USDC return to the fixed deployer and zero remaining balance with the relay stopped. The Wise job separately confirmed its $5 reward after one signed operator reconciliation. The earlier enclave-only wallet still holds unrecovered $50. | Operator recovery does not prove enclave retirement. The one-slot test leaves zero funded capacity. KMS recovery is not ledger persistence or safe cross-epoch wallet reuse. |
 | Contributor-agent trials | Claude Opus 5.5 high and Codex high reviewed the local contributor flow. Their findings drove safe secret prompts, clear release gates, recovery commands, receipt checks and Wise relationship fixes. Claude's final follow-up found the practical fixes intact and passed 33 targeted client/artifact tests. A fresh live client restored the paid Wise job and identical signed receipt with zero new reservations/submissions. | This is same-epoch client recovery, not enclave-ledger recovery after restart. |
 | Durable contributor smoke | An independent local agent exercised the actual CLI/Client/Runtime and encrypted state using synthetic external dependencies: reservation/save before input, full capacity without keys, fresh-ingress restart and identical signed paid receipt, expiry-only renewal, changed-pin refusal and explicit reserved submission. Interrupted submitted work failed without rerunning bank/model calls. | No live AWS, bank, provider or transfer evidence; the changed durable image still needs its own rebuild/hardware/restore proof before public approval. |
-| Durable hardware and paid restart | Source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e` passed fresh Nitro/KMS bootstrap and zero-fund restart. One encrypted Wise submission acquired authenticated reads and used contributor-funded ordinary NEAR grading, followed by an automatic confirmed $5 payout. After signed pause and enclave restart, the client recovered the same signed paid receipt with no new reservation, submission or model call; the inference key was disabled before recovery. See [durable evidence](../transcripts/durable-pilot-evidence.json). | Internal Wise validation only; Wise is excluded from reward recruitment. No public paid campaign is available. Static evidence does not guarantee confidential inference, other bank support or cloud availability. |
+| Durable hardware and paid restart | Source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e` passed fresh Nitro/KMS bootstrap and zero-fund restart. One encrypted Wise submission acquired authenticated reads and used contributor-funded ordinary NEAR grading, followed by an automatic confirmed $5 payout. After signed pause and enclave restart, the client recovered the same signed paid receipt with no new reservation, submission or model call; the inference key was disabled before recovery. See [durable evidence](../transcripts/durable-pilot-evidence.json). | Internal Wise validation only; Wise is excluded from reward recruitment. It does not prove Mercury acquisition or approve its new measured source. Static evidence does not guarantee confidential inference, other bank support or cloud availability. |
 | Public availability | Landing/docs/catalog describe the new contribution program with readiness gates. | No claim that all banks are ready, funded or supported in Peer. |
 
 Evidence must remain scoped to its actual source/image version and observation date.

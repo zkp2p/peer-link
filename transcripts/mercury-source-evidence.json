@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "status": "experimental_source_validation_open_subject_to_reservation",
+  "observedAt": 1791534333,
+  "scope": "Mercury first-contributor source validation, one organization and one fixed10USDC reward. No successful live authenticated Mercury acquisition is claimed. Wise is excluded from incentives.",
+  "sourceCommit": "cd0c65a36df88bf4c4cc79c53068443e62c9f1e9",
+  "sourcePullRequest": "https://github.com/zkp2p/peer-link/pull/243",
+  "serviceUrl": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
+  "policyDigest": "518e005aaa24e184e68be319f3ef1972dbd2bb42faa9857d5a3459eed7f83444",
+  "sourceDescriptorDigest": "b563eb7a159c81bddf05b97971a0426036175a102d044c1299abb27617383f50",
+  "sourceArchiveSha256": "9c7064461af2a3c7b81480cccde969e3c11219e29da564cf177238612952180d",
+  "signedEifSha384": "f700968df930312c146c99bc2bfd6b1ea44437a9d656e0a818200d70f38ac1096902138be41f202f7c74d2433af47879",
+  "measurements": {
+    "0": "d4823c3b9f4d92982825a432e177885832573c3f4ce7394ed5408bebf9f77c1aeabd1a03d3ae5a64c471cb5a5ce4776a",
+    "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
+    "2": "a828060e402c2c0e0698e600a659587f19805fbd676afd99188a124ca838a22512dc3571e0a72e000e020499b459c82f",
+    "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
+  },
+  "build": {
+    "ciRunUrl": "https://github.com/zkp2p/peer-link/actions/runs/37901826670",
+    "independentBuilds": 2,
+    "measuredInputsMatchHardwareBuild": true,
+    "measuredInputCount": 27,
+    "normalizedUnsignedEifSha384": "d18551536a9c1764ca884627d151f6bfa6c8aa15b070551edae7e6c3d5ad6d094bfd26f2f0dc48c43cfedb931bf5719e",
+    "fullArtifactDigestsVerifiedByCI": true,
+    "reportsRetrievedFromAuthenticatedCIJobLogs": true,
+    "fullCIArtifactsDownloadedLocally": false,
+    "publicSignedImageAndSourceBackupVerified": true
+  },
+  "review": {
+    "claudeModel": "claude-opus-5-5",
+    "claudeEffort": "high",
+    "codeReviewMaterialBlockers": 0,
+    "independentCodexContributorSimulationCases": 8,
+    "pythonTests": 274,
+    "javascriptTests": 395,
+    "pullRequest": "https://github.com/zkp2p/peer-link/pull/243"
+  },
+  "hardware": {
+    "platform": "AWS Nitro Enclaves",
+    "instanceType": "c6i.xlarge",
+    "enclaveVcpus": 2,
+    "enclaveMemoryMiB": 2048,
+    "debug": false,
+    "genuineFreshQuotesVerified": true,
+    "rolePcr3AndInstancePcr4Verified": true,
+    "kmsRecipientGenerateAndDecryptVerified": true,
+    "stateNamespace": "mercury-public-v1",
+    "stateAuthorityVersion": 1,
+    "encryptedStateMasterOutsideEnclave": true,
+    "plaintextBankAndInferenceCredentialsPersisted": false,
+    "ingressKeysPersisted": false,
+    "receiptSignerPersistedEncrypted": true,
+    "payoutCustody": "operator-recoverable AWS KMS"
+  },
+  "zeroFundsRestart": {
+    "sameEpochAndReceiptKey": true,
+    "freshIngressKey": true,
+    "differentEnclaveModule": true,
+    "writerGenerations": [1, 2],
+    "revisions": [0, 1],
+    "sameWrappedStateMaster": true,
+    "restoredPaused": true,
+    "outstandingObligations": 0,
+    "usdcMinor": 0,
+    "walletNonce": 4,
+    "oldWiseEncryptedHeadAndArchivesPreserved": true,
+    "verifiedAt": 1791533989.899461
+  },
+  "prefunding": {
+    "sourceChecks": [
+      {
+        "anonymousStatus": 401,
+        "descriptorDigest": "b563eb7a159c81bddf05b97971a0426036175a102d044c1299abb27617383f50",
+        "invalidCredentialStatus": 401
+      }
+    ],
+    "actualKmsSignatureVerified": true,
+    "zeroUsdcVerified": true,
+    "baseRpcVerified": true,
+    "broadcast": false,
+    "verifiedAt": 1791533998
+  },
+  "campaign": {
+    "id": "mercury-api-source-v1",
+    "bankId": "us/mercury",
+    "issue": "https://github.com/zkp2p/peer-link/issues/1",
+    "maximumOrganizations": 1,
+    "rewardUsdcMinor": 10000000,
+    "initialFundingUsdcMinor": 10000000,
+    "fundingTransaction": "0xe94f7b445d2fd1e5e2255a970dec0b0afef2f639cb5dc5bbd430eec6f17c1d30",
+    "payoutWallet": "0xd297f105b145cd1d4ddb1d31392300e934bc3559",
+    "epochId": "6348bab8ab50e957ca3b54f3b2320fdd",
+    "signedActivationVerifiedAt": 1791534266,
+    "admissionRequirement": "successful_live_reservation",
+    "liveAuthorizedMercuryAcquisitionCompleted": false,
+    "liveMercuryInferenceCompleted": false,
+    "liveMercuryPayoutCompleted": false,
+    "firstPositiveAcquisition": "pending_first_contributor"
+  },
+  "operations": {
+    "verifiedAt": 1791534286.806536,
+    "boundedSystemdRecovery": true,
+    "allContinuousServicesActiveAndEnabled": true,
+    "finiteStopDisabledForNewStackOnly": true,
+    "functionalHealthMetricsPublished": true,
+    "automaticRefill": false,
+    "singleHostManualSignedResumeAfterOutage": true,
+    "cloudWatchExternalAlertActionsConfigured": false
+  },
+  "historicalInternalValidation": {
+    "bank": "wise",
+    "evidence": "https://github.com/zkp2p/peer-link/blob/main/transcripts/durable-pilot-evidence.json",
+    "excludedFromIncentives": true,
+    "evidenceDoesNotProveMercuryAcquisition": true
+  },
+  "limits": [
+    "Anonymous and invalid-token401 checks prove only the fixed endpoint rejects those requests; they are not positive bank-access evidence. The first contributor supplies the first real authenticated Mercury acquisition.",
+    "Observed organization/account relationships prove possession of API access, not legal ownership or unique human identity. The service cannot attest token read-only permissions; contributors must create and revoke a dedicated read-only token.",
+    "This experimental source supports only the measured official Mercury API contract, at most four reads, first100accounts/transactions and a30day interval. No generic browser agent, redirects, pagination or payment endpoints.",
+    "Contributor-approved BYOK routes receive deterministic redacted structural evidence. Model usefulness scoring is probabilistic and cannot override deterministic source, eligibility, budget and payout gates.",
+    "Confidential NEAR model execution and per-request x402/NEAR Intents billing are not verified or enabled. Ordinary NEAR credit funding and paid inference were separately verified in the historical internal test.",
+    "AWS/account administrators remain trusted for infrastructure and key-policy control. Payout custody is recoverable by authorized operators and is not enclave-exclusive escrow.",
+    "Single-host restarts restore paused admissions and need signed operator resume; no automatic refill. Some interrupted jobs need expiry or reconciliation as tracked in issue241.",
+    "The original historical enclave-only50USDC remains unrecovered; the replacement KMS wallet has independently verified operator recovery."
+  ]
+}

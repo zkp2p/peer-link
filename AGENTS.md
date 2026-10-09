@@ -7,12 +7,13 @@ bank campaign. The [PRD](docs/transcript-contributions-prd.md) describes the int
 product; the [release](transcripts/release.json) and actual verification evidence
 control availability.
 
-**No public paid campaign is currently available; stop before secret collection.** An
+**Mercury is an experimental first-contributor source-validation campaign, not a
+completed integration or prior positive live API acquisition.** An
 infrastructure deployment, synthetic fixture, legacy adapter or open bank issue
 cannot enable live collection. Independently verify a reviewed measured Nitro release,
 fresh attestation, encryption-key/policy bindings and a successful funded reservation
-in an enabled future campaign before secret collection or any encrypted submission.
-Bank rewards remain planned. Wise is excluded from reward recruitment; its
+in the enabled Mercury campaign before secret collection or any encrypted submission.
+Other bank rewards remain planned. Wise is excluded from reward recruitment; its
 completed tests are internal validation only. Approval is not a capacity guarantee. Never replace
 missing evidence with invented PCRs,
 mock quotes or a server's `verified` flag.
@@ -27,8 +28,12 @@ mock quotes or a server's `verified` flag.
   Local captures guide navigation; only fresh enclave-acquired bank responses prove
   source acquisition. Submitted account IDs do not establish ownership.
 - The enclave checks exact approved origins, paths and GET reads, TLS, authenticated
-  account identity, limits and expiry. Generic banks stay in source review until their
-  identity/source adapter has demonstrated safe live acquisition.
+  account identity, limits and expiry. Generic sources stay planned unless their
+  exact source configuration, identity checks and measured release are approved.
+  An explicitly designated first-contributor source-validation campaign may obtain
+  its first positive live acquisition from the consenting contributor. That is not
+  prior live validation or a completed Peer integration; see
+  [the Mercury candidate](docs/source-validation.md).
 - Deterministic extraction removes private values **before model grading**. The
   implemented ordinary provider-visible mode sends only validated structural artifacts
   and requires explicit consent. Provider privacy is separate from Peer enclave privacy.
@@ -108,13 +113,15 @@ expired/replayed jobs, privacy/model mismatch, malformed grading, private-data l
 duplicate accounts, capacity/budget races and payout reconciliation. Distinguish
 synthetic tests from real hardware, inference, owner-authorized bank and payment evidence.
 
-## Internal Wise validation; public incentives planned
+## Internal Wise validation; Mercury source-validation campaign
 
-**No public paid campaign is currently available.** Bank transcript rewards remain
-planned at the published fixed $5/$10 rates, with 1–5 distinct contributors per bank
-when enabled. Wise is an existing integration/reference, excluded from reward
-recruitment. Its completed paid tests are internal validation, not public enrollment.
-Do not collect credentials or spend on inference for a planned campaign.
+**Mercury first-contributor source validation:** [$10 USDC for one accepted
+organization](https://github.com/zkp2p/peer-link/issues/1). Its first positive live
+API acquisition is pending and would come from the contributor; this is not a
+completed Peer integration. Other bank rewards remain planned. Wise is an existing
+integration/reference and is excluded from rewards; its paid tests are internal
+validation only. Independently verify the approved release and obtain a funded
+reservation before keys or inference. Static copy cannot guarantee capacity.
 
 The internal validation service was `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
 with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
@@ -148,8 +155,10 @@ cannot recover old bank-upload decryption keys. KMS administrators remain truste
 for encrypted metadata/deduplication secrecy, and cloud availability remains a
 trust boundary; missing, mismatched or unavailable state must
 stop admission. Hardware and paid-job/restart verification passed for the internal Wise test.
-Public incentives need a separately verified non-Wise source and release approval;
-confidential inference remains unavailable.
+Public incentives need a reviewed non-Wise source and measured release approval.
+The Mercury candidate is explicitly first-contributor source validation: its positive
+live acquisition remains unverified until a contributor completes that flow.
+Confidential inference remains unavailable.
 
 ## Commands and layout
 

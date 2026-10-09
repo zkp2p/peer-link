@@ -16,13 +16,21 @@
 
 ## Status
 
-No public paid campaign is currently available. Bank rewards remain planned at
-the published fixed $5/$10 rates with 1–5 distinct contributors when enabled.
-Wise is an existing integration/reference, excluded from reward recruitment;
-its completed paid tests are internal validation only. Stop before collecting
-credentials or spending on inference for a planned campaign. Future enrollment
-requires an independently pinned approved release, fresh attestation and a
-successful funded reservation. Neither static copy nor an issue reserves a slot.
+**Mercury first-contributor source validation:** [$10 USDC for one accepted
+organization](https://github.com/zkp2p/peer-link/issues/1). Its first positive live
+API acquisition is pending and would come from the contributor; this is not a
+completed Peer integration. Other bank rewards remain planned. Wise is an existing
+integration/reference and is excluded from rewards; its paid tests are internal
+validation only. Independently verify the approved release and obtain a funded
+reservation before keys or inference. Static copy cannot guarantee capacity.
+
+Mercury terms: https://github.com/zkp2p/peer-link/issues/1
+Source-validation scope: https://github.com/zkp2p/peer-link/blob/main/docs/source-validation.md
+
+The three measured BYOK routes are OpenAI `gpt-4o-mini-2024-07-18`, OpenRouter
+`openai/gpt-4o-mini-2024-07-18`, and NEAR `z-ai/glm-5.3-flash`, all provider-visible
+and requiring explicit consent. This is route approval, not a claim that each
+provider has completed a live Mercury job.
 
 ## Rewards
 

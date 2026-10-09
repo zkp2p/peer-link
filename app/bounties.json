@@ -1,5 +1,17 @@
 [
   {
+    "issue": 1,
+    "name": "Mercury",
+    "country": "US",
+    "currency": "USD",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/1",
+    "logo": "/logos/mercury.svg",
+    "adapter": "us/mercury",
+    "status": "source_validation",
+    "maxContributorOrganizations": 1
+  },
+  {
     "issue": 6,
     "name": "Monobank",
     "country": "UA",

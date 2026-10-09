@@ -31,12 +31,28 @@ type Integration = {
   hasAdapter: boolean;
   // Planned USDC per accepted transcript; the bank's issue holds live availability.
   bounty: number | null;
+  campaignStatus: "planned" | "source_validation";
+  maxContributorOrganizations: number | null;
 };
 
 // Mercury stays first; banks.json keeps Chase, Bank of America and Wells Fargo next.
 const PINNED_ADAPTERS = ["us/mercury"];
 const PINNED_BANKS = 3;
-const bountyByUrl = new Map(bounties.map((bounty) => [bounty.url, bounty]));
+type Campaign = {
+  name: string;
+  country: string;
+  currency: string;
+  logo: string;
+  adapter: string;
+  url: string;
+  amount: number;
+  status?: string;
+  maxContributorOrganizations?: number;
+};
+const bountyByUrl = new Map<string, Campaign>(bounties.map((bounty) => [bounty.url, bounty]));
+const bountyByAdapter = new Map<string, Campaign>(
+  bounties.map((bounty) => [bounty.adapter, bounty]),
+);
 const normalize = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "");
 
 const list = document.querySelector("#provider-list");
@@ -44,19 +60,23 @@ const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
 const catalogStatus = document.querySelector<HTMLElement>("#catalog-status");
 
 function fromProvider(provider: Provider, bank?: Bank): Integration {
+  const campaign = bountyByAdapter.get(provider.id);
   return {
     name: bank?.name ?? provider.name,
     country: provider.country,
     currency: provider.currencies.join(", "),
-    href: provider.source,
+    href: campaign?.url ?? provider.source,
     logo: provider.logo ?? bank?.logo ?? null,
     mark: provider.name.slice(0, 2).toUpperCase(),
     hasAdapter: true,
-    bounty: null,
+    bounty: campaign?.amount ?? null,
+    campaignStatus: campaign?.status === "source_validation" ? "source_validation" : "planned",
+    maxContributorOrganizations: campaign?.maxContributorOrganizations ?? null,
   };
 }
 
 function fromBank(bank: Bank): Integration {
+  const campaign = bountyByUrl.get(bank.issue);
   return {
     name: bank.name,
     country: bank.country,
@@ -65,7 +85,9 @@ function fromBank(bank: Bank): Integration {
     logo: bank.logo,
     mark: bank.mark,
     hasAdapter: false,
-    bounty: bountyByUrl.get(bank.issue)?.amount ?? null,
+    bounty: campaign?.amount ?? null,
+    campaignStatus: campaign?.status === "source_validation" ? "source_validation" : "planned",
+    maxContributorOrganizations: campaign?.maxContributorOrganizations ?? null,
   };
 }
 
@@ -77,6 +99,24 @@ function render(providers: Provider[], catalogUnavailable = false) {
   const used = new Set<string>();
   const pinned = providers.filter((provider) => PINNED_ADAPTERS.includes(provider.id));
   for (const provider of pinned) used.add(provider.id);
+  // Local campaign discovery survives an unavailable or incomplete adapter catalog.
+  const missingPinned = PINNED_ADAPTERS.filter(
+    (adapter) => !pinned.some((provider) => provider.id === adapter),
+  ).flatMap((adapter) => {
+    const campaign = bountyByAdapter.get(adapter);
+    return campaign
+      ? [
+          fromBank({
+            name: campaign.name,
+            country: campaign.country,
+            currency: campaign.currency,
+            issue: campaign.url,
+            logo: campaign.logo,
+            mark: campaign.name.slice(0, 2).toUpperCase(),
+          }),
+        ]
+      : [];
+  });
   const bankCards = banks.map((bank) => {
     const folder = bountyByUrl.get(bank.issue)?.adapter;
     const provider = providers.find(
@@ -95,6 +135,7 @@ function render(providers: Provider[], catalogUnavailable = false) {
     .map((p) => fromProvider(p));
   const integrations: Integration[] = [
     ...pinned.map((provider) => fromProvider(provider)),
+    ...missingPinned,
     ...bankCards.slice(0, PINNED_BANKS),
     ...unlisted,
     ...bankCards.slice(PINNED_BANKS),
@@ -111,15 +152,21 @@ function render(providers: Provider[], catalogUnavailable = false) {
     card.className = "integration-tile";
     card.href = integration.href;
     const place = countryNames.of(integration.country) ?? integration.country;
-    const rewardDescription = `Planned $${integration.bounty} per accepted transcript. No public paid campaign is currently available.`;
+    const organizationLimit = integration.maxContributorOrganizations
+      ? ` Limit: ${integration.maxContributorOrganizations} contributor organization.`
+      : "";
+    const rewardDescription =
+      integration.campaignStatus === "source_validation"
+        ? `First-contributor source validation: $${integration.bounty} per accepted contribution.${organizationLimit} A verified release and funded reservation are required; availability is not guaranteed.`
+        : `Planned $${integration.bounty} per accepted transcript.${organizationLimit} This bank’s campaign is planned.`;
     card.setAttribute(
       "aria-label",
-      integration.hasAdapter
-        ? `${integration.name}, ${place}. View experimental adapter.`
-        : integration.name === "Wise"
-          ? `${integration.name}, ${place}. View the existing Wise reference; no transcript reward recruitment.`
-          : integration.bounty
-            ? `${integration.name}, ${place}. ${rewardDescription}`
+      integration.name === "Wise"
+        ? `${integration.name}, ${place}. View the existing Wise reference; no transcript reward recruitment.`
+        : integration.bounty
+          ? `${integration.name}, ${place}. ${rewardDescription}`
+          : integration.hasAdapter
+            ? `${integration.name}, ${place}. View experimental adapter.`
             : `${integration.name}, ${place}. View bank integration discussion.`,
     );
     const logo = document.createElement("span");
@@ -128,6 +175,8 @@ function render(providers: Provider[], catalogUnavailable = false) {
       const img = document.createElement("img");
       img.src = integration.logo;
       img.alt = "";
+      // Bank cards stay light; preserve official SVGs with adaptive dark-mode fills.
+      img.style.colorScheme = "light";
       img.loading = "lazy";
       img.addEventListener("error", () => {
         img.remove();

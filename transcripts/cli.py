@@ -8,7 +8,7 @@ import sys
 import time
 import warnings
 from pathlib import Path
-from .client import Client,DEFAULT_LIMITS
+from .client import Client,DEFAULT_LIMITS,campaign_limits
 from .common import Rejected,canonical,digest,fields,require,strict_json
 from .policy import validate_campaign,validate_reservation
 
@@ -33,7 +33,7 @@ def terms(release,policy,campaign_id=None,provider=None,model=None,privacy='prov
             'upstream':(OPENROUTER_UPSTREAMS.get(model) if route['provider']=='openrouter' else
                         sorted(NEAR_VISIBLE_UPSTREAMS) if route['provider']=='near' else route['provider']),
             'inferenceInput':'redacted_structural_artifact','inferenceBilling':'contributor_key_only_including_failed_or_rejected_jobs',
-            'defaultLimits':DEFAULT_LIMITS.copy(),'inputLimitUnit':'conservative_encoded_request_bytes_then_reported_tokens',
+            'defaultLimits':campaign_limits(campaign),'inputLimitUnit':'conservative_encoded_request_bytes_then_reported_tokens',
             'guaranteedDollarCap':False,'rewardGuaranteed':False,
             'releaseDigest':digest(release),'policyDigest':digest(policy)}
 
@@ -145,7 +145,7 @@ def main():
             validate_reservation(campaign,{'version':1,'campaignId':args.campaign,'payoutAddress':args.payout,
                 'provider':args.provider,'model':args.model,'privacyMode':args.privacy,'consent':True,
                 'policyDigest':digest(campaign),'expiresAt':now+600,
-                'limits':DEFAULT_LIMITS.copy()},now)
+                'limits':campaign_limits(campaign)},now)
             if args.state is not None:require(not args.state.exists(),'state_exists')
             def reserved(state):
                 path=args.state or Path('.local')/('transcript-job-'+state['jobId']+'.json')
