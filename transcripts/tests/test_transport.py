@@ -101,6 +101,43 @@ class BankTests(unittest.TestCase):
 
 
 class PlumbingTests(unittest.TestCase):
+    def framed_response(self, framing, body=b'{"result":"0x2105"}', *, max_bytes=1000):
+        # Keep the real HTTPSConnection/HTTPResponse and socket.makefile lifecycle.
+        # Only TLS wrapping/DNS are replaced: no network or credentials are used.
+        client,server=socket.socketpair()
+        header=b'HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n'
+        if framing=='length':
+            header+=b'Content-Length: '+str(len(body)).encode()+b'\r\n'
+        elif framing=='truncated':
+            header+=b'Content-Length: '+str(len(body)+3).encode()+b'\r\n'
+        elif framing=='chunked':
+            header+=b'Transfer-Encoding: chunked\r\n'
+            body=hex(len(body))[2:].encode()+b'\r\n'+body+b'\r\n0\r\n\r\n'
+        server.sendall(header+b'\r\n'+body)
+        server.shutdown(socket.SHUT_WR)
+        context=Mock();context.wrap_socket.return_value=client
+        try:
+            with patch('transcripts.transport.public_socket',return_value=client), \
+                 patch('ssl.create_default_context',return_value=context):
+                return HTTPTransport('direct').request('POST','https://rpc.example/',body=b'{}',max_bytes=max_bytes)
+        finally:
+            client.close();server.close()
+
+    def test_real_connection_close_lifecycle_for_all_response_framings(self):
+        for framing in ('length','chunked','eof'):
+            with self.subTest(framing=framing):
+                response=self.framed_response(framing)
+                self.assertEqual(response.body,b'{"result":"0x2105"}')
+                self.assertTrue(response.tls_verified)
+
+    def test_response_framing_keeps_size_and_completeness_checks(self):
+        for framing in ('length','chunked','eof'):
+            with self.subTest(framing=framing):
+                with self.assertRaisesRegex(Rejected,'response_size'):
+                    self.framed_response(framing,b'x'*11,max_bytes=10)
+        with self.assertRaisesRegex(Rejected,'response_incomplete'):
+            self.framed_response('truncated')
+
     def test_no_aliasing_header_only_for_exact_near_completion_route(self):
         for method, url, value in [('GET', 'https://cloud-api.near.ai/v1/chat/completions', 'true'),
                 ('POST', WISE + '/v1/profiles', 'true'),
@@ -112,6 +149,7 @@ class PlumbingTests(unittest.TestCase):
                     HTTPTransport('direct').request(method, url, headers={'x-no-aliasing': value})
                 connector.assert_not_called()
         response = Mock(status=200)
+        response.isclosed.return_value=False;response.length=None
         response.getheaders.return_value = [('Content-Type', 'application/json')]
         response.read1.side_effect = [b'{}', b'']
         connection = Mock();connection.getresponse.return_value = response
@@ -138,6 +176,7 @@ class PlumbingTests(unittest.TestCase):
         self.assertEqual(real_context.verify_mode, ssl.CERT_REQUIRED)
         context = Mock()
         response = Mock(status=200)
+        response.isclosed.return_value=False;response.length=None
         response.getheaders.return_value = [('Content-Type', 'application/json')]
         response.read1.side_effect = [b'{"safe":true}', b'']
         connection = Mock()
@@ -155,6 +194,7 @@ class PlumbingTests(unittest.TestCase):
                 (200, [('Content-Type', 'application/json'), ('Content-Encoding', 'gzip')], []),
                 (200, [('Content-Type', 'application/json')], [b'x' * 11])):
             response = Mock(status=status); response.getheaders.return_value = headers
+            response.isclosed.return_value=False;response.length=None
             response.read1.side_effect = chunks
             connection = Mock(); connection.getresponse.return_value = response
             with patch('transcripts.transport.public_socket'), patch('ssl.create_default_context'), \
