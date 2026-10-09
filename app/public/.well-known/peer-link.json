@@ -40,8 +40,8 @@
       "consentedUpstreams": ["near", "chutes"],
       "aliasesAllowed": false,
       "maximumCalls": 1,
-      "creditFundingStatus": "merchant_credit_pending",
-      "billableInferenceVerified": false
+      "creditFundingStatus": "merchant_credit_verified",
+      "billableInferenceVerified": true
     }
   },
   "pilot": {
