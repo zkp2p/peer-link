@@ -13,7 +13,7 @@ admission.
 **Mercury first-contributor source validation:** [$10 USDC for one accepted
 organization](https://github.com/zkp2p/peer-link/issues/1). Its first positive live
 API acquisition is pending and would come from the contributor; this is not a
-completed Peer integration. Other bank rewards remain planned. Wise is an existing
+completed Peer integration. The other listed banks are open-recipe campaigns in the current release, sharing its funded budget. Wise is an existing
 integration/reference and is excluded from rewards; its paid tests are internal
 validation only. Independently verify the approved release and obtain a funded
 reservation before keys or inference. Static copy cannot guarantee capacity.
@@ -147,6 +147,43 @@ reward or slot count, or changing a domain edits the measured policy and so
 needs a new signed image, a new state namespace and a newly published release
 manifest. `GET /v1/campaigns` additionally returns `availability`: remaining
 slots per campaign and remaining epoch budget.
+
+### Rolling a release epoch
+
+The open-recipe release of 2026-10-09 (`open-public-v1`) and its two validation
+epochs were rolled on the existing host in this order. Each step gates the next.
+
+1. Close the running epoch first: signed `pause`, confirm no obligations, return
+   any unspent USDC through operator custody, then signed `retire`. Retirement
+   reports `refunded` with amount 0 when the wallet holds no USDC.
+2. Create a new state stack for the new namespace and add its authority version
+   and state key to the host role with an additive change set. A namespace holds
+   one epoch: genesis is refused when the namespace already has a head.
+3. Set `stateAuthority` (function ARN, namespace, wrapping key) and
+   `initialWalletNonce` (the payout wallet's current on-chain nonce) in the
+   measured policy, and `pilotBudgetMinor` to the amount that will actually be
+   funded. Commit, and let CI build the image on its two independent builders.
+4. Build the same commit on the host from a `git archive` extracted under
+   `umask 022`; a stricter umask changes file modes inside the image and so
+   PCR0 and PCR2. Proceed only when the host measurements equal both CI builders.
+5. Approve that PCR0 on the new state key, install the signed image, and verify
+   with the contributor client's `preflight` against the release manifest.
+6. Signed operator `preflight` (only valid while unfunded), then
+   `install_continuous.sh` while paused, then fund exactly the budget, then
+   signed `activate`.
+7. Publish `transcripts/release.json` on `main`. Until it merges, contributors
+   on `main` are pinned to the retired release and cannot contribute.
+
+A code fix that leaves the measured policy unchanged does not need a new
+namespace. Pause, build and approve the new PCR0 on the same state key, install,
+and the enclave restores the same epoch, ledger and budget from durable state;
+operator `preflight` is refused for a funded epoch, so go straight to signed
+`resume`. This was exercised on the second validation epoch.
+
+Run the Python tests under 3.11, the enclave's runtime, as well as the local
+default. Validate any change to the acceptance path against a real account on a
+validation epoch before the public roll: synthetic rows are shorter than a real
+bank's, and one defect in the release candidate was visible only with real rows.
 
 ## Provision
 

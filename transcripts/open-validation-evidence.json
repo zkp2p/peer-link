@@ -1,0 +1,158 @@
+{
+  "version": 1,
+  "service": "peerlink-transcript-contributions",
+  "date": "2026-10-09",
+  "scope": "Internal owner-authorized validation of the open-recipe flow against one Wise account on the dedicated Nitro host. Wise is already integrated and has no public reward. These epochs are retired; nothing here shows live acquisition for any public campaign bank.",
+  "serviceUrl": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
+  "payoutWallet": "0xd297f105b145cd1d4ddb1d31392300e934bc3559",
+  "epochs": [
+    {
+      "name": "validation-1",
+      "epochId": "e4ba5daaf37edf087894637d181bce05",
+      "stateNamespace": "open-validation-v1",
+      "sourceCommit": "92ee92a1b38dc2d210c455cfa38ea9d1cee4a9f0",
+      "policyDigest": "bf71a7c226743323a8b7a2dc27e640eccb7cd21ff874cafbc395da6b641b686c",
+      "measurements": {
+        "0": "1edc1e3b45452e036ae9160f06b3096e65bf52e05d65d53ab2dda953254d9c8cc2617d4e4332cf6a2782411b3fee5545",
+        "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
+        "2": "d705994390a1a707f27aed42c0f1bcc6f73f5ce96622c3d101ef5ec1f6758b5b14e90a3587f979bfd6cc86a0a6182811",
+        "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
+      },
+      "budgetMinor": 10000000,
+      "fundingTransaction": "0x08fb44c8ca62cbdade599e97b3593ed7cc7ac53e36e4276cd81f1e89fa025e2a",
+      "jobs": [
+        {
+          "jobId": "0e650926518bcfc9220790bc8e88565d",
+          "by": "operator",
+          "provider": "openai_compatible",
+          "state": "rejected",
+          "reason": "model_output_truncated",
+          "note": "Deliberately low output limit; shows a provider failure ends in a fixed code and no payout."
+        },
+        {
+          "jobId": "707691573ca643ed79e59dfd4fab8bd0",
+          "by": "Claude contributor agent, cold start from the repository documentation",
+          "credentialKind": "bearer",
+          "provider": "near",
+          "model": "z-ai/glm-5.3-flash",
+          "state": "paid",
+          "score": 100,
+          "rewardMinor": 5000000,
+          "transaction": "0xc13357e3a2342746cd66f4fe2c3d04fbaea616e55bf5d341020b9934947c63b1",
+          "archivedRecords": 3
+        },
+        {
+          "jobId": "8a21123d108c4a0c4ddb679ec0bc9c2e",
+          "by": "Codex contributor agent (gpt-6-sol, xhigh), cold start from the repository documentation",
+          "credentialKind": "bearer",
+          "state": "paid",
+          "score": 100,
+          "rewardMinor": 5000000,
+          "transaction": "0x6523198d1dd26bff4af513f078e2c679e8fdd8d836132a532884dbd283fc54d0",
+          "archivedRecords": 3
+        }
+      ],
+      "retirement": {
+        "state": "refunded",
+        "amountMinor": 0
+      }
+    },
+    {
+      "name": "validation-2",
+      "epochId": "23c83f1f5d28ec0ea83133eb9d3fdf2e",
+      "stateNamespace": "open-validation-v2",
+      "policyDigest": "af6a39c155f5e2d6d3a4a0bbe5f8ba50ada4cd861f5a1a8b2cd16d00edf13a2d",
+      "budgetMinor": 10000000,
+      "fundingTransaction": "0x5ab50782e800e7ed7fff5e97e2fc3790ca6ec559ce6cdeff9d8e0c5f6f1f7e80",
+      "images": [
+        {
+          "sourceCommit": "bb684eaf1252faf63d3c72da478b68bbfea110c6",
+          "measurements": {
+            "0": "83eb3e6ae713d7d17649f521c17c226692082073ed99fd8f8a0948f4d63d2adaf685be8f9b063e69d56b9d3ab807f75a",
+            "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
+            "2": "ba8ed044f0ef3886a6c05a70598f345efcbbfab75b133c9f71ead30426ce8c022dbcfe509c1fc744a733e8da193b5d50",
+            "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
+          },
+          "jobs": [
+            {
+              "jobId": "285466f71b583749319e866e951ca1d6",
+              "by": "operator",
+              "credentialKind": "headers",
+              "provider": "openai_compatible",
+              "state": "rejected",
+              "reason": "account_evidence_missing",
+              "note": "Defect found: the row-level duplicate witness exceeded an internal length bound for rows longer than about 230 characters, so acceptance failed after inference. Fixed in the next image with a regression test."
+            }
+          ]
+        },
+        {
+          "sourceCommit": "46c514a298a36e996b470f6f446477e109f9ff13",
+          "measurements": {
+            "0": "08fe823daae5bc5af4fd89c9d68189573bc33699a129ff8f766554c9e9b52ac2a39e2a32a4e37d62b7d224bef6bdbb8e",
+            "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
+            "2": "d09f7b3dc6d43721ac2b72a33b0c86a17b32e21b5bee5fd513998b4b5698c8e265a1e56203438a1a0600259896500120",
+            "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
+          },
+          "ciRunUrl": "https://github.com/zkp2p/peer-link/actions/runs/37938417224",
+          "independentCiBuildsMatchHardwareBuild": true,
+          "sameEpochRestoredFromDurableStateAfterImageReplacement": true,
+          "jobs": [
+            {
+              "jobId": "17a598f316d8a81f37747de4a240c7fe",
+              "by": "operator",
+              "credentialKind": "headers",
+              "provider": "openai_compatible",
+              "inferenceBaseUrl": "https://cloud-api.near.ai/v1",
+              "model": "z-ai/glm-5.3-flash",
+              "state": "paid",
+              "score": 100,
+              "rewardMinor": 5000000,
+              "transaction": "0xdb6bf142e4796de6c1813b6d8ef684e99c3edb2f39d134d62e0ae54c3fdd4c8e",
+              "archivedRecords": 3
+            },
+            {
+              "jobId": "5da39edd453770a2df43c4b15d1103d2",
+              "by": "operator",
+              "state": "rejected",
+              "reason": "duplicate_account",
+              "note": "Same account through other URLs, another credential kind and another payout address."
+            },
+            {
+              "jobId": "85e7bfe9d8040e8d6e9db2a40cd66ffb",
+              "by": "operator",
+              "state": "rejected",
+              "reason": "duplicate_account",
+              "note": "Same history under a different identity selector; caught by row witnesses."
+            }
+          ]
+        }
+      ],
+      "unspentReturnedByOperatorCustody": {
+        "amountMinor": 5000000,
+        "transaction": "0xd97f24c0eaa323913d784873a644fcbb6c425b8f3f9df0b788a91647ff38a508"
+      },
+      "retirement": {
+        "state": "refunded",
+        "amountMinor": 0
+      }
+    }
+  ],
+  "established": [
+    "Fresh Nitro attestation verified by the contributor client against the pinned measurements before every reservation.",
+    "Contributor-written version-3 recipes with bearer and header credentials, replayed inside the enclave over TLS it terminates.",
+    "Prompt assembled in the enclave from PeerLink's prefix, the contributor's notes and the value-free transcript, and sent to an OpenAI-compatible endpoint the contributor chose, by named provider and by base URL.",
+    "Model-proposed field roles verified in code against the live rows before acceptance.",
+    "Automatic 5 USDC payouts on Base within about thirty seconds of submission, with signed receipts the client verified.",
+    "Signed accepted, payout-pending and paid records mirrored to the private archive bucket for every paid job; rejected jobs leave no record.",
+    "One paid contribution per account per campaign, by declared identity and by shared rows."
+  ],
+  "limitations": [
+    "One bank API with a personal token. No web-session, cookie, CSRF, POST or GraphQL read has been exercised against a real bank.",
+    "The anonymous-access gate, write guard and redaction rules are heuristics covered by synthetic tests only.",
+    "The first validation image predates the final hardening pass; only the second image of validation-2 carries the final measured code apart from the public policy."
+  ],
+  "tests": {
+    "python": 349,
+    "pythonVersions": ["3.11", "3.14"]
+  }
+}

@@ -2,20 +2,21 @@
   "version": 1,
   "status": "approved",
   "serviceUrl": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
-  "policyDigest": "518e005aaa24e184e68be319f3ef1972dbd2bb42faa9857d5a3459eed7f83444",
+  "policyDigest": "4cd16f4ca0c8a0d30e2c3acb520463e2a5fadec5c12d54b5d69ff8dde99130b3",
   "measurements": {
-    "0": "d4823c3b9f4d92982825a432e177885832573c3f4ce7394ed5408bebf9f77c1aeabd1a03d3ae5a64c471cb5a5ce4776a",
+    "0": "b38fcad81d17e1650763613299f266b0834ed5f92f373090266a8b8319109a3a3dcf8cd39fd12e8a51b8f8f11385df9e",
     "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
-    "2": "a828060e402c2c0e0698e600a659587f19805fbd676afd99188a124ca838a22512dc3571e0a72e000e020499b459c82f",
+    "2": "1c1d5c56a36ad8635806f578993efc3fa20b175b0c0ca2a6be0176f658a852384e26765dfc53100eb0f37e6a6692a25e",
     "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
   },
-  "expiresAt": 1794125696,
+  "expiresAt": 1794146448,
   "limitations": [
-    "Experimental Mercury API source-validation campaign only: one organization contribution, ten Base USDC. The first successful authenticated Mercury acquisition remains to be supplied by a contributor; Mercury is not a completed integration.",
-    "Wise is already integrated and is excluded from transcript incentives. Other bank campaigns remain planned. A successful live reservation is required; publication is not a capacity guarantee.",
-    "Only approved contributor-funded inference receives redacted structural evidence with consent. Rejected jobs may still incur inference costs. Confidential NEAR inference and per-request x402/NEAR Intents billing are not enabled.",
+    "Open-recipe transcript campaigns for 20 banks plus the Mercury API source-validation campaign. This release epoch is funded with 10 Base USDC in total, enough for one $10 or two $5 rewards, with no automatic refill. A successful live reservation is required; a listing is not a capacity guarantee.",
+    "No listed bank has an accepted contribution yet. The open-recipe flow was validated end to end against one Wise API account on retired internal epochs; web-session, cookie, CSRF, POST and GraphQL reads are covered by synthetic tests only, and a bank may refuse requests from the enclave's data-centre address.",
+    "The contributor's bank session and raw responses stay inside the attested enclave. The contributor's notes and the value-free transcript are sent to the inference endpoint the contributor chooses and, if accepted, are signed, archived and read by Peer. Redaction of field names, URL path words and status tokens is heuristic; review the local preview before contributing.",
+    "The anonymous-access gate, the POST write guard and duplicate-account detection are heuristics. A recipe must replay only requests the bank's own site issues to view history.",
+    "Inference is billed to the contributor's own key, including when a job is rejected. The reward is fixed and is not guaranteed to cover that cost.",
     "Payout custody is operator-recoverable AWS KMS. AWS and account administrators remain trusted for infrastructure and key-policy control; this is not escrow.",
-    "The single-host service restores encrypted state and receipts with fresh ingress keys and paused admissions after restart. Operator resume is required; there is no automatic wallet refill.",
-    "Some interrupted jobs need expiry or operator reconciliation; see GitHub issue 241. No guarantee of immediate unattended recovery is made."
+    "The single-host service restores encrypted state and receipts with fresh ingress keys and paused admissions after restart. Operator resume is required; some interrupted jobs need expiry or operator reconciliation (GitHub issue 241)."
   ]
 }

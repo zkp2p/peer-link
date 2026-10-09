@@ -4,23 +4,23 @@ PeerLink collects authenticated banking transcripts from account owners. Users d
 not write a provider, open a PR, or claim a Merit bounty. Peer builds the integration
 from accepted structural evidence. Mercury's experimental [source-validation campaign](source-validation.md)
 is capped at one organization for $10 USDC if accepted; its first positive live
-API acquisition is pending. Other bank rewards remain planned. Wise is an existing
+API acquisition is pending. The other listed banks are open-recipe campaigns in the current release, sharing its funded budget. Wise is an existing
 integration/reference, excluded from reward recruitment; its paid tests are internal only.
 
 ## Campaign pages and amounts
 
 Keep one public GitHub campaign page per bank for discovery, questions and status.
 The [campaign index](https://github.com/zkp2p/peer-link/issues/64) is the current list.
-Each enabled campaign collects **1–5 distinct contributors**, paying once per
+Each enabled campaign collects **1–2 distinct contributors**, paying once per
 account/contributor at its published fixed rate:
 
 - **$10 USDC per accepted transcript:** Mercury (experimental source validation, one organization),
   Chase, Bank of America and Wells Fargo.
 - **$5 USDC per accepted transcript:** the other currently listed bank campaigns.
 
-Other listed rates remain planned. Wise is excluded from the incentivization layer.
-An approved release, reviewed source and identity checks, available slot and
-reserved reward are required before a submission. Read
+Wise is excluded from the incentivization layer. An approved release, an
+available slot and a reserved reward are required before a submission; all
+campaigns share one funded budget that is usually smaller than the sum of slots. Read
 [reward terms](incentives.md) and the [contribution skill](../skills/contribute-transcript/SKILL.md).
 
 Prioritize banks with authorized account-owner access, a safely reproducible
@@ -43,12 +43,12 @@ different accounts or API keys for the same organization do not create another a
 [#3](https://github.com/zkp2p/peer-link/issues/3) remains technical evidence discussion,
 not a second campaign. Prior valid commitments remain governed by their original terms.
 
-Non-Wise campaigns need reviewed source/identity checks, measured-release and hardware
-approval, and reserved funds before enrollment. Explicit first-contributor source
-validation collects its first positive live evidence from the consenting contributor;
-it does not promise that acquisition will succeed. Inference uses the contributor's
-own key and may be billed even when grading rejects or fails. Other listed rewards
-remain planned.
+Every campaign needs a measured release, hardware approval and reserved funds
+before enrollment. Open-recipe campaigns take the read route from the
+contributor's recipe; Mercury uses a reviewed fixed route. Either way the first
+positive live evidence for a bank comes from a consenting contributor, and
+nothing promises that acquisition will succeed. Inference uses the contributor's
+own key and may be billed even when a job is rejected.
 The completed [Wise evidence](../transcripts/durable-pilot-evidence.json) records
 internal acquisition, grading, payment and restart tests; it is not an invitation
 to claim a Wise reward. Future contributors must obtain their own successful

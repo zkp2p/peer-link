@@ -116,11 +116,24 @@ Peer production. Peer engineers separately review metadata and transformers.
 the open flow: origin pinning, the anonymous-access gate, write refusal for POST
 reads, absence of bank values in transcripts and prompts, forged or wrong model
 output, recomputation of the score at acceptance, duplicate accounts, and the
-archived record. It is not hardware, bank, inference or payment evidence. Those
-are established per release by a fresh Nitro quote against the published
-measurements and by the scoped evidence files under `transcripts/`; where a
-release publishes none for a campaign, treat live acquisition for that bank as
-not yet demonstrated.
+archived record. It is not hardware, bank, inference or payment evidence.
+
+[Open validation evidence](../transcripts/open-validation-evidence.json) records
+two retired operator-owned epochs on the Nitro host, run against one Wise
+account on 2026-10-09. Contributor agents starting only from this repository's
+documentation (one Claude, one Codex) each wrote a recipe, previewed it,
+contributed and were paid $5 USDC; an operator run with header credentials and a
+custom inference base URL was paid on the final code; and two attempts to be
+paid again for the same account were rejected. Every paid job's signed records
+reached the private archive. The second epoch also caught a defect that
+synthetic tests had missed, because their rows were shorter than a real bank's;
+the fix and its regression test are in the release.
+
+That evidence covers one bank API reached with a personal token. It does not
+show a web session, cookie, CSRF header, POST or GraphQL read working against a
+real bank, and it does not show live acquisition for any listed campaign bank.
+Treat each of those as not yet demonstrated until a contribution for that bank
+is accepted.
 
 ## Internal durable Wise evidence
 

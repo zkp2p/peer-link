@@ -90,7 +90,7 @@ fingerprint or refuse data-centre addresses cannot be read from the enclave.
 **Mercury first-contributor source validation:** [$10 USDC for one accepted
 organization](https://github.com/zkp2p/peer-link/issues/1). Its first positive live
 API acquisition is pending and would come from the contributor; this is not a
-completed Peer integration. Other bank rewards remain planned. Wise is an existing
+completed Peer integration. The other listed banks are open-recipe campaigns in the current release, sharing its funded budget. Wise is an existing
 integration/reference and is excluded from rewards; its paid tests are internal
 validation only. Independently verify the approved release and obtain a funded
 reservation before keys or inference. Static copy cannot guarantee capacity.
