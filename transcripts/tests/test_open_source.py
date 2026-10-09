@@ -3,6 +3,7 @@ import copy
 import hashlib
 import json
 import socket
+import ssl
 import threading
 import time
 import unittest
@@ -382,7 +383,8 @@ class AcquisitionTests(unittest.TestCase):
         from transcripts.transport import HTTPTransport
         client, server = socket.socketpair()
         class PassThrough:
-            minimum_version = None
+            # Python 3.11's HTTPSConnection reads these from the context it is given.
+            minimum_version, verify_mode, check_hostname = None, ssl.CERT_REQUIRED, True
             def wrap_socket(self, raw, server_hostname=None):
                 return raw
         def peer():
