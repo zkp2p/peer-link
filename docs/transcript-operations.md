@@ -2,17 +2,26 @@
 
 This is a dedicated PeerLink deployment. It does not change a production attestor,
 reuse its signing key, or inherit its approval. The deployment may expose public
-campaign/status/attestation metadata while live contribution and payout gates remain
-closed. Infrastructure creation, a signed EIF and a successful synthetic job do not
+campaign/status/attestation metadata. The approved Wise release requires successful
+reservation before secret input; other banks remain planned. Infrastructure creation, a signed EIF and a successful synthetic job do not
 establish live bank acceptance.
 
-## Public launch candidate — in progress
+## Approved Wise release
 
-The next release is preparing [Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239)
-only: up to two distinct contributors at **$5 USDC per accepted transcript**,
-with a planned $10 budget reserved before admission. Other bank
-pages remain planned. No public job is available until the approved measured
-release, funded campaign and remaining capacity are independently verified.
+[Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239) is the first
+public launch scope: at most two distinct contributors, **$5 Base USDC per accepted
+transcript**, and an initial $10 allocation. Other banks remain planned. An
+operator-paid validation contribution counts toward the two-award limit; no static
+page guarantees remaining capacity. Verify the approved, unexpired release and
+obtain a successful reservation before collecting credentials or paying for inference.
+
+The approved service is `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
+with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
+Fresh Nitro verification, authenticated Wise reads, ordinary NEAR grading, an
+automatic confirmed $5 payout and paid-job recovery after an enclave restart passed.
+Recovery preserved the signed receipt without another reservation, submission or
+model call. See the separately scoped
+[durable evidence](../transcripts/durable-pilot-evidence.json) for verified scope and remaining limitations.
 
 The v3 design encrypts canonical SQLite state snapshots under AES-GCM, with an
 immutable AWS Lambda/DynamoDB compare-and-swap authority. Descriptor v3 binds
@@ -37,8 +46,26 @@ separate receipt signer is encrypted in durable state. Later snapshot recovery
 cannot recover old bank-upload decryption keys. KMS administrators remain trusted
 for encrypted metadata/deduplication secrecy, and cloud availability remains a
 trust boundary; missing, mismatched or unavailable state must
-stop admission. These protections are under implementation and verification, not
-approved public availability.
+stop admission. Release-specific hardware and paid-job/restart verification passed for Wise;
+other bank adapters and confidential inference require separate approval.
+
+## Publish the independent approval manifest
+
+After the exact image and durable paid-job/restart scope pass, publish `transcripts/release.json` separately from the EIF: `status: approved`,
+the exact HTTPS service URL, measured policy digest, actual PCR0/1/2/8 and a bounded
+future `expiresAt`. The manifest is excluded from the measured build inputs;
+publishing it cannot require rebuilding an image to embed its own PCR approval.
+Keep `/v1/release` discovery-only and point to the canonical manifest. Agents resolve
+and review a full Git commit independently; do not embed the publication commit's
+own unknown SHA in that same commit or trust an issue-supplied approval file.
+Record the measured source and scoped evidence separately. Recheck measured input
+hashes after the manifest/docs commit. The client release identity excludes only
+`expiresAt`: an expiry renewal preserves every other field, including limitations.
+A changed endpoint, policy, measurement or other field needs explicit review.
+
+Static discovery and the initial budget do not establish current funded capacity.
+Admission requires a fresh successful reservation; the operator-paid validation
+contribution counts toward the two-award limit. Publish no “one slot left” promise.
 
 ## Architecture and limits
 
@@ -225,7 +252,7 @@ retirement. A supervised Wise job then completed authenticated enclave acquisiti
 redacted NEAR grading and a [confirmed $5 reward](https://basescan.org/tx/0x88899fbe3b6036390f19207ec911493db6f1245ab1c50811c44ca2ee4752c677)
 after one signed operator reconciliation from `payout_pending`. A fresh client
 restored the same signed receipt without new reservations/submissions. The one-slot
-test leaves no funded capacity; public collection remains closed. See [evidence](../transcripts/kms-pilot-evidence.json).
+test allocation has no remaining capacity; it does not approve the separate durable release. See [evidence](../transcripts/kms-pilot-evidence.json).
 
 ## Wallet and state gates
 
@@ -259,13 +286,14 @@ descriptor `budgetMinor` to match measured `pilotBudgetMinor` exactly. Fund only
 independently attested epoch address and once within that exact budget plus bounded
 gas. Record address, epoch, funding transaction and chain
 receipt in the task's private spend ledger; public records contain no secrets.
-There is no automatic refill. A restarted enclave must stay closed to previously
-funded claims and old reservations. KMS permits operator fund recovery after enclave
-loss, but not safe continuation with a blank ledger. The prior enclave-only wallet
+There is no automatic refill. The durable Wise release restores its exact encrypted
+state identity and starts paused until signed resume and chain reconciliation.
+Missing or mismatched state must stop admission. KMS permits operator fund recovery
+after enclave loss, but not safe continuation with a blank ledger. The prior enclave-only wallet
 already holds $50 USDC that remains unrecovered at this checkpoint. Leave that
 old live enclave intact while reconciling it; installing the KMS release cannot
-recover its old key. Broad acceptance stays closed pending verified persistence,
-deduplication and reconciliation authority.
+recover its old key. Only the separately approved Wise scope may admit reservations;
+other banks require their own source and funding approval.
 
 Before a planned stop, use the implemented signed operator `retire` action. It
 irreversibly closes admission and cancels unused reservations, while submitted,

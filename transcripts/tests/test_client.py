@@ -232,10 +232,13 @@ class ClientTests(unittest.TestCase):
 
     def test_offline_terms_work_unreleased_without_key_or_network(self):
         output=io.StringIO()
-        with patch('sys.argv',['transcripts.cli','terms','--campaign','wise-api-public-v1',
-                              '--provider','openrouter','--model','openai/gpt-4o-mini-2024-07-18']),\
-                patch('transcripts.cli.Client') as client,patch('transcripts.cli.getpass.getpass') as secret,redirect_stdout(output):
-            main()
+        with tempfile.TemporaryDirectory() as directory:
+            release=Path(directory)/'release.json'
+            release.write_text(json.dumps({**self.release,'status':'unreleased'}))
+            with patch('sys.argv',['transcripts.cli','terms','--release',str(release),'--campaign','wise-api-public-v1',
+                                  '--provider','openrouter','--model','openai/gpt-4o-mini-2024-07-18']),\
+                    patch('transcripts.cli.Client') as client,patch('transcripts.cli.getpass.getpass') as secret,redirect_stdout(output):
+                main()
         result=json.loads(output.getvalue())
         self.assertFalse(result['accepting']);self.assertEqual(result['reason'],'release_not_approved')
         self.assertEqual(result['rewardUSDC'],5);self.assertEqual(result['provider'],'openrouter')
@@ -323,9 +326,12 @@ class ClientTests(unittest.TestCase):
 
     def test_unreleased_never_reads_recipe_or_prompts_owner(self):
         output=io.StringIO();stdin=unittest.mock.Mock()
-        with patch('sys.argv',['transcripts.cli','contribute','--prompt-secrets','--consent']),\
-                patch('sys.stdin',stdin),patch('transcripts.cli.getpass.getpass') as secret,redirect_stdout(output):
-            with self.assertRaises(SystemExit):main()
+        with tempfile.TemporaryDirectory() as directory:
+            release=Path(directory)/'release.json'
+            release.write_text(json.dumps({**self.release,'status':'unreleased'}))
+            with patch('sys.argv',['transcripts.cli','contribute','--release',str(release),'--prompt-secrets','--consent']),\
+                    patch('sys.stdin',stdin),patch('transcripts.cli.getpass.getpass') as secret,redirect_stdout(output):
+                with self.assertRaises(SystemExit):main()
         self.assertEqual(json.loads(output.getvalue())['error'],'release_not_approved')
         stdin.buffer.read.assert_not_called();secret.assert_not_called()
 

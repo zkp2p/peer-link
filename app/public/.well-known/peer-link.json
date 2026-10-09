@@ -8,12 +8,13 @@
   "contributionSkill": "https://github.com/zkp2p/peer-link/blob/main/skills/contribute-transcript/SKILL.md",
   "campaigns": "https://github.com/zkp2p/peer-link/issues",
   "verification": {
-    "status": "unreleased",
-    "endpoint": null,
-    "acceptsSecrets": false,
+    "status": "approved_release_published",
+    "endpoint": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
     "scheduledJudgment": false,
-    "automaticPayout": false,
-    "release": "https://github.com/zkp2p/peer-link/blob/main/transcripts/release.json"
+    "automaticPayout": true,
+    "release": "https://github.com/zkp2p/peer-link/blob/main/transcripts/release.json",
+    "secretSubmissionRequirement": "approved_release_fresh_attestation_and_successful_reservation",
+    "payoutScope": "accepted_reserved_jobs"
   },
   "rewards": {
     "currency": "USDC",
@@ -83,24 +84,29 @@
     "meritProjectProfile": "https://terminal.merit.systems/zkp2p/peer-link",
     "individualMeritBounties": false
   },
-  "launchCandidate": {
-    "status": "in_progress_not_public_approved",
+  "publicCampaign": {
+    "status": "approved_release_published",
     "bank": "wise",
     "maximumContributors": 2,
     "rewardUSDC": 5,
     "otherBanks": "planned",
-    "durableState": "encrypted_snapshot_immutable_lambda_cas_under_verification",
-    "publicAcceptanceEnabled": false,
+    "durableState": "encrypted_snapshot_immutable_lambda_cas_verified_scope",
     "campaign": "https://github.com/zkp2p/peer-link/issues/239",
-    "plannedBudgetUSDC": 10,
-    "remainingFundedCapacity": 0,
     "descriptorVersion": 3,
-    "plannedLedgerPersistence": "aws_dynamodb_encrypted_snapshot",
     "restartRequiresOperatorReview": true,
     "credentialsPersisted": false,
     "ingressKeyPersisted": false,
     "receiptSignerPersistedEncrypted": true,
     "submissionEnvelopesPersisted": false,
-    "historicalIngressKeysRecoverableFromSnapshot": false
+    "historicalIngressKeysRecoverableFromSnapshot": false,
+    "policyId": "wise-api-public-v1",
+    "measuredSource": "629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e",
+    "evidence": "https://github.com/zkp2p/peer-link/blob/main/transcripts/durable-pilot-evidence.json",
+    "initialBudgetUSDC": 10,
+    "ledgerPersistence": "aws_dynamodb_encrypted_snapshot",
+    "admissionRequirement": "successful_live_reservation",
+    "reservationRoute": "/v1/reservations",
+    "operatorValidationCountsTowardAwardLimit": true,
+    "hardwarePaidRestartProof": "verified_scoped"
   }
 }

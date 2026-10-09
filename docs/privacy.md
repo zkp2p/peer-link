@@ -1,8 +1,8 @@
 # Transcript privacy
 
-**Current status: unreleased. Do not send bank sessions or inference keys.** Use
-only the approved independently verified [release](../transcripts/release.json)
-and an active source campaign through the
+**Current status: approved Wise transcript release only. Other banks remain planned.**
+Independently pin the [release](../transcripts/release.json), verify fresh attestation,
+and reserve a funded slot before collecting or sending keys. Follow the
 [contribution skill](../skills/contribute-transcript/SKILL.md).
 
 ## Where data goes
@@ -28,8 +28,9 @@ with explicit consent to NEAR and its approved Chutes upstream. It requests no
 aliasing, rejects alias/model mismatches and unapproved serving-provider headers,
 and makes at most one grading call. Those gateway assertions over TLS are not
 independent model attestation. Paid ordinary schema probes and the supervised
-Wise pilot exercised this route; confidential inference and the changed durable
-release still require separate verification.
+Wise pilots exercised this route. The [durable release evidence](../transcripts/durable-pilot-evidence.json)
+records the authenticated Wise job, bounded contributor billing, automatic payment
+and receipt recovery after restart. Confidential inference remains unavailable.
 
 NEAR confidential inference is unavailable until its exact attestation and encrypted
 request/response adapter have been verified. Failed confidential verification must
@@ -80,20 +81,22 @@ Bank and inference credentials remain transient inside the enclave after encrypt
 submission; the signing broker does not receive them. The completed pilot lost its
 RAM-only ledger, deduplication authority and in-process artifacts on restart. KMS custody
 recovery does not restore that state or make reusing a funded wallet safe. Operator
-review is required before restarting a campaign. This is not durable production
-storage or payment reconciliation.
+review was required before restarting that RAM-only campaign. Those historical
+results do not establish durable storage; the current release has separate evidence below.
 
-## Durable-state release under development
+## Approved durable-state release
 
-The v3 release is preparing AES-GCM snapshots containing authoritative job,
+The v3 release uses AES-GCM snapshots containing authoritative job,
 deduplication, durable receipt keys and payout state. Attested KMS Recipient
 decryption binds approved PCR0 and host-role PCR3; an immutable Lambda/DynamoDB
 revision and writer-generation authority rejects stale writes. Bank sessions,
 inference keys, raw bank reads and submission envelopes are never persisted.
 Snapshots bind exact policy/campaigns/wallet/namespace/authority; absent, mismatched
 or stale state must stop admission. Restore starts paused for signed operator
-resume and chain reconciliation. These protections require separate live
-verification before public collection.
+resume and chain reconciliation. The [live evidence](../transcripts/durable-pilot-evidence.json)
+records hardware bootstrap and restart, preserved paid receipts and chain state,
+and a fresh client recovering the same payment without resubmission. These checks
+cover the capped Wise release, not every bank or arbitrary infrastructure failure.
 
 The bank-upload ingress private key is fresh per boot and never persisted. A
 separate durable receipt signer is encrypted in the snapshot; it cannot decrypt

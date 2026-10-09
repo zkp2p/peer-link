@@ -3,7 +3,8 @@
 A submitted recipe or local capture is a navigation hint. Only fresh reads made by
 the enclave's authenticated bank transport establish source acquisition. Synthetic
 fixtures, browser self-reports, model inference and bank listings do not prove live
-acceptance. The [current release](../transcripts/release.json) is unreleased.
+acceptance. The [current release](../transcripts/release.json) approves Wise only;
+a successful reservation is required before secret input.
 
 ## Source and account identity
 
@@ -74,7 +75,7 @@ date and remaining limitations accurately. A paid transcript does not prove fina
 bank settlement, recipient credit, support for every payment type, or readiness in
 Peer production. Peer engineers separately review metadata and transformers.
 
-## Durable release evidence still required
+## Durable Wise release evidence
 
 A separate credential-free contributor smoke exercised the actual CLI, client,
 runtime, encryption and durable-state path with synthetic external dependencies.
@@ -83,8 +84,8 @@ secrets, fresh-ingress restart with the same signed paid receipt, expiry-only
 renewal and interrupted work without another bank/model call. This is local
 synthetic evidence, not a live bank, AWS, model or payment test.
 
-The new snapshot/CAS release needs its own measured policy and descriptor,
-independent rebuild and fresh Nitro evidence. Demonstrate restart with the same
+The snapshot/CAS release has separately scoped measured-policy, descriptor,
+fresh Nitro and paid-job/restart evidence. Continue to require the same
 accepted job, account deduplication and transaction identity; stale-writer fencing,
 state deletion/mismatch failures and interrupted bank/inference handling must fail
 closed. Do not reuse the completed RAM-only pilot evidence as approval for that
@@ -94,6 +95,18 @@ the separate durable receipt signer must remain encrypted. Verify fresh attestat
 binds the current ingress key and persistent receipt identity. KMS administrators
 remain trusted for encrypted metadata/deduplication secrecy; storage does not
 guarantee cloud availability.
+
+The Wise public launch scope is two $5 awards with a $10 initial allocation; an
+operator-paid validation contribution counts toward that limit. Source
+`629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e` and service API
+`https://9lb70whku9.execute-api.us-east-1.amazonaws.com` have separate
+[durable evidence](../transcripts/durable-pilot-evidence.json). Fresh Nitro/KMS
+bootstrap, zero-fund restart, authenticated Wise acquisition, paid ordinary NEAR
+grading, automatic confirmed $5 payout and paid-job recovery after restart passed.
+Recovery preserved the same signed receipt with no new reservation/submission or
+model call, after the inference key was disabled. Historical pilot proof does not
+approve the changed image. Static evidence never guarantees a current slot;
+only a successful service reservation establishes admission.
 
 ## Legacy reports
 

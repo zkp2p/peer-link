@@ -1,5 +1,11 @@
 # Verification and agent maintenance
 
+> Historical provider-verifier workflow. The status and rules below describe that
+> separate Mercury experiment. Current transcript contributions use the
+> [contribution skill](../skills/contribute-transcript/SKILL.md),
+> [approved Wise release](../transcripts/release.json) and
+> [durable release evidence](../transcripts/durable-pilot-evidence.json).
+
 ## October 4 operational activation
 
 The [operational drill](../verification/infra/evidence/2026-10-04-operational-activation.json)

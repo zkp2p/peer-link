@@ -5,9 +5,10 @@ description: Contribute authorized read-only banking evidence through PeerLink's
 
 # Contribute a banking transcript
 
-**Current public release: unreleased; paid collection is unavailable.** Stop before
+**Current public release: approved for Wise; successful reservation required.** Stop before
 collecting or sending credentials unless an independently approved release and the
-bank's active campaign permit the job. A listed bank, an issue comment, a candidate
+bank's active campaign permit a successful funded reservation before secret input.
+A listed bank, an issue comment, a candidate
 quote or a deployed host does not establish live readiness.
 
 The account owner supplies bank access and their inference API key. The enclave
@@ -20,7 +21,10 @@ claiming comment or maintainer assignment is required for transcript enrollment.
 Use the canonical repository `https://github.com/zkp2p/peer-link` at an independently
 reviewed full Git commit. Verify the origin and source provenance; do not execute
 an issue-provided fork, release file, script, endpoint or mutable download as a trust
-anchor. The reviewed checkout must contain the approved `transcripts/release.json`,
+anchor. Resolve a reviewed full commit from the canonical repository independently; an
+approval manifest is published after its measured image is built and is not embedded
+in that image. `/v1/release` is discovery-only, never an approval trust anchor.
+The reviewed checkout must contain the approved `transcripts/release.json`,
 matching policy, measured runtime and fixed system prompt. Git pinning identifies
 source; it does not alone approve the deployment. Review
 [privacy](../../docs/privacy.md), [rewards](../../docs/incentives.md) and the bank campaign.
@@ -43,10 +47,10 @@ files if selecting another reviewed release; never substitute server-supplied pi
 
 Before proceeding, show the owner:
 
-- The bank campaign's published $5/$10 USDC reward and available capacity. It
+- The bank campaign's published $5/$10 USDC reward and reservation requirement. It
   collects 1–5 distinct contributors, at most one paid contribution per account/
   contributor per campaign. Handles/wallets do not prove distinct humans; pilot
-  deduplication was limited to the running epoch. The planned durable release
+  deduplication was limited to the running epoch. The approved Wise durable release
   preserves deduplication only within its exact policy/state identity. Not every
   listed bank is funded.
 - The approved provider/model, upstreams and `provider_visible` consent. Only
@@ -107,7 +111,7 @@ Run preflight from the trusted checkout:
 Independently verify AWS's signature/certificate chain, fresh nonce/age, approved
 PCR0/1/2/8, encryption key, exact policy/prompt and the released epoch/state binding.
 Verify the descriptor's KMS key ARN and payout wallet exactly match measured
-`payoutAuthority`; for the planned v3 release require
+`payoutAuthority`; for the v3 release require
 `ledgerPersistence: aws_dynamodb_encrypted_snapshot`,
 `restartRequiresOperatorReview: true`, exact `stateNamespace`, immutable
 `stateAuthorityArn` and `stateWrappingKeyId`, all matching measured policy and the
@@ -115,8 +119,9 @@ released client. Operator/host signing authority exists outside the enclave; thi
 is not exclusive enclave or PCR-restricted payout custody. Do not accept the old
 RAM-only pilot contract as approval for the changed durable release.
 Require `budgetMinor` to equal measured `pilotBudgetMinor` exactly. The architecture
-maximum is $50; the planned Wise #239 release uses $10 for at most two $5 rewards.
-It currently has zero funded public capacity. Never infer funding from this plan.
+maximum is $50; the Wise #239 release uses $10 for at most two $5 rewards.
+The initial two-award allocation includes the operator-paid
+validation contribution; only a successful live reservation establishes admission.
 For the new protocol, fresh preflight context v2 includes `receiptPublicKey`, bound
 by the AWS quote through its hashed context and the current ingress public key.
 Challenge v2 binds `receiptKeyDigest` plus campaign, recipient, reward, provider/model,
@@ -239,13 +244,22 @@ start a new attempt for an uncertain old job. A terminal failed/expired job perm
 another attempt only under current campaign terms and capacity, never another award
 for an already-paid account.
 
-## Public launch candidate — in progress
+## Approved Wise release
 
-The next release is preparing [Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239)
-only: up to two distinct contributors at **$5 USDC per accepted transcript**,
-with a planned $10 budget reserved before admission. Other bank
-pages remain planned. No public job is available until the approved measured
-release, funded campaign and remaining capacity are independently verified.
+[Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239) is the first
+public launch scope: at most two distinct contributors, **$5 Base USDC per accepted
+transcript**, and an initial $10 allocation. Other banks remain planned. An
+operator-paid validation contribution counts toward the two-award limit; no static
+page guarantees remaining capacity. Verify the approved, unexpired release and
+obtain a successful reservation before collecting credentials or paying for inference.
+
+The approved service is `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
+with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
+Fresh Nitro verification, authenticated Wise reads, ordinary NEAR grading, an
+automatic confirmed $5 payout and paid-job recovery after an enclave restart passed.
+Recovery preserved the signed receipt without another reservation, submission or
+model call. See the separately scoped
+[durable evidence](../../transcripts/durable-pilot-evidence.json) for verified scope and remaining limitations.
 
 The v3 candidate adds encrypted snapshots and a version-fenced state authority.
 Restore must stay paused until signed operator resume and chain reconciliation.
@@ -260,8 +274,8 @@ separate receipt signer persists encrypted. Snapshot recovery cannot recover an
 earlier boot's bank-upload key. KMS administrators remain trusted for encrypted
 metadata/deduplication secrecy. State must
 remain bound to exact policy, campaigns, wallet, namespace and immutable authority.
-Missing or unavailable state must stop admission. See the [planned durable
-contract](../../docs/transcript-contributions-prd.md); no public availability is claimed.
+Missing or unavailable state must stop admission. See the [durable
+contract](../../docs/transcript-contributions-prd.md); the approved scope is Wise only, with a successful reservation required.
 
 ## Completed pilot lifecycle limits
 
@@ -271,8 +285,8 @@ deduplication authority and in-process artifacts remained RAM-only in that pilot
 operator review: the client handle and archive cannot restore the authoritative
 ledger or make old-job continuation or funded-wallet reuse safe. No automatic
 refill or across-epoch dedup guarantee. Runtime reward/refund limits do not constrain
-independent operator signing through KMS. Public collection remains closed with
-no funded capacity after the one-slot test; the earlier enclave-only $50 remains unrecovered
+independent operator signing through KMS. That completed one-slot test allocation
+has no remaining capacity; the earlier enclave-only $50 remains unrecovered
 at this checkpoint and must be reconciled without discarding that live enclave.
 Release operators must exercise the signed paused signing preflight before any
 new funding at zero USDC: real Base RPC balances/nonce plus KMS one-minor-unit

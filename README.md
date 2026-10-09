@@ -9,10 +9,11 @@ your inference API key to grade its usefulness. Peer engineers turn accepted evi
 into Curator metadata and attestation transformers. You do not write a provider or
 open a contribution PR.
 
-**Status: unreleased; not accepting bank credentials or paid contributions.** A bank
+**Status: approved Wise release; a successful reservation is required.** A bank
 listing, a deployed host, or synthetic tests do not establish live availability.
 Only use an independently verified approved [release](transcripts/release.json)
-and an active, funded bank campaign.
+and a successful reservation in the enabled Wise campaign. Approval does not
+guarantee remaining capacity; other banks remain planned.
 
 [Website](https://link.peer.xyz) · [Contribution guide](CONTRIBUTING.md) ·
 [Campaign issues](https://github.com/zkp2p/peer-link/issues) · [Rewards](docs/incentives.md) ·
@@ -65,8 +66,8 @@ completed authenticated enclave reads, redaction and paid NEAR grading, followed
 by a [confirmed $5 payout](https://basescan.org/tx/0x88899fbe3b6036390f19207ec911493db6f1245ab1c50811c44ca2ee4752c677).
 The job first returned `payout_pending` and needed one signed operator reconciliation.
 A fresh client restored the same signed receipt without another reservation or
-submission. The one-slot experiment has no remaining funded capacity; public
-collection stays closed.
+submission. That completed one-slot test allocation has no remaining capacity;
+it does not establish availability in the separate durable campaign.
 The revised payout design uses a non-exportable AWS KMS signing key. Authorized
 operator IAM and the host signing broker can sign outside the enclave and recover
 funds; this is not exclusive enclave custody. The completed one-slot pilot
@@ -93,22 +94,31 @@ release approval remains a separate gate. The
 verified the fixed deployer return and zero remaining USDC with the relay stopped;
 it does not prove the enclave retirement flow.
 
-## Public launch candidate — in progress
+## Approved Wise release
 
-The next release is preparing [Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239)
-only: up to two distinct contributors at **$5 USDC per accepted transcript**,
-with a planned $10 budget reserved before admission. Other bank
-pages remain planned. No public job is available until the approved measured
-release, funded campaign and remaining capacity are independently verified.
+[Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239) is the first
+public launch scope: at most two distinct contributors, **$5 Base USDC per accepted
+transcript**, and an initial $10 allocation. Other banks remain planned. An
+operator-paid validation contribution counts toward the two-award limit; no static
+page guarantees remaining capacity. Verify the approved, unexpired release and
+obtain a successful reservation before collecting credentials or paying for inference.
 
-The v3 candidate is adding encrypted job/deduplication/payout snapshots and a
+The approved service is `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
+with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
+Fresh Nitro verification, authenticated Wise reads, ordinary NEAR grading, an
+automatic confirmed $5 payout and paid-job recovery after an enclave restart passed.
+Recovery preserved the signed receipt without another reservation, submission or
+model call. See the separately scoped
+[durable evidence](transcripts/durable-pilot-evidence.json) for verified scope and remaining limitations.
+
+The v3 release uses encrypted job/deduplication/payout snapshots and a
 version-fenced state authority. Restore stays paused for operator review and
 chain reconciliation; interrupted bank/model calls fail without a paid retry.
 Bank sessions and inference keys remain transient. Bank-upload ingress keys are
 fresh per boot and never persisted; only the separate receipt signer is encrypted
 in durable state. Later snapshot recovery cannot recover prior upload decryption
 keys. KMS administrators remain trusted for metadata/deduplication secrecy.
-These protections are still under verification; see the
+The Wise hardware and paid-job/restart scope was verified; see the
 [durable contract and release gates](docs/transcript-contributions-prd.md).
 
 ## Develop and inspect
@@ -131,7 +141,7 @@ Existing `banks/` adapters, fixtures and reports remain reference assets under
 MIT; their presence does not make them the paid contribution workflow.
 
 [PRD](docs/transcript-contributions-prd.md) · [Evidence](docs/evidence.md) ·
-[Verification](docs/verification.md) · [Operations](docs/transcript-operations.md) ·
+[Legacy verifier](docs/verification.md) · [Operations](docs/transcript-operations.md) ·
 [Developer docs](https://docs.peer.xyz/developer/peer-link) · [Security](SECURITY.md)
 
 ## Retired provider program

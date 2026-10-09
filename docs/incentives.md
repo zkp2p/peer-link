@@ -1,8 +1,9 @@
 # Transcript contribution rewards
 
-**The service is unreleased: no new transcript jobs or rewards are available yet.**
+**Wise has an approved release: successful reservation is required before secret input.**
 The [release manifest](../transcripts/release.json), independently verified release
-and active bank campaign control availability. A bank issue, logo, host deployment
+and a successful live reservation control admission. Approval and static issue
+text cannot guarantee remaining capacity. A bank issue, logo, host deployment
 or synthetic test does not prove acceptance is open.
 
 ## Campaign terms
@@ -62,8 +63,8 @@ recipient credit, final settlement or production approval.
 The architecture reward ceiling is **$50 USDC**, with separate bounded gas
 and no automatic refill. The completed supervised Wise experiment used a measured
 **$5 USDC budget** and one contributor slot after a confirmed $1 recovery test.
-That $5 reward was paid; **remaining funded public capacity is zero**. The current
-replacement enclave is paused and unfunded. Future campaigns must publish available
+That $5 reward was paid; **that completed test allocation has no remaining capacity**.
+The separate durable Wise release has its own initial allocation and verification. Future campaigns must publish available
 capacity and reserve their reward funds before accepting contributions. A budget
 ceiling or a planned per-transcript rate is not a funded award.
 
@@ -81,14 +82,16 @@ restore. Operator KMS recovery is a separate trust boundary. The earlier
 enclave-only pilot's funded $50 remains unrecovered at this checkpoint; new custody
 does not restore its old signing key.
 
-## Durable launch candidate
+## Approved Wise campaign
 
-The next release is preparing [Wise #239](https://github.com/zkp2p/peer-link/issues/239)
-only: up to two distinct contributors at $5 USDC each and a planned $10 campaign
-budget, reserved funds checked before admission. Other campaigns remain
-planned. Encrypted snapshots, attested KMS decryption and a version-fenced state
-authority are in progress; activation requires verified restart, deduplication and
-same-transaction reconciliation evidence. Public acceptance remains closed.
+[Wise #239](https://github.com/zkp2p/peer-link/issues/239) has an initial allocation
+of two $5 Base USDC awards ($10 total). An operator-paid validation contribution counts toward that limit. Other
+banks remain planned. No static page promises a remaining slot: obtain a successful
+reservation before sharing keys or paying for inference. The authenticated Wise
+job paid automatically, and the same signed receipt was recovered after restart
+without another submission or model call. See the separately scoped
+[durable evidence](../transcripts/durable-pilot-evidence.json); the older RAM-only
+pilot does not approve this release.
 
 ## Retired provider awards
 

@@ -7,11 +7,13 @@ bank campaign. The [PRD](docs/transcript-contributions-prd.md) describes the int
 product; the [release](transcripts/release.json) and actual verification evidence
 control availability.
 
-**Unreleased: no bank credentials or paid contributions are accepted yet.** An
+**Approved Wise release: a successful reservation is required before secret input.** An
 infrastructure deployment, synthetic fixture, legacy adapter or open bank issue
 cannot enable live collection. Independently verify a reviewed measured Nitro release,
-fresh attestation, encryption-key/policy bindings and the active source campaign
-before any encrypted submission. Never replace missing evidence with invented PCRs,
+fresh attestation, encryption-key/policy bindings and a successful funded reservation
+in the enabled Wise campaign before secret collection or any encrypted submission.
+Approval is not a capacity guarantee; other banks remain planned. Never replace
+missing evidence with invented PCRs,
 mock quotes or a server's `verified` flag.
 
 ## Contributor workflow
@@ -71,7 +73,8 @@ The completed pilot kept ledger, dedup/integrity keys and in-process artifacts R
 operator review; recoverable custody is not durable rollback-safe payment state or
 permission to reuse the funded wallet with a blank ledger.
 Keep admission disabled until measured-release, hardware, inference, bank, payout
-and funding gates pass. No automatic wallet refill or ledger recovery claim. Preserve
+and funding gates pass. No automatic wallet refill. The durable release has its own scoped recovery
+evidence below; the completed RAM-only pilot did not. Preserve
 the old funded enclave while its unrecovered $50 is reconciled; the new KMS key cannot
 recover the old enclave-only key.
 Before new funding, require the signed paused operator preflight to exercise real
@@ -81,7 +84,8 @@ sees the signature/digest and can reconstruct that fixed refund. A valid quote o
 The measured `pilotBudgetMinor` is the exact epoch budget, bounded from $5 to the
 $50 architecture maximum. The revised candidate used $5 after a separate confirmed
 $1 recovery test and capacity one for the Wise experiment. Its paid test consumed
-that slot/budget; no funded public capacity remains. Do not silently refill or
+that slot/budget; that completed test allocation has no remaining capacity.
+Do not silently refill or
 fund the architecture maximum.
 The signed operator retirement action irreversibly closes admission, cancels unused
 reservations, finishes existing obligations and archives them before the fixed
@@ -103,13 +107,22 @@ expired/replayed jobs, privacy/model mismatch, malformed grading, private-data l
 duplicate accounts, capacity/budget races and payout reconciliation. Distinguish
 synthetic tests from real hardware, inference, owner-authorized bank and payment evidence.
 
-## Public launch candidate — in progress
+## Approved Wise release
 
-The next release is preparing [Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239)
-only: up to two distinct contributors at **$5 USDC per accepted transcript**,
-with a planned $10 budget reserved before admission. Other bank
-pages remain planned. No public job is available until the approved measured
-release, funded campaign and remaining capacity are independently verified.
+[Wise campaign #239](https://github.com/zkp2p/peer-link/issues/239) is the first
+public launch scope: at most two distinct contributors, **$5 Base USDC per accepted
+transcript**, and an initial $10 allocation. Other banks remain planned. An
+operator-paid validation contribution counts toward the two-award limit; no static
+page guarantees remaining capacity. Verify the approved, unexpired release and
+obtain a successful reservation before collecting credentials or paying for inference.
+
+The approved service is `https://9lb70whku9.execute-api.us-east-1.amazonaws.com`,
+with measured source `629b8798fe4181a1d8e7d52fb3ad0c85d1339c7e`.
+Fresh Nitro verification, authenticated Wise reads, ordinary NEAR grading, an
+automatic confirmed $5 payout and paid-job recovery after an enclave restart passed.
+Recovery preserved the signed receipt without another reservation, submission or
+model call. See the separately scoped
+[durable evidence](transcripts/durable-pilot-evidence.json) for verified scope and remaining limitations.
 
 The v3 design encrypts canonical SQLite state snapshots under AES-GCM, with an
 immutable AWS Lambda/DynamoDB compare-and-swap authority. Descriptor v3 binds
@@ -134,8 +147,8 @@ separate receipt signer is encrypted in durable state. Later snapshot recovery
 cannot recover old bank-upload decryption keys. KMS administrators remain trusted
 for encrypted metadata/deduplication secrecy, and cloud availability remains a
 trust boundary; missing, mismatched or unavailable state must
-stop admission. These protections are under implementation and verification, not
-approved public availability.
+stop admission. Release-specific hardware and paid-job/restart verification passed for Wise;
+other bank adapters and confidential inference require separate approval.
 
 ## Commands and layout
 

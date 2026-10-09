@@ -111,12 +111,16 @@ function render(providers: Provider[], catalogUnavailable = false) {
     card.className = "integration-tile";
     card.href = integration.href;
     const place = countryNames.of(integration.country) ?? integration.country;
+    const isWiseCampaign = integration.href === "https://github.com/zkp2p/peer-link/issues/239";
+    const rewardDescription = isWiseCampaign
+      ? "$5 per accepted transcript. Release approval and a successful reservation are required; availability can change."
+      : `Planned $${integration.bounty} per accepted transcript. View the campaign issue for availability.`;
     card.setAttribute(
       "aria-label",
       integration.hasAdapter
         ? `${integration.name}, ${place}. View experimental adapter.`
         : integration.bounty
-          ? `${integration.name}, ${place}. Planned $${integration.bounty} per accepted transcript. View the campaign issue for availability.`
+          ? `${integration.name}, ${place}. ${rewardDescription}`
           : `${integration.name}, ${place}. View bank integration discussion.`,
     );
     const logo = document.createElement("span");
@@ -147,7 +151,7 @@ function render(providers: Provider[], catalogUnavailable = false) {
       tag.className = "bounty-tag";
       tag.setAttribute("aria-hidden", "true");
       tag.textContent = `$${integration.bounty}`;
-      card.title = `Planned $${integration.bounty} per accepted transcript. Availability is on the issue.`;
+      card.title = rewardDescription;
       card.append(tag);
     }
     list.append(card);

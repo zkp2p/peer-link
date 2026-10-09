@@ -2,8 +2,8 @@
 
 PeerLink collects authenticated banking transcripts from account owners. Users do
 not write a provider, open a PR, or claim a Merit bounty. Peer builds the integration
-from accepted structural evidence. **Public collection is paused and has no funded
-reward slots.**
+from accepted structural evidence. **Wise has an approved transcript release; other
+banks remain planned.** A successful live reservation is required before secret input.
 
 ## Campaign pages and amounts
 
@@ -15,7 +15,7 @@ account/contributor at its published fixed rate:
 - **$10 USDC per accepted transcript:** Chase, Bank of America and Wells Fargo.
 - **$5 USDC per accepted transcript:** the other currently listed bank campaigns.
 
-These are planned rates, not funded offers. An approved release, demonstrated bank
+Wise has an initial two-award allocation; other listed rates remain planned. An approved release, demonstrated bank
 source, available slot and reserved reward are required before a submission. Read
 [reward terms](incentives.md) and the [contribution skill](../skills/contribute-transcript/SKILL.md).
 
@@ -24,12 +24,14 @@ read-only history source, and useful gaps in schema or transaction-type coverage
 A bank's logo, a legacy adapter or a public campaign page does not establish live
 support. No bank-specific conversion or settled-volume ranking is claimed here.
 
-## Next release scope
+## Approved release scope
 
-Prepare verified, funded [Wise #239](https://github.com/zkp2p/peer-link/issues/239)
-collection first: at most two distinct contributors at $5 each, with a planned
-$10 campaign budget. This remains a launch candidate, not an open offer. Other bank pages
-are planned until their source and release gates pass.
+[Wise #239](https://github.com/zkp2p/peer-link/issues/239) is the first approved
+collection: at most two distinct contributors at $5 each, with an initial $10
+allocation. The authorized paid validation counts toward that limit. Check the
+[release evidence](../transcripts/durable-pilot-evidence.json) and reserve a funded
+slot; a bank page does not guarantee availability. Other banks remain planned
+until their source and release gates pass.
 
 ## Merit and legacy work
 

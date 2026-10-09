@@ -9,14 +9,21 @@
 - Agent instructions: https://github.com/zkp2p/peer-link/blob/main/AGENTS.md
 - Privacy rules: https://github.com/zkp2p/peer-link/blob/main/docs/privacy.md
 - Reward terms: https://github.com/zkp2p/peer-link/blob/main/docs/incentives.md
-- Campaign index (one issue per bank; each issue states reward, open slots and status): https://github.com/zkp2p/peer-link/issues/64
+- Campaign index (one issue per bank; each issue states reward, terms and status): https://github.com/zkp2p/peer-link/issues/64
 - Propose a bank: https://github.com/zkp2p/peer-link/issues/new?template=bank-request.md
 - Machine discovery: https://link.peer.xyz/.well-known/peer-link.json
 - Integration catalog: https://link.peer.xyz/catalog.json
 
 ## Status
 
-Public transcript submission is in development; no public campaign is open or funded. The next verified durable-state release is preparing Wise only, up to two $5 contributions. All other banks remain planned. Rewards shown on the website are planned rates. A bank is open only when its own issue says so; the issue and the machine discovery file override this page.
+Wise #239 has the first approved transcript release: $5 Base USDC per accepted contribution,
+at most two contributors and an initial $10 allocation. Release-specific Nitro,
+automatic payout and paid-job recovery after restart passed. Other banks remain planned. The operator-paid
+validation contribution counts toward the two-award limit. Independently pin the
+approved release, verify fresh attestation and obtain a successful reservation
+before collecting credentials or spending on inference. Static copy cannot promise
+remaining capacity. The pinned release controls verification, published campaign
+terms control eligibility, and the service reservation controls admission.
 
 ## Rewards
 
