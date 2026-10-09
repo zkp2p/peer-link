@@ -87,6 +87,10 @@ class ProviderClient:
         require(remaining > 0, "request_timeout")
         payload = {"model": self.model, "messages": messages, "max_tokens": output_limit,
                    "temperature": 0, "stream": False}
+        if self.provider == "near":
+            # GLM always reasons; bound the requested effort inside the same
+            # contributor-approved completion budget, without adding a retry.
+            payload["chat_template_kwargs"] = {"reasoning_effort": "low"}
         if self.provider in {"openai", "openrouter", "near"}:
             payload["response_format"] = {"type": "json_schema", "json_schema": {"name": "peerlink_grade", "strict": True,
                 "schema": {"type": "object", "additionalProperties": False,

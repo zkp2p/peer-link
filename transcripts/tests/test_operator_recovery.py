@@ -167,7 +167,7 @@ class AWSExchangeTests(unittest.TestCase):
     def test_fixed_profile_region_get_public_key_and_digest_mode(self):
         calls=[];broker=SyntheticBroker()
         def run(args,**kwargs):
-            calls.append((args,kwargs));payload=json.loads(kwargs['input'])
+            calls.append((args,kwargs));payload=json.loads(args[args.index('--cli-input-json')+1])
             if 'get-public-key' in args:
                 result={'KeyId':KEY_ID,'PublicKey':b64(PUBLIC_DER),'KeySpec':'ECC_SECG_P256K1',
                         'KeyUsage':'SIGN_VERIFY','SigningAlgorithms':['ECDSA_SHA_256']}
@@ -182,7 +182,9 @@ class AWSExchangeTests(unittest.TestCase):
         self.assertEqual(Account.recover_transaction(result.raw_transaction),WALLET)
         for args,kwargs in calls:
             self.assertEqual(args[:5],['aws','--profile','peer','--region','us-east-1'])
-            self.assertIn('file:///dev/stdin',args)
+            self.assertNotIn('file:///dev/stdin',args)
+            self.assertNotIn('input',kwargs)
+            self.assertIsInstance(json.loads(args[args.index('--cli-input-json')+1]),dict)
             self.assertEqual(kwargs['timeout'],30)
 
     def test_wrong_metadata_and_aws_errors_fail_without_secret_details(self):

@@ -54,8 +54,10 @@ class AWSKMSExchange:
     def _call(self, operation, payload):
         try:
             result=self._run(['aws','--profile','peer','--region','us-east-1','kms',operation,
-                              '--cli-input-json','file:///dev/stdin','--cli-binary-format','base64','--output','json'],
-                             input=canonical(payload).decode(),text=True,capture_output=True,timeout=30,check=False)
+                              # Only public ARN/digest material is supplied here.
+                              # macOS AWS CLI can reject file:///dev/stdin JSON.
+                              '--cli-input-json',canonical(payload).decode(),'--cli-binary-format','base64','--output','json'],
+                             text=True,capture_output=True,timeout=30,check=False)
             require(result.returncode==0,'kms_broker_unavailable')
             return strict_json(result.stdout.encode(),8192)
         except Rejected:raise

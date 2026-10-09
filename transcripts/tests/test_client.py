@@ -103,6 +103,12 @@ class ClientTests(unittest.TestCase):
         with self.assertRaisesRegex(Rejected,'release_not_approved'):
             Client(None,{'status':'unreleased','serviceUrl':None,'expiresAt':0},self.policy)
 
+    def test_reservation_binds_default_completion_budget_without_extra_calls(self):
+        self.contribute()
+        self.assertEqual(self.reservation['limits'],{'maxCalls':1,'maxInputTokens':50000,
+                         'maxOutputTokens':2048,'maxBankReads':10,'deadlineSeconds':120})
+        self.assertEqual(self.client.job['request']['limits'],self.reservation['limits'])
+
     def test_fixed_http_errors_preserved_without_raw_error_text(self):
         client=Client(self.release['serviceUrl'],self.release,self.policy)
         for code,expected in [('campaign_capacity','campaign_capacity'),('budget_exhausted','budget_exhausted'),
@@ -155,7 +161,8 @@ class ClientTests(unittest.TestCase):
         self.contribute();self.receipt_record=self.record()
         signed=self.client.receipt(self.client.job['jobId']);self.assertEqual(signed['payload']['job']['state'],'paid')
         modifications=[('job','bindingDigest','f'*64),('job','artifactDigest','f'*64),
-                       ('job','payoutAddress','0x'+'2'*40),('inference','outputTokens',513),
+                       ('job','payoutAddress','0x'+'2'*40),
+                       ('inference','outputTokens',self.reservation['limits']['maxOutputTokens']+1),
                        ('inference','responseDigest','f'*64),('modelResult','privateProse','SYNTHETIC-PRIVATE')]
         for section,field,value in modifications:
             with self.subTest(field=field):

@@ -24,7 +24,7 @@ SAFE_ERRORS = {'campaign_capacity','budget_exhausted','duplicate_recipient','dup
 JOB_FIELDS = {'jobId','campaignId','state','bindingDigest','expiresAt','rewardMinor','payoutAddress',
               'reason','artifactDigest','transactionId'}
 STATE_FIELDS = {'version','jobId','campaignId','request','bindingDigest','epoch','publicKey','releaseDigest','policyDigest'}
-DEFAULT_LIMITS = {'maxCalls':1,'maxInputTokens':50000,'maxOutputTokens':512,'maxBankReads':10,'deadlineSeconds':120}
+DEFAULT_LIMITS = {'maxCalls':1,'maxInputTokens':50000,'maxOutputTokens':2048,'maxBankReads':10,'deadlineSeconds':120}
 
 def safe_failure(body):
     try:
