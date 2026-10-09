@@ -22,6 +22,8 @@ SAFE_ERRORS = {'campaign_capacity','budget_exhausted','duplicate_recipient','dup
                'unsafe_artifact','cancelled','consent_required','account_evidence_missing','ambiguous_account',
                'policy_mismatch','stale_evidence','limits_exceeded','invalid_envelope','expired_or_replayed_challenge',
                'interrupted_execution','state_capacity'}
+from .acquisition import SOURCE_FAILURES
+SAFE_ERRORS.update(SOURCE_FAILURES)
 JOB_FIELDS = {'jobId','campaignId','state','bindingDigest','expiresAt','rewardMinor','payoutAddress',
               'reason','artifactDigest','transactionId'}
 STATE_FIELDS = {'version','jobId','campaignId','request','bindingDigest','epoch','publicKey','releaseDigest','policyDigest'}
@@ -40,6 +42,12 @@ def safe_failure(body):
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args,**kwargs):return None
+
+def campaign_limits(campaign):
+    limits=DEFAULT_LIMITS.copy()
+    if 'sourceDescriptor' in campaign:limits['maxBankReads']=campaign['sourceDescriptor']['maxReads']
+    return limits
+
 
 class Client:
     def __init__(self,service,release,policy):
@@ -105,7 +113,7 @@ class Client:
         now=int(time.time())
         request={'version':1,'campaignId':campaign_id,'payoutAddress':payout,'provider':provider,'model':model,
                  'privacyMode':privacy,'consent':True,'policyDigest':digest(campaign),'expiresAt':now+600,
-                 'limits':DEFAULT_LIMITS.copy()}
+                 'limits':campaign_limits(campaign)}
         validate_reservation(campaign,request,now)
         status=self.call('/v1/reservations',request)
         fields(status,JOB_FIELDS)

@@ -75,12 +75,35 @@ def tunnel_socket(host, port=443, timeout=15):
         raise
 
 
+def bank_status_error(status):
+    if status in (401,403): return "bank_http_unauthorized"
+    if 300<=status<400:return "bank_http_redirect"
+    if 400<=status<500:return "bank_http_client_error"
+    if 500<=status<600:return "bank_http_server_error"
+    return "bank_http_unexpected_status"
+
+
 class HTTPTransport:
     def __init__(self, mode="vsock"):
         require(mode in {"direct", "vsock"}, "invalid_transport")
         self.mode = mode
 
     def request(self, method, url, *, headers=None, body=None, timeout=15, max_bytes=MAX_RESPONSE):
+        return self._request(method,url,headers=headers,body=body,timeout=timeout,max_bytes=max_bytes)
+
+    def request_bank(self,url,*,headers,timeout=15,max_bytes=MAX_RESPONSE):
+        return self._request("GET",url,headers=headers,timeout=timeout,max_bytes=max_bytes,bank_status_codes=True)
+
+    def probe_authentication(self,url,*,timeout=15,invalid_credential=False):
+        """Status-only anonymous GET: never read, retain or return an error body."""
+        require(type(invalid_credential) is bool,"invalid_submission")
+        headers={"Accept":"application/json"}
+        # Public, deliberately invalid test value; never a contributor credential.
+        invalid_probe_token="peerlink-deliberately-invalid-token-v1"
+        if invalid_credential:headers["Authorization"]="Bearer "+invalid_probe_token
+        return self._request("GET",url,headers=headers,timeout=timeout,authentication_probe=True)
+
+    def _request(self, method, url, *, headers=None, body=None, timeout=15, max_bytes=MAX_RESPONSE, authentication_probe=False, bank_status_codes=False):
         require(method in {"GET", "POST"}, "unsafe_method")
         integer(max_bytes, 1, MAX_RESPONSE, "response_limits")
         require(type(timeout) in (int, float) and 0 < timeout <= 300, "request_timeout")
@@ -128,10 +151,14 @@ class HTTPTransport:
                 connection.request(method, parsed.path + ("?" + parsed.query if parsed.query else ""),
                                    body=body, headers=headers)
                 response = connection.getresponse()
-                require(200 <= response.status < 300, "http_request_failed")  # Redirects never followed.
                 response_headers = tuple((name.lower(), value) for name, value in response.getheaders())
                 require(len(response_headers) <= 50 and sum(len(k) + len(v) for k, v in response_headers) <= 16384,
                         "response_headers_size")
+                if authentication_probe:
+                    require(response.status == 401, "unauthenticated_source")
+                    # No body/content-type assumption or error headers cross this boundary.
+                    return HTTPResponse(401,b"",())
+                require(200 <= response.status < 300, bank_status_error(response.status) if bank_status_codes else "http_request_failed")  # Redirects never followed.
                 content_types = [v for k, v in response_headers if k == "content-type"]
                 require(len(content_types) == 1 and (content_types[0].split(";")[0].strip().lower() == "application/json"
                         or content_types[0].split(";")[0].strip().lower().endswith("+json")
@@ -173,11 +200,17 @@ def json_response(response, maximum=MAX_RESPONSE):
 
 
 class BankClient:
-    """Only Wise has an authenticated account-identity adapter in this pilot.
+    """Factory for reviewed descriptors and the internal Wise identity adapter.
 
     credential is {origin, kind: bearer|cookie, value}. profile_id selects a
     profile but is never evidence of ownership: /v1/profiles proves membership.
     """
+    def __new__(cls,campaign,*args,**kwargs):
+        if "sourceDescriptor" in campaign:
+            from .acquisition import DescriptorBankClient
+            return DescriptorBankClient(campaign,*args,**kwargs)
+        return super().__new__(cls)
+
     def __init__(self, campaign, credential, transport=None, *, profile_id=None, max_reads=20, timeout=15):
         validate_campaign(campaign)
         fields(credential, {"origin", "kind", "value"})

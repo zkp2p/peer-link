@@ -27,8 +27,12 @@ mock quotes or a server's `verified` flag.
   Local captures guide navigation; only fresh enclave-acquired bank responses prove
   source acquisition. Submitted account IDs do not establish ownership.
 - The enclave checks exact approved origins, paths and GET reads, TLS, authenticated
-  account identity, limits and expiry. Generic banks stay in source review until their
-  identity/source adapter has demonstrated safe live acquisition.
+  account identity, limits and expiry. Generic sources stay planned unless their
+  exact source configuration, identity checks and measured release are approved.
+  An explicitly designated first-contributor source-validation campaign may obtain
+  its first positive live acquisition from the consenting contributor. That is not
+  prior live validation or a completed Peer integration; see
+  [the Mercury candidate](docs/source-validation.md).
 - Deterministic extraction removes private values **before model grading**. The
   implemented ordinary provider-visible mode sends only validated structural artifacts
   and requires explicit consent. Provider privacy is separate from Peer enclave privacy.
@@ -148,8 +152,10 @@ cannot recover old bank-upload decryption keys. KMS administrators remain truste
 for encrypted metadata/deduplication secrecy, and cloud availability remains a
 trust boundary; missing, mismatched or unavailable state must
 stop admission. Hardware and paid-job/restart verification passed for the internal Wise test.
-Public incentives need a separately verified non-Wise source and release approval;
-confidential inference remains unavailable.
+Public incentives need a reviewed non-Wise source and measured release approval.
+The Mercury candidate is explicitly first-contributor source validation: its positive
+live acquisition remains unverified until a contributor completes that flow.
+Confidential inference remains unavailable.
 
 ## Commands and layout
 

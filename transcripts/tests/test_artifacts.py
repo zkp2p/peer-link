@@ -30,7 +30,14 @@ def kms_policy(campaign, wallet='0x'+'2'*40):
 
 class ArtifactTests(unittest.TestCase):
     def setUp(self):
-        self.campaign=json.loads((Path(__file__).parents[1]/'policy.json').read_text())['campaigns'][0]
+        from transcripts.tests.test_transport import wise_policy
+        self.campaign=wise_policy()
+        self.campaign['sources'][0]['headerNames']=['Content-Type']
+        self.campaign['safeSchemaFields'] += ['date','referenceNumber','exchangeDetails','forAmount','value','rate',
+            'details','merchant','category','senderAccount','sourceAmount','targetAmount','endOfStatementBalance',
+            'query','accountId','intervalStart','intervalEnd','issuer','bankDetails','accountHolder','firstName','lastName']
+        self.campaign['evidenceRequirements']['requiredFields']=['type','date','referenceNumber']
+        self.campaign['safeSchemaFields'] += ['type']
         self.profile=9100001;self.balance=9200002;self.job='a'*32
 
     def reads(self):

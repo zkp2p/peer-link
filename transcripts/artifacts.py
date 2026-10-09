@@ -10,6 +10,20 @@ from .policy import validate_campaign
 ARTIFACT_FIELDS = {"version", "campaignId", "bankId", "sourceOrigins", "endpoints", "relationships", "toolFlow", "coverage", "limitations"}
 TYPES = {"null", "boolean", "integer", "number", "string", "object", "array"}
 LIMITATIONS = {"account_duplicates_only", "schema_only", "no_payment_authenticity_claim"}
+def artifact_limitations(campaign):
+    if "sourceDescriptor" in campaign:
+        return {"organization_duplicates_only", "no_human_identity_claim", "schema_only", "no_payment_authenticity_claim", "one_page_history_only", "first_contributor_source_validation"}
+    return LIMITATIONS
+
+
+def descriptor_binding(campaign):
+    d=campaign["sourceDescriptor"]
+    return {"origin":d["origin"], "listPath":d["accountsPath"], "detailPath":d["historyPath"],
+            "relation":"authenticated_path_parameter",
+            "sourceField":"$"+"".join("."+part for part in d["accountsListPath"])+"[]."+d["accountIdField"],
+            "parameter":"accountId", "placeholder":1}
+
+
 WISE_ORIGIN = "https://api.wise.com"
 WISE_PROFILES = "/v1/profiles"
 WISE_BALANCES = "/v4/profiles/{id}/balances"
@@ -120,6 +134,9 @@ def _schema(value, safe_fields, output, path="$", depth=0, counter=None):
 def extract_artifact(campaign, reads):
     validate_campaign(campaign)
     require(isinstance(reads, list) and bool(reads) and all(type(read) is LiveRead for read in reads), "untrusted_evidence")
+    if "sourceDescriptor" in campaign:
+        from .acquisition import validate_evidence
+        validate_evidence(campaign, reads)
     endpoints = {}
     origins = set()
     for read in reads:
@@ -146,6 +163,8 @@ def extract_artifact(campaign, reads):
                 relationships.append({"origin": first["origin"], "listPath": first["path"],
                                       "detailPath": second["path"], "relation": "list_detail"})
     relationships.extend(_wise_relationships(campaign, reads))
+    if "sourceDescriptor" in campaign:
+        relationships.append(descriptor_binding(campaign))
     tool_flow = []
     for index, read in enumerate(reads):
         source, template, _ = permitted_endpoint(campaign, read.url, read.method)
@@ -158,7 +177,7 @@ def extract_artifact(campaign, reads):
                 "sourceOrigins": sorted(origins), "endpoints": normalized,
                 "relationships": relationships, "toolFlow": tool_flow,
                 "coverage": {"readCount": len(reads), "historyMinimumSatisfied": True},
-                "limitations": sorted(LIMITATIONS)}
+                "limitations": sorted(artifact_limitations(campaign))}
     validate_artifact(campaign, artifact)
     return artifact
 
@@ -192,10 +211,12 @@ def validate_artifact(campaign, artifact):
         require(isinstance(relationship, dict), "unsafe_artifact")
         if relationship.get("relation") == "authenticated_path_parameter":
             fields(relationship, {"origin", "listPath", "detailPath", "relation", "sourceField", "parameter", "placeholder"})
-            require(type(relationship["placeholder"]) is int and relationship in WISE_PATH_BINDINGS, "unsafe_artifact")
+            allowed_bindings = (descriptor_binding(campaign),) if "sourceDescriptor" in campaign else WISE_PATH_BINDINGS
+            require(type(relationship["placeholder"]) is int and relationship in allowed_bindings, "unsafe_artifact")
+            identity_type = "string" if "sourceDescriptor" in campaign else "integer"
             require(any(endpoint["origin"] == relationship["origin"] and endpoint["path"] == relationship["listPath"]
                         and endpoint["method"] == "GET" and any(field["path"] == relationship["sourceField"]
-                            and "integer" in field["types"] for field in endpoint["fields"])
+                            and identity_type in field["types"] for field in endpoint["fields"])
                         for endpoint in artifact["endpoints"]), "unsafe_artifact")
         else:
             fields(relationship, {"origin", "listPath", "detailPath", "relation"})
@@ -215,7 +236,7 @@ def validate_artifact(campaign, artifact):
     integer(artifact["coverage"]["readCount"], 1, 20, "unsafe_artifact")
     require(artifact["coverage"]["readCount"] == len(artifact["toolFlow"]), "unsafe_artifact")
     require(artifact["coverage"]["historyMinimumSatisfied"] is True, "unsafe_artifact")
-    require(isinstance(artifact["limitations"], list) and set(artifact["limitations"]) == LIMITATIONS, "unsafe_artifact")
+    require(isinstance(artifact["limitations"], list) and set(artifact["limitations"]) == artifact_limitations(campaign), "unsafe_artifact")
     require(len(canonical(artifact)) <= 1_000_000, "unsafe_artifact")
     return artifact
 

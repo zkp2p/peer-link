@@ -16,7 +16,7 @@ COPY verification/trust/aws-nitro-root.pem /opt/peer-link/verification/trust/aws
 # Exact enclave import closure. Never copy release.json: its PCR manifest is
 # independently pinned discovery metadata and cannot recursively measure itself.
 # Host relay/client/CLI, tests, infrastructure configs and local caches stay out.
-COPY transcripts/__init__.py transcripts/artifacts.py transcripts/aws_state.py transcripts/channel.py \
+COPY transcripts/__init__.py transcripts/acquisition.py transcripts/artifacts.py transcripts/aws_state.py transcripts/channel.py \
     transcripts/common.py transcripts/epoch.py transcripts/eth_payout.py \
     transcripts/ledger.py transcripts/kms_signer.py transcripts/payout.py transcripts/policy.py \
     transcripts/providers.py transcripts/recipe.py transcripts/runtime.py \

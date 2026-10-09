@@ -235,13 +235,13 @@ class ClientTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             release=Path(directory)/'release.json'
             release.write_text(json.dumps({**self.release,'status':'unreleased'}))
-            with patch('sys.argv',['transcripts.cli','terms','--release',str(release),'--campaign','wise-api-public-v1',
+            with patch('sys.argv',['transcripts.cli','terms','--release',str(release),'--campaign',json.loads((Path(__file__).parents[1]/'policy.json').read_text())['campaigns'][0]['id'],
                                   '--provider','openrouter','--model','openai/gpt-4o-mini-2024-07-18']),\
                     patch('transcripts.cli.Client') as client,patch('transcripts.cli.getpass.getpass') as secret,redirect_stdout(output):
                 main()
         result=json.loads(output.getvalue())
         self.assertFalse(result['accepting']);self.assertEqual(result['reason'],'release_not_approved')
-        self.assertEqual(result['rewardUSDC'],5);self.assertEqual(result['provider'],'openrouter')
+        self.assertEqual(result['rewardUSDC'],json.loads((Path(__file__).parents[1]/'policy.json').read_text())['campaigns'][0]['rewardMinor']//1000000);self.assertEqual(result['provider'],'openrouter')
         self.assertEqual(result['upstream'],'OpenAI');self.assertEqual(result['privacyMode'],'provider_visible')
         self.assertEqual(result['payout']['chainId'],8453)
         self.assertEqual(result['payout']['contract'],'0x833589fcd6edb6e08f4c7c32d4f71b54bda02913')

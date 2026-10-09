@@ -77,7 +77,7 @@ class Runtime:
         if self.durable:
             authorization=self.ledger.runtime_state().get('fundingPreflight')
             if authorization is not None:
-                fields(authorization,{'descriptorDigest','nonce'})
+                self.validate_funding_authorization(authorization)
                 self.funding_preflight=authorization['descriptorDigest'];self.funding_preflight_nonce=authorization['nonce']
         self.rpc=RPC(policy['payoutRpc'],transport)
         self.payment=BaseUSDCPayoutTransport(epoch,self.rpc,pinned_rpc_url=policy['payoutRpc'])
@@ -194,6 +194,17 @@ class Runtime:
             require(body['jobId'] in self.receipts,'receipt_unavailable');return self.receipts[body['jobId']]
         raise Rejected('route_not_found')
 
+    def validate_funding_authorization(self,authorization):
+        from .acquisition import validate_descriptor
+        expected=[]
+        for campaign in self.policy['campaigns']:
+            if 'sourceDescriptor' in campaign:
+                expected.append({'descriptorDigest':digest(validate_descriptor(campaign)),
+                                 'anonymousStatus':401,'invalidCredentialStatus':401})
+        require(len(expected)<=1,'source_review_required')
+        fields(authorization,{'descriptorDigest','nonce'} | ({'sourceChecks'} if expected else set()))
+        if expected:require(authorization['sourceChecks']==expected,'funding_preflight_required')
+
     def operator(self,body):
         fields(body,{'payload','signature'});value=body['payload']
         fields(value,{'action','epochId','wallet','nonce','expiresAt'})
@@ -213,11 +224,19 @@ class Runtime:
                 nonce=int(self.rpc.call('eth_getTransactionCount',[self.epoch.wallet,'pending']),16)
                 if self.durable:self.payment.check_continuity()
                 probe=self.epoch.check_payout_signing(nonce)
+                source_checks=[]
+                require(sum('sourceDescriptor' in campaign for campaign in self.policy['campaigns'])<=1,'source_review_required')
+                from .acquisition import negative_source_checks
+                for campaign in self.policy['campaigns']:
+                    if 'sourceDescriptor' in campaign:source_checks.append(negative_source_checks(campaign,self.transport))
                 descriptor=digest(self.epoch.public_descriptor())
-                if self.durable:self.ledger.update_runtime({'fundingPreflight':{'descriptorDigest':descriptor,'nonce':nonce}})
+                authorization={'descriptorDigest':descriptor,'nonce':nonce}
+                if source_checks:authorization['sourceChecks']=source_checks
+                if self.durable:self.ledger.update_runtime({'fundingPreflight':authorization})
                 self.funding_preflight=descriptor;self.funding_preflight_nonce=nonce
                 return {'health':self.dispatch('health',{}),'preflight':{
-                    **probe,'usdcBalanceMinor':usdc,'gasBalanceWei':gas,'pendingNonce':nonce}}
+                    **probe,'usdcBalanceMinor':usdc,'gasBalanceWei':gas,'pendingNonce':nonce,
+                    **({'sourceChecks':source_checks} if source_checks else {})}}
             if value['action']=='pause':self.epoch.pause()
             elif value['action']=='resume':
                 if self.durable:self.restore_funding_gate()
@@ -231,7 +250,9 @@ class Runtime:
             else:
                 if self.durable:
                     authorization=self.ledger.runtime_state().get('fundingPreflight')
-                    require(authorization is not None and authorization['descriptorDigest']==digest(self.epoch.public_descriptor()),'funding_preflight_required')
+                    require(authorization is not None,'funding_preflight_required')
+                    self.validate_funding_authorization(authorization)
+                    require(authorization['descriptorDigest']==digest(self.epoch.public_descriptor()),'funding_preflight_required')
                     self.funding_preflight=authorization['descriptorDigest'];self.funding_preflight_nonce=authorization['nonce']
                     self.payment.check_continuity()
                     require(all(int(self.rpc.call('eth_getTransactionCount',[self.epoch.wallet,tag]),16)==self.funding_preflight_nonce
@@ -343,6 +364,7 @@ class Runtime:
             if self.durable:
                 from .aws_state import MAX_RECORD
                 require(len(canonical(artifact))<=MAX_RECORD-8192,'unsafe_artifact')
+            if self.durable or 'sourceDescriptor' in campaign:
                 phase='state'
                 self.ledger.check_account(job_id,reads,dedup_key=self.epoch._dedup_key,now=int(time.time()))
                 phase='payout_preflight'

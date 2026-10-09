@@ -24,6 +24,7 @@ class LiveRead:
     authenticated: bool
     tls_verified: bool
     response_headers: tuple = ()
+    authentication_gate: bool = False
 
     def __repr__(self):
         # URLs, bodies and authenticated identifiers remain private even when an
@@ -59,6 +60,9 @@ def permitted_endpoint(campaign, url, method):
 
 def validate_recipe(campaign, recipe, max_reads=20):
     validate_campaign(campaign)
+    if "sourceDescriptor" in campaign:
+        from .acquisition import validate_hints
+        return validate_hints(campaign, recipe, max_reads)
     fields(recipe, {"version", "reads"})
     require(recipe["version"] == 1, "recipe_version")
     require(isinstance(recipe["reads"], list) and 1 <= len(recipe["reads"]) <= max_reads, "recipe_limits")
@@ -84,6 +88,9 @@ def validate_live_reads(campaign, reads, job_id, submitted_at, now, max_reads=20
         require(len(canonical(read.body)) <= 2_000_000, "evidence_size")
         account_ids.add(read.account_id)
     require(len(account_ids) == 1, "ambiguous_account")
+    if "sourceDescriptor" in campaign:
+        from .acquisition import validate_evidence
+        return validate_evidence(campaign, reads)
     return next(iter(account_ids))
 
 

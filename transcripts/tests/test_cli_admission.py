@@ -39,7 +39,7 @@ class CliAdmissionTests(unittest.TestCase):
             self.assertEqual(value['inferenceKey'],'SYNTHETIC-INFERENCE')
             events.append('submit');return {'state':'unverified'}
         client.submit_reserved.side_effect=submit
-        argv=['transcripts.cli','contribute','--campaign','wise-api-public-v1',
+        argv=['transcripts.cli','contribute','--campaign',json.loads((Path(__file__).parents[1]/'policy.json').read_text())['campaigns'][0]['id'],
               '--payout','0x'+'1'*40,'--provider','near','--model','z-ai/glm-5.3-flash',
               '--consent','--prompt-secrets','--state',str(state_path)]
         output=io.StringIO()
@@ -82,7 +82,7 @@ class CliReservedTests(unittest.TestCase):
         from transcripts.client import DEFAULT_LIMITS
         from transcripts.common import canonical
         clock=2000
-        state={'version':2,'jobId':'a'*32,'bindingDigest':'b'*64,'campaignId':'wise-api-public-v1',
+        state={'version':2,'jobId':'a'*32,'bindingDigest':'b'*64,'campaignId':json.loads((Path(__file__).parents[1]/'policy.json').read_text())['campaigns'][0]['id'],
                'request':{'expiresAt':clock-1 if expired else clock+60,'payoutAddress':'0x'+'2'*40,
                           'provider':'near','model':'z-ai/glm-5.3-flash','privacyMode':'provider_visible',
                           'limits':DEFAULT_LIMITS.copy()}}
@@ -124,7 +124,7 @@ class CliReservedTests(unittest.TestCase):
         client.restore.assert_called_once_with(state);client.submit_reserved.assert_called_once()
         preview=json.loads(output.splitlines()[0])
         self.assertEqual(preview['payoutAddress'],state['request']['payoutAddress'])
-        self.assertEqual(preview['model'],state['request']['model']);self.assertEqual(preview['rewardMinor'],5_000_000)
+        self.assertEqual(preview['model'],state['request']['model']);self.assertEqual(preview['rewardMinor'],json.loads((Path(__file__).parents[1]/'policy.json').read_text())['campaigns'][0]['rewardMinor'])
 
     def test_nonreserved_jobs_reject_before_read_or_prompt(self):
         for status in ('submitted','verifying','accepted','payout_pending','paid','rejected','expired','cancelled'):

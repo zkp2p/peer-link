@@ -25,6 +25,8 @@ REASONS = {"insufficient_evidence", "insufficient_history", "duplicate_account",
            "invalid_submission", "consent_required", "account_evidence_missing", "ambiguous_account",
            "policy_mismatch", "stale_evidence", "limits_exceeded", "storage_unavailable"}
 REASONS.add("interrupted_execution")
+from .acquisition import SOURCE_FAILURES
+REASONS.update(SOURCE_FAILURES)
 
 
 def _locked(method):

@@ -11,6 +11,7 @@
 !verification/trust/aws-nitro-root.pem
 !transcripts/
 !transcripts/__init__.py
+!transcripts/acquisition.py
 !transcripts/artifacts.py
 !transcripts/aws_state.py
 !transcripts/channel.py
