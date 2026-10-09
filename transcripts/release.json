@@ -2,16 +2,16 @@
   "version": 1,
   "status": "approved",
   "serviceUrl": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
-  "policyDigest": "bf71a7c226743323a8b7a2dc27e640eccb7cd21ff874cafbc395da6b641b686c",
+  "policyDigest": "af6a39c155f5e2d6d3a4a0bbe5f8ba50ada4cd861f5a1a8b2cd16d00edf13a2d",
   "measurements": {
-    "0": "1edc1e3b45452e036ae9160f06b3096e65bf52e05d65d53ab2dda953254d9c8cc2617d4e4332cf6a2782411b3fee5545",
+    "0": "83eb3e6ae713d7d17649f521c17c226692082073ed99fd8f8a0948f4d63d2adaf685be8f9b063e69d56b9d3ab807f75a",
     "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
-    "2": "d705994390a1a707f27aed42c0f1bcc6f73f5ce96622c3d101ef5ec1f6758b5b14e90a3587f979bfd6cc86a0a6182811",
+    "2": "ba8ed044f0ef3886a6c05a70598f345efcbbfab75b133c9f71ead30426ce8c022dbcfe509c1fc744a733e8da193b5d50",
     "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
   },
-  "expiresAt": 1791810125,
+  "expiresAt": 1791725753,
   "limitations": [
-    "Private validation epoch for the open-recipe release: three internal Wise slots, ten Base USDC in total. Not a public campaign.",
+    "Private validation epoch for the open-recipe release: one internal Wise campaign with two slots, ten Base USDC in total. Not a public campaign.",
     "Inference is billed to the contributor's own key at the endpoint they choose. Only the notes and the value-free transcript are sent to it.",
     "Payout custody is operator-recoverable AWS KMS. Redaction of names and status tokens is heuristic.",
     "This manifest expires within days and is replaced by the public release on main."
