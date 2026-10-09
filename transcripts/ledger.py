@@ -27,6 +27,14 @@ REASONS = {"insufficient_evidence", "insufficient_history", "duplicate_account",
 REASONS.add("interrupted_execution")
 from .acquisition import SOURCE_FAILURES
 REASONS.update(SOURCE_FAILURES)
+from .open_source import OPEN_FAILURES
+from .transport import PROVIDER_FAILURES
+REASONS.update(OPEN_FAILURES | PROVIDER_FAILURES)
+# Fixed diagnostic codes a contributor's agent can act on without seeing any data.
+REASONS.update({"recipe_version", "recipe_limits", "invalid_credential", "invalid_profile", "request_timeout",
+                "response_size", "response_encoding", "http_transport_failed", "inference_input_limit",
+                "inference_usage_limit", "inference_usage_invalid", "inference_call_limit",
+                "provider_not_allowed", "inference_key_required"})
 
 
 def _locked(method):
@@ -257,6 +265,22 @@ class Ledger:
             raise
 
     @_locked
+    def availability(self, campaigns, now):
+        """Public remaining slots and budget; a reservation is still the only admission."""
+        live = ("state IN ('accepted','payout_pending','paid') OR "
+                "(state IN ('reserved','submitted','verifying') AND expires_at>?)")
+        with self._read():
+            spent = self.db.execute("SELECT COALESCE(sum(reward),0) FROM jobs WHERE " + live, (now,)).fetchone()[0]
+            budget = self.db.execute("SELECT budget FROM meta WHERE id=1").fetchone()[0]
+            slots = []
+            for campaign in campaigns:
+                active = self.db.execute("SELECT count(*) FROM jobs WHERE campaign_id=? AND (" + live + ")",
+                                         (campaign["id"], now)).fetchone()[0]
+                slots.append({"campaignId": campaign["id"],
+                              "slotsRemaining": max(0, campaign["maxContributors"] - active)})
+            return {"budgetRemainingMinor": max(0, budget - spent), "campaigns": slots}
+
+    @_locked
     def terms(self, job_id):
         with self._read():
             row = self._job(job_id)
@@ -299,7 +323,7 @@ class Ledger:
         return self.status(job_id)
 
     @_locked
-    def accept(self, job_id, reads, model_result, *, dedup_key, now, evidence=None, policy=None):
+    def accept(self, job_id, reads, model_result, *, dedup_key, now, evidence=None, policy=None, context=None):
         with self._transaction():
             row = self._job(job_id)
             require(row["state"] == "verifying", "invalid_transition")
@@ -307,13 +331,18 @@ class Ledger:
             campaign, request = json.loads(row["campaign"]), json.loads(row["request"])
             account_id = validate_live_reads(campaign, reads, job_id, row["submitted_at"], now,
                                              request["limits"]["maxBankReads"])
-            artifact = extract_artifact(campaign, reads)
-            fields(model_result, {"rubricVersion", "score", "useful"})
-            require(model_result["rubricVersion"] == campaign["rubricVersion"], "model_result_invalid")
-            integer(model_result["score"], 0, 100, "model_result_invalid")
-            require(type(model_result["useful"]) is bool, "model_result_invalid")
-            require(model_result["useful"] and model_result["score"] >= campaign["evidenceRequirements"]["minScore"],
-                    "model_rejected")
+            artifact = extract_artifact(campaign, reads, context)
+            if "openSource" in campaign:
+                # The score is recomputed from the live records, never taken from a model.
+                from .open_source import check_assessment
+                check_assessment(campaign, reads, context, artifact, model_result)
+            else:
+                fields(model_result, {"rubricVersion", "score", "useful"})
+                require(model_result["rubricVersion"] == campaign["rubricVersion"], "model_result_invalid")
+                integer(model_result["score"], 0, 100, "model_result_invalid")
+                require(type(model_result["useful"]) is bool, "model_result_invalid")
+                require(model_result["useful"] and model_result["score"] >= campaign["evidenceRequirements"]["minScore"],
+                        "model_rejected")
             fingerprint = account_fingerprint(dedup_key, campaign["id"], account_id)
             aliases=account_fingerprints(dedup_key,campaign,reads,account_id)
             self._check_aliases(campaign['id'],aliases)

@@ -83,6 +83,22 @@ def bank_status_error(status):
     return "bank_http_unexpected_status"
 
 
+PROVIDER_FAILURES = {"provider_http_bad_request", "provider_http_unauthorized", "provider_http_payment_required",
+                     "provider_http_not_found", "provider_http_rate_limited", "provider_http_server_error",
+                     "provider_http_unexpected_status"}
+
+
+def provider_status_error(status):
+    """Fixed codes so a contributor can tell a bad key from a bad model or quota."""
+    if status in (400, 422): return "provider_http_bad_request"
+    if status in (401, 403): return "provider_http_unauthorized"
+    if status == 402: return "provider_http_payment_required"
+    if status == 404: return "provider_http_not_found"
+    if status == 429: return "provider_http_rate_limited"
+    if 500 <= status < 600: return "provider_http_server_error"
+    return "provider_http_unexpected_status"
+
+
 class HTTPTransport:
     def __init__(self, mode="vsock"):
         require(mode in {"direct", "vsock"}, "invalid_transport")
@@ -91,8 +107,23 @@ class HTTPTransport:
     def request(self, method, url, *, headers=None, body=None, timeout=15, max_bytes=MAX_RESPONSE):
         return self._request(method,url,headers=headers,body=body,timeout=timeout,max_bytes=max_bytes)
 
-    def request_bank(self,url,*,headers,timeout=15,max_bytes=MAX_RESPONSE):
-        return self._request("GET",url,headers=headers,timeout=timeout,max_bytes=max_bytes,bank_status_codes=True)
+    def request_bank(self,url,*,headers,timeout=15,max_bytes=MAX_RESPONSE,open_headers=False,body=None,content_type=None):
+        # An open-campaign recipe may replay the read-only POST a bank site issues.
+        require(body is None or open_headers and isinstance(body,str) and isinstance(content_type,str),"unsafe_method")
+        if body is not None:headers={**headers,"Content-Type":content_type}
+        return self._request("GET" if body is None else "POST",url,headers=headers,timeout=timeout,max_bytes=max_bytes,
+                             body=None if body is None else body.encode("ascii"),bank_status_codes=True,open_headers=open_headers)
+
+    def request_provider(self,url,*,headers,body,timeout=15,max_bytes=65536):
+        return self._request("POST",url,headers=headers,body=body,timeout=timeout,max_bytes=max_bytes,
+                             provider_status_codes=True)
+
+    def probe_anonymous(self,url,*,timeout=15,body=None,content_type=None):
+        """Credential-free request reporting only the status and whether JSON was served."""
+        headers={"Accept":"application/json"}
+        if body is not None:headers["Content-Type"]=content_type
+        return self._request("GET" if body is None else "POST",url,headers=headers,timeout=timeout,
+                             body=None if body is None else body.encode("ascii"),anonymous_probe=True)
 
     def probe_authentication(self,url,*,timeout=15,invalid_credential=False):
         """Status-only anonymous GET: never read, retain or return an error body."""
@@ -103,7 +134,8 @@ class HTTPTransport:
         if invalid_credential:headers["Authorization"]="Bearer "+invalid_probe_token
         return self._request("GET",url,headers=headers,timeout=timeout,authentication_probe=True)
 
-    def _request(self, method, url, *, headers=None, body=None, timeout=15, max_bytes=MAX_RESPONSE, authentication_probe=False, bank_status_codes=False):
+    def _request(self, method, url, *, headers=None, body=None, timeout=15, max_bytes=MAX_RESPONSE, authentication_probe=False, bank_status_codes=False,
+                 open_headers=False, anonymous_probe=False, provider_status_codes=False):
         require(method in {"GET", "POST"}, "unsafe_method")
         integer(max_bytes, 1, MAX_RESPONSE, "response_limits")
         require(type(timeout) in (int, float) and 0 < timeout <= 300, "request_timeout")
@@ -125,7 +157,13 @@ class HTTPTransport:
                 if "X-Amz-Target" in headers:
                     require(parsed.hostname=="kms.us-east-1.amazonaws.com" and parsed.path=="/"
                             and headers["X-Amz-Target"] in {"TrentService.GenerateDataKey","TrentService.Decrypt"},"unsafe_headers")
-            require(set(headers) <= permitted, "unsafe_headers")
+            if open_headers:
+                # Contributor session headers for an open campaign. Names were
+                # validated by credential_headers; AWS endpoints never use this path.
+                require(not aws_host and all(
+                    re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9-]{0,63}", name) for name in headers), "unsafe_headers")
+            else:
+                require(set(headers) <= permitted, "unsafe_headers")
             if "x-no-aliasing" in headers:
                 require(method == "POST" and parsed.hostname == "cloud-api.near.ai"
                         and parsed.path == "/v1/chat/completions" and not parsed.query
@@ -158,7 +196,12 @@ class HTTPTransport:
                     require(response.status == 401, "unauthenticated_source")
                     # No body/content-type assumption or error headers cross this boundary.
                     return HTTPResponse(401,b"",())
-                require(200 <= response.status < 300, bank_status_error(response.status) if bank_status_codes else "http_request_failed")  # Redirects never followed.
+                if anonymous_probe:
+                    kinds = [v.split(";")[0].strip().lower() for k, v in response_headers if k == "content-type"]
+                    served = len(kinds) == 1 and (kinds[0] == "application/json" or kinds[0].endswith("+json"))
+                    return HTTPResponse(response.status,b"",(("content-type","json"),) if served else ())
+                require(200 <= response.status < 300, bank_status_error(response.status) if bank_status_codes else
+                        provider_status_error(response.status) if provider_status_codes else "http_request_failed")  # Redirects never followed.
                 content_types = [v for k, v in response_headers if k == "content-type"]
                 require(len(content_types) == 1 and (content_types[0].split(";")[0].strip().lower() == "application/json"
                         or content_types[0].split(";")[0].strip().lower().endswith("+json")
@@ -209,6 +252,9 @@ class BankClient:
         if "sourceDescriptor" in campaign:
             from .acquisition import DescriptorBankClient
             return DescriptorBankClient(campaign,*args,**kwargs)
+        if "openSource" in campaign:
+            from .open_source import OpenBankClient
+            return OpenBankClient(campaign,*args,**kwargs)
         return super().__new__(cls)
 
     def __init__(self, campaign, credential, transport=None, *, profile_id=None, max_reads=20, timeout=15):
