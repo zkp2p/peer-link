@@ -7,6 +7,7 @@ import re
 import select
 import socket
 import threading
+import time
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 from pathlib import Path
 from .common import Rejected,canonical,require,strict_json
@@ -15,6 +16,60 @@ from .storage import serve_archive
 
 PUBLIC_GET={'/health':'health','/v1/campaigns':'campaigns','/v1/release':'release'}
 PUBLIC_POST={'/v1/reservations':'reserve','/v1/challenges':'challenge','/v1/submissions':'submit','/v1/attest':'attest','/v1/operator':'operator'}
+
+
+# Operational events. Each is one JSON line on stdout with fixed, public fields only:
+# never a request or response body, ciphertext, payout address, client address or bank
+# host chosen by a contributor. The host log shipper forwards these lines unchanged.
+SAFE={'jobId':re.compile(r'[0-9a-f]{32}'),'campaignId':re.compile(r'[a-z0-9][a-z0-9-]{0,63}'),
+      'state':re.compile(r'[a-z_]{1,32}'),'reportedState':re.compile(r'[a-z_]{1,32}'),
+      'reason':re.compile(r'[a-z0-9_]{1,64}'),'error':re.compile(r'[a-z0-9_]{1,64}'),
+      'provider':re.compile(r'[a-z_]{1,32}'),'model':re.compile(r'[A-Za-z0-9._:/@-]{1,100}'),
+      'transactionId':re.compile(r'0x[0-9a-f]{64}'),'action':re.compile(r'[a-z]{1,16}')}
+PROVIDER_HOSTS={'api.openai.com':'openai','openrouter.ai':'openrouter','cloud-api.near.ai':'near'}
+
+
+def emit(event):
+    try:print(json.dumps(event,sort_keys=True,separators=(',',':')),flush=True)
+    except Exception:pass
+
+
+def safe_fields(source,names):
+    """The named fields of a dict whose values match their fixed public pattern."""
+    found={}
+    for name in names:
+        value=source.get(name) if isinstance(source,dict) else None
+        if isinstance(value,str) and SAFE[name].fullmatch(value):found[name]=value
+    return found
+
+
+def request_event(method,command,body,result,code,started,request_bytes,response_bytes):
+    name=command['command'] if isinstance(command,dict) else 'unrouted'
+    event={'event':'request','command':name,'method':method if method in ('GET','POST') else 'other','status':code,
+           'ms':int((time.monotonic()-started)*1000),'requestBytes':request_bytes,'responseBytes':response_bytes}
+    if isinstance(command,dict):event.update(safe_fields(command.get('body'),('jobId',)))
+    if name=='reserve':event.update(safe_fields(body,('campaignId','provider','model')))
+    if name=='operator':event.update(safe_fields(body.get('payload') if isinstance(body,dict) else None,('action',)))
+    if name in {'reserve','submit','status','receipt','operator'}:
+        # A signed receipt carries the job under payload.job; a status is the job itself.
+        job=result.get('payload',{}).get('job') if isinstance(result,dict) and isinstance(result.get('payload'),dict) else result
+        event.update(safe_fields(job,('jobId','campaignId','state','reportedState','reason','transactionId')))
+    event.update(safe_fields(result,('error',)))
+    if name=='health' and isinstance(result,dict) and type(result.get('accepting')) is bool:event['accepting']=result['accepting']
+    return event
+
+
+def egress_target(host,policy):
+    """A public label for an egress destination: a fixed service host, the campaign's
+    bank domain, a named model provider, or "other" for a contributor-chosen endpoint."""
+    if not isinstance(host,str):return 'invalid'
+    if host in PROVIDER_HOSTS:return PROVIDER_HOSTS[host]
+    if host in policy.get('egressHosts',()):return host
+    for campaign in policy.get('campaigns',()):
+        for source in campaign.get('sources',()):
+            domain=str(source.get('origin','')).removeprefix('https://')
+            if 'openSource' in campaign and domain and (host==domain or host.endswith('.'+domain)):return domain
+    return 'other'
 
 
 def route(method,path,body):
@@ -50,30 +105,39 @@ def egress_permitted(host,allowed,public):
     return isinstance(host,str) and (host in allowed or public and HOSTNAME.fullmatch(host) is not None)
 
 
-def egress_connection(conn,allowed,public=False):
+def egress_connection(conn,allowed,public=False,policy=None):
+    started=time.monotonic();host=None;count=0;outcome='error'
     try:
         conn.settimeout(10);line=bytearray()
         while not line.endswith(b'\n'):
             require(len(line)<512,'egress_denied')
             byte=conn.recv(1);require(bool(byte),'connection_closed');line.extend(byte)
         request=strict_json(bytes(line),512)
+        host=request.get('host') if isinstance(request,dict) else None
         require(set(request)=={'host','port'} and egress_permitted(request['host'],allowed,public) and request['port']==443,'egress_denied')
+        outcome='unavailable'
         with connect_public(request['host']) as upstream:
             conn.sendall(b'OK\n');conn.settimeout(30)
-            count=0
+            outcome='idle'
             while True:
                 ready,_,_=select.select([conn,upstream],[],[],30)
                 if not ready:break
                 for source in ready:
                     data=source.recv(65536)
-                    if not data:return
+                    if not data:outcome='closed';return
                     count+=len(data);require(count<=8_000_000,'egress_limit')
                     (upstream if source is conn else conn).sendall(data)
+    except Rejected as error:
+        if str(error) in {'egress_denied','egress_limit','egress_unavailable'}:outcome=str(error).removeprefix('egress_')
     except Exception:pass
-    finally:conn.close()
+    finally:
+        conn.close()
+        if policy is not None:
+            emit({'event':'egress','target':egress_target(host,policy),'outcome':outcome,
+                  'ms':int((time.monotonic()-started)*1000),'bytes':count})
 
 
-def egress_server(port,cid,allowed,*,ready=None,public=False):
+def egress_server(port,cid,allowed,*,ready=None,public=False,policy=None):
     with socket.socket(socket.AF_VSOCK,socket.SOCK_STREAM) as listener:
         listener.bind((socket.VMADDR_CID_ANY,port));listener.listen(16)
         if ready is not None:ready.set()
@@ -82,7 +146,7 @@ def egress_server(port,cid,allowed,*,ready=None,public=False):
             conn,peer=listener.accept()
             if peer[0]!=cid or not slots.acquire(blocking=False):conn.close();continue
             def run(connection=conn):
-                try:egress_connection(connection,allowed,public)
+                try:egress_connection(connection,allowed,public,policy)
                 finally:slots.release()
             threading.Thread(target=run,daemon=True).start()
 
@@ -102,7 +166,7 @@ def main():
         broker=KmsBroker(authority['keyId'],authority['wallet'])
         broker.public_key()  # Fail startup on a wrong key, wallet, or inaccessible role.
         listeners.append((serve,(args.kms_port,args.enclave_cid,broker)))
-    listeners.append((functools.partial(egress_server,public=policy.get('egressPolicy')=='public_https'),
+    listeners.append((functools.partial(egress_server,public=policy.get('egressPolicy')=='public_https',policy=policy),
                       (args.egress_port,args.enclave_cid,set(policy['egressHosts']))))
     start_listeners(listeners)
     slots=threading.BoundedSemaphore(20)
@@ -112,8 +176,10 @@ def main():
         def do_GET(self):self.invoke()
         def do_POST(self):self.invoke()
         def invoke(self):
-            code=200
+            code=200;started=time.monotonic();command=body=None;length=0
             if not slots.acquire(blocking=False):
+                emit({'event':'request','command':'busy','method':self.command if self.command in ('GET','POST') else 'other',
+                      'status':503,'ms':0,'requestBytes':0,'responseBytes':0})
                 self.send_error(503);return
             try:
                 self.connection.settimeout(15)
@@ -131,6 +197,9 @@ def main():
             except Exception:code,result=503,{'error':'service_unavailable'}
             finally:slots.release()
             data=canonical(result)
+            # Local probes poll health every minute; only a change in the answer is worth a line.
+            if not (isinstance(command,dict) and command['command']=='health' and code==200 and self.client_address[0]=='127.0.0.1'):
+                emit(request_event(self.command,command,body,result,code,started,length,len(data)))
             self.send_response(code);self.send_header('Content-Type','application/json');self.send_header('Cache-Control','no-store')
             self.send_header('X-Content-Type-Options','nosniff');self.send_header('Content-Length',str(len(data)));self.end_headers();self.wfile.write(data)
     with ThreadingHTTPServer(('0.0.0.0',args.port),Handler) as http:

@@ -1,0 +1,172 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Payload-free PeerLink transcript host logs: one CloudWatch group forwarded to Axiom; the host holds no Axiom token",
+  "Parameters": {
+    "LogGroupName": {
+      "Type": "String",
+      "Default": "/peerlink/transcripts/host",
+      "AllowedPattern": "/[A-Za-z0-9/_-]{1,200}"
+    },
+    "RetentionDays": {
+      "Type": "Number",
+      "Default": 30,
+      "AllowedValues": [7, 14, 30, 60, 90]
+    },
+    "AxiomUrl": {
+      "Type": "String",
+      "Default": "https://api.axiom.co",
+      "AllowedPattern": "https://[a-z0-9.-]{4,100}"
+    },
+    "AxiomDataset": {
+      "Type": "String",
+      "AllowedPattern": "[a-z0-9][a-z0-9-]{1,62}"
+    },
+    "AxiomToken": {
+      "Type": "String",
+      "NoEcho": true,
+      "MinLength": 20,
+      "MaxLength": 200,
+      "Description": "Ingest-only Axiom API token scoped to AxiomDataset; never a personal token"
+    }
+  },
+  "Resources": {
+    "HostLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": {
+          "Ref": "LogGroupName"
+        },
+        "RetentionInDays": {
+          "Ref": "RetentionDays"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "peer-link-transcripts"
+          },
+          {
+            "Key": "Component",
+            "Value": "service-logs"
+          }
+        ]
+      }
+    },
+    "ForwarderRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "peer-link-transcripts"
+          },
+          {
+            "Key": "Component",
+            "Value": "service-logs"
+          }
+        ]
+      }
+    },
+    "Forwarder": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Description": "Forward payload-free PeerLink transcript host logs to Axiom",
+        "Runtime": "python3.12",
+        "Handler": "index.handler",
+        "Timeout": 20,
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": ["ForwarderRole", "Arn"]
+        },
+        "Code": {
+          "ZipFile": "\"\"\"CloudWatch Logs subscription target: forward the transcript host's log lines to Axiom.\n\nRuns as a Lambda outside the Nitro host, so the host never holds the Axiom token. The\nlines are already payload-free (see transcripts/infra/log_shipper.py); this function\nonly reshapes them and adds the event time.\n\"\"\"\nimport base64\nimport gzip\nimport json\nimport os\nimport urllib.request\nfrom datetime import datetime, timezone\n\n\ndef rows(event):\n    data = json.loads(gzip.decompress(base64.b64decode(event[\"awslogs\"][\"data\"])))\n    if data.get(\"messageType\") != \"DATA_MESSAGE\":\n        return []\n    result = []\n    for item in data.get(\"logEvents\", []):\n        try:\n            row = json.loads(item[\"message\"])\n            if not isinstance(row, dict):\n                raise ValueError\n        except ValueError:\n            row = {\"message\": str(item.get(\"message\"))[:1000]}\n        row[\"_time\"] = datetime.fromtimestamp(item[\"timestamp\"] / 1000, timezone.utc).isoformat()\n        row[\"host\"] = data.get(\"logStream\")\n        result.append(row)\n    return result\n\n\ndef handler(event, context):\n    batch = rows(event)\n    if not batch:\n        return {\"forwarded\": 0}\n    bearer = \"Bearer \" + os.environ[\"AXIOM_TOKEN\"]\n    request = urllib.request.Request(\n        os.environ[\"AXIOM_URL\"].rstrip(\"/\") + \"/v1/datasets/\" + os.environ[\"AXIOM_DATASET\"] + \"/ingest\",\n        data=json.dumps(batch).encode(), method=\"POST\",\n        headers={\"Authorization\": bearer, \"Content-Type\": \"application/json\"})\n    with urllib.request.urlopen(request, timeout=10) as response:\n        outcome = json.loads(response.read())\n    if outcome.get(\"failed\"):\n        raise RuntimeError(\"axiom_ingest_failed\")  # CloudWatch Logs retries the batch.\n    return {\"forwarded\": len(batch)}\n"
+        },
+        "Environment": {
+          "Variables": {
+            "AXIOM_URL": {
+              "Ref": "AxiomUrl"
+            },
+            "AXIOM_DATASET": {
+              "Ref": "AxiomDataset"
+            },
+            "AXIOM_TOKEN": {
+              "Ref": "AxiomToken"
+            }
+          }
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "peer-link-transcripts"
+          },
+          {
+            "Key": "Component",
+            "Value": "service-logs"
+          }
+        ]
+      }
+    },
+    "ForwarderPermission": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Ref": "Forwarder"
+        },
+        "Principal": "logs.amazonaws.com",
+        "SourceArn": {
+          "Fn::GetAtt": ["HostLogs", "Arn"]
+        },
+        "SourceAccount": {
+          "Ref": "AWS::AccountId"
+        }
+      }
+    },
+    "Subscription": {
+      "Type": "AWS::Logs::SubscriptionFilter",
+      "DependsOn": "ForwarderPermission",
+      "Properties": {
+        "LogGroupName": {
+          "Ref": "HostLogs"
+        },
+        "FilterPattern": "",
+        "DestinationArn": {
+          "Fn::GetAtt": ["Forwarder", "Arn"]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "LogGroupName": {
+      "Value": {
+        "Ref": "HostLogs"
+      }
+    },
+    "LogGroupArn": {
+      "Value": {
+        "Fn::GetAtt": ["HostLogs", "Arn"]
+      }
+    },
+    "ForwarderName": {
+      "Value": {
+        "Ref": "Forwarder"
+      }
+    }
+  }
+}

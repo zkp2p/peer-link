@@ -76,6 +76,18 @@ revoke any dedicated token and revoke or cap the inference key. Logging out does
 not revoke an API token. Python reference removal is not guaranteed memory
 zeroization; enclave destruction is the final key-erasure boundary.
 
+## Operational logs
+
+The relay outside the enclave logs fixed public facts about each request, for
+debugging and monitoring: the command, HTTP status and timing, the random job
+id, the campaign, the named model provider and model id, and the public job
+state and reason code. These lines are stored in AWS CloudWatch Logs and in
+Peer's Axiom organisation. They never contain a request or response body,
+ciphertext, a bank session, an inference key, a transcript, notes, a payout
+address, a client IP address or a custom inference URL. The enclave does not
+log. Details and the tests that hold these rules are in
+[transcript logs](transcript-logs.md).
+
 ## Redaction and retention
 
 For open campaigns the transcript contains, and the validator admits, only:

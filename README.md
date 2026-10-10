@@ -204,7 +204,7 @@ page. `banks/`, `lib/` and `verification/` are reference assets from the
 earlier program.
 
 [Product and architecture](docs/transcript-contributions-prd.md) ·
-[Operations](docs/transcript-operations.md) · [Archive](docs/transcript-archive.md) ·
+[Operations](docs/transcript-operations.md) · [Archive](docs/transcript-archive.md) · [Logs](docs/transcript-logs.md) ·
 [Evidence](docs/evidence.md) · [Legacy verifier](docs/verification.md) ·
 [Security](SECURITY.md)
 

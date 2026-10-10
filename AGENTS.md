@@ -68,7 +68,9 @@ integrated and has no public reward.
   new signed build, a new state namespace and a newly published
   `transcripts/release.json`; follow [docs/transcript-operations.md](docs/transcript-operations.md).
   `release.json`, the client, the CLI, `hints.py`, the host relay and the
-  archive uploader are outside the measured image.
+  archive uploader are outside the measured image, as are the log shipper and
+  forwarder. Relay log lines carry fixed public fields only; add a test in
+  `transcripts/tests/test_logs.py` before logging any new field.
 - Code, not a model, owns authentication of the source, redaction, duplicate
   checks, budget, recipient, the fixed reward and signing. For open campaigns
   the score is computed from the live records; never let model output set it.
@@ -115,7 +117,7 @@ npm run privacy -- --range origin/main..HEAD
 | --- | --- |
 | `transcripts/` | Enclave runtime, policy, transport, ledger, payout, client and CLI. |
 | `transcripts/open_source.py` | Open recipes, redaction and the mapping check. |
-| `transcripts/infra/` | Image build, host install, state stack and S3 archive uploader. |
+| `transcripts/infra/` | Image build, host install, state stack, S3 archive uploader, log shipper and Axiom forwarder. |
 | `skills/contribute-transcript/` | Contributor instructions. |
 | `docs/` | Recipe guide, privacy, rewards, product, operations, evidence. |
 | `app/` | Landing page. Vercel Git deployments are disabled; deploy explicitly. |
