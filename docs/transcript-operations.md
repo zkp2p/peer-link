@@ -124,6 +124,9 @@ The revised host IAM role allows SSM transport and explicitly scoped
 `kms:GetPublicKey`/`kms:Sign` for the one policy-bound payout key. It may also
 `s3:PutObject` to two prefixes of the private transcript archive bucket, write-only,
 so signed records are mirrored off the host; see [transcript archive](transcript-archive.md).
+It may also create a stream and put events in one CloudWatch log group, write-only,
+for payload-free service logs that a forwarder outside the host sends to Axiom; see
+[transcript logs](transcript-logs.md).
 Production secrets, other S3 access, other KMS keys, role assumption and Parameter
 Store remain outside that role. Native KMS signing is not restricted to enclave PCRs; authorized host
 and operator IAM are part of the custody trust boundary.
