@@ -27,6 +27,90 @@ not write a provider or open a pull request.
 
 ## How it works
 
+### At a glance
+
+```mermaid
+flowchart TD
+    you(["You and your AI agent<br/>on your own machine"])
+
+    subgraph enclave["PeerLink enclave: a sealed AWS Nitro machine that nobody, including Peer, can look inside"]
+        direction LR
+        fetch["1. Fetch your history<br/>from your bank"]
+        strip["2. Strip every value,<br/>keep only the structure"]
+        ask["3. Ask your model<br/>which field is which"]
+        check["4. Check the answer<br/>in code"]
+        fetch --> strip --> ask --> check
+    end
+
+    bank[("Your bank")]
+    model["The AI model you chose<br/>(OpenAI, NEAR, OpenRouter, any compatible API)"]
+    paid(["You receive $5 or $10 USDC"])
+    peer(["Peer receives the value-free transcript<br/>and builds the bank integration"])
+
+    you == "encrypted: instructions, bank session, model key" ==> enclave
+    fetch <-- "read-only requests, your history" --> bank
+    ask <-- "structure only, never your session" --> model
+    check --> paid
+    check --> peer
+```
+
+| Who | What they see |
+| --- | --- |
+| You and your agent | Everything. It is your account, on your machine. |
+| The PeerLink enclave | Your bank session and raw history, in memory, for one job. Both are discarded when the job ends. |
+| The AI model you chose | Your agent's notes and the value-free transcript: field names, types and formats. Never your session, ids, names or amounts. |
+| Peer engineers | The same notes and value-free transcript, signed, and only if the job is accepted. |
+| Peer's servers outside the enclave | Encrypted data they cannot open, plus public job status. |
+
+### Step by step
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor You
+    participant Agent as Your AI agent
+    participant Enclave as PeerLink enclave
+    participant Bank as Your bank
+    participant Model as Your model
+    participant Base as Base (USDC)
+
+    You->>Agent: Help me contribute my bank
+    Agent->>Enclave: Is there budget left for this bank?
+    Enclave-->>Agent: Reward, open slots, budget left
+
+    You->>Bank: Sign in yourself (password, MFA)
+    Agent->>Bank: Find the read-only requests that list history
+    Note over Agent: Writes the recipe<br/>and notes
+    Agent->>Bank: Preview locally by replaying those reads
+    Agent-->>You: What would be kept, the model, the reward
+    You->>Agent: Yes, go ahead
+
+    Agent->>Enclave: Verify attestation, reserve a job
+    Agent->>Enclave: Encrypted recipe, session, model key
+    Enclave->>Bank: Replay the reads with your session
+    Bank-->>Enclave: Your transaction history
+    Note over Enclave: Keeps structure only.<br/>Values, ids and the session<br/>are discarded.
+    Enclave->>Model: Instructions, your notes, value-free transcript
+    Model-->>Enclave: Proposed role for each field
+    Note over Enclave: Code checks every role<br/>against the live rows
+
+    alt Score passes
+        Enclave->>Base: Send $5 or $10 USDC to your address
+        Note over Enclave: Signed transcript goes<br/>to Peer's private archive
+        Enclave-->>Agent: Signed receipt with the transaction
+        Agent-->>You: Paid. Log out and revoke the keys.
+    else Rejected
+        Enclave-->>Agent: Reason code and a hint, nothing kept
+        Agent-->>You: What to fix (inference was still billed)
+    end
+```
+
+Nothing about your account is sent until step 10; before that your agent only
+asks the service whether there is capacity. Steps 11 to 16 happen inside the
+enclave, usually in under a minute.
+
+### In detail
+
 1. **Pick a campaign.** Twenty banks have an `open_recipe` campaign in which the
    contributor's agent supplies the read route. Mercury has a
    `reviewed_descriptor` campaign with a fixed API route. After
