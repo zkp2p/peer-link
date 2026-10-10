@@ -78,9 +78,12 @@ axiom query "['peerlink-transcripts-prod'] | where unit != 'relay' | project _ti
    the script's SHA-256, the log group, the region and the instance id. It does
    not touch the relay, enclave, credential or health units.
 5. Relay events need the host's `transcripts/server.py` at a revision that emits
-   them. The enclave unit requires the relay unit, so replacing the relay file
-   restarts the enclave: pause first, replace and restart, verify with the
-   client's `preflight`, then send a signed `resume`.
+   them, and the relay unit's `StandardOutput=journal` (`install_release.sh`
+   sets it; a host installed earlier needs a drop-in with that one line). Its
+   `StandardError` stays `null`. The enclave unit requires the relay unit, so
+   replacing the relay file or its unit restarts the enclave: pause first,
+   replace and restart, verify with the client's `preflight`, then send a
+   signed `resume`.
 
 The host role cannot read, filter or delete log events, and the Axiom token
 never reaches the host. A compromised host could add false lines to the group;

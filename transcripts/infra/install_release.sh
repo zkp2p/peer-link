@@ -149,7 +149,9 @@ ProtectHome=yes
 StateDirectory=peer-link-transcripts
 StateDirectoryMode=0700
 RestrictAddressFamilies=AF_INET AF_INET6 AF_VSOCK AF_UNIX
-StandardOutput=null
+# stdout carries only the relay's payload-free JSON events (docs/transcript-logs.md);
+# stderr, which may hold a traceback with a client address, stays discarded.
+StandardOutput=journal
 StandardError=null
 UNIT
 # Continuous service needs a separate hardware/nonce/release gate for this image.
