@@ -31,7 +31,7 @@ not write a provider or open a pull request.
 
 ```mermaid
 flowchart TD
-    you(["You and your AI agent<br/>on your own machine"])
+    you(["You and your AI agent, on your own machine"])
 
     subgraph enclave["PeerLink enclave: a sealed AWS Nitro machine that nobody, including Peer, can look inside"]
         direction LR
@@ -42,16 +42,16 @@ flowchart TD
         fetch --> strip --> ask --> check
     end
 
-    bank[("Your bank")]
-    model["The AI model you chose<br/>(OpenAI, NEAR, OpenRouter, any compatible API)"]
-    paid(["You receive $5 or $10 USDC"])
-    peer(["Peer receives the value-free transcript<br/>and builds the bank integration"])
+    bank[("Your bank<br/>read-only requests in,<br/>your history out")]
+    model["The AI model you chose<br/>sees structure only,<br/>never your session"]
+    paid(["You receive<br/>$5 or $10 USDC"])
+    peer(["Peer receives the<br/>value-free transcript"])
 
     you == "encrypted: instructions, bank session, model key" ==> enclave
-    fetch <-- "read-only requests, your history" --> bank
-    ask <-- "structure only, never your session" --> model
-    check --> paid
-    check --> peer
+    enclave <--> bank
+    enclave <--> model
+    enclave --> paid
+    enclave --> peer
 ```
 
 | Who | What they see |
