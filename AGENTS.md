@@ -1,6 +1,6 @@
 # PeerLink agent instructions
 
-PeerLink pays account owners a fixed $5 or $10 USDC for a useful, value-free
+PeerLink pays account owners a fixed $10 USDC for a useful, value-free
 transcript of how their bank presents transaction history. Peer engineers build
 bank integrations from accepted transcripts. Contributors do not write provider
 code, claim issues or open pull requests.

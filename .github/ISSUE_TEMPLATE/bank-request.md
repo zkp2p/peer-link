@@ -15,6 +15,6 @@ Known access limitations:
 
 Opening this request does not activate bank access, reserve a slot or promise funds.
 Banks are added to the transcript service in a new measured release. Each campaign
-pays a fixed $5/$10 USDC and takes up to two contributors, sharing one funded budget.
+pays a fixed $10 USDC and takes up to five contributors, sharing one funded budget.
 Enrollment uses the contribute-transcript skill and an attested encrypted job, not
 claiming comments or provider PRs. Contributors pay their inference costs even if rejected.

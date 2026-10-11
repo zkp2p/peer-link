@@ -135,6 +135,14 @@ real bank, and it does not show live acquisition for any listed campaign bank.
 Treat each of those as not yet demonstrated until a contribution for that bank
 is accepted.
 
+The grants release (`open-public-v2`, 2026-10-11) changes only the measured
+policy and the per-release ceiling: 35 campaigns, $10 per accepted open-recipe
+transcript for up to five contributors per bank, and a $120 funded budget. Its
+image was built on the host and reproduced by both CI builders before approval;
+after activation an operator job with an invalid bank token was reserved,
+submitted and rejected as `bank_http_unauthorized` with the budget untouched. No
+positive contribution has been made on it yet.
+
 ## Internal durable Wise evidence
 
 A separate credential-free contributor smoke exercised the actual CLI, client,

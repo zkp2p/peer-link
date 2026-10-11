@@ -2,16 +2,16 @@
   "version": 1,
   "status": "approved",
   "serviceUrl": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
-  "policyDigest": "4cd16f4ca0c8a0d30e2c3acb520463e2a5fadec5c12d54b5d69ff8dde99130b3",
+  "policyDigest": "e81ad3a0763f22d1c490fa434da57b0aaf76539462ca05740870871e6b272147",
   "measurements": {
-    "0": "b38fcad81d17e1650763613299f266b0834ed5f92f373090266a8b8319109a3a3dcf8cd39fd12e8a51b8f8f11385df9e",
+    "0": "412a17f92a19382c13528d6fb6917a96c80132d5c4828af6339faaa16d2b5d3ceb0e6d4ded5e648a7c2d6d68ac661d95",
     "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
-    "2": "1c1d5c56a36ad8635806f578993efc3fa20b175b0c0ca2a6be0176f658a852384e26765dfc53100eb0f37e6a6692a25e",
+    "2": "12a736538681a121f9ee8cbefc1a0f82a21fad0f11bdcd920aade7af21ac5cc92fc4d3df4dd579a2a70c7a6cadb7319d",
     "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
   },
-  "expiresAt": 1794146448,
+  "expiresAt": 1794281624,
   "limitations": [
-    "Open-recipe transcript campaigns for 20 banks plus the Mercury API source-validation campaign. This release epoch is funded with 10 Base USDC in total, enough for one $10 or two $5 rewards, with no automatic refill. A successful live reservation is required; a listing is not a capacity guarantee.",
+    "Open-recipe transcript campaigns for 34 banks plus the Mercury API source-validation campaign. Each accepted open-recipe transcript pays $10, for up to five contributors per bank. This release epoch is funded with 120 Base USDC in total, enough for twelve $10 grants, with no automatic refill; Peer tops it up by rolling a new release. A successful live reservation is required; a listing is not a capacity guarantee.",
     "No listed bank has an accepted contribution yet. The open-recipe flow was validated end to end against one Wise API account on retired internal epochs; web-session, cookie, CSRF, POST and GraphQL reads are covered by synthetic tests only, and a bank may refuse requests from the enclave's data-centre address.",
     "The contributor's bank session and raw responses stay inside the attested enclave. The contributor's notes and the value-free transcript are sent to the inference endpoint the contributor chooses and, if accepted, are signed, archived and read by Peer. Redaction of field names, URL path words and status tokens is heuristic; review the local preview before contributing.",
     "The anonymous-access gate, the POST write guard and duplicate-account detection are heuristics. A recipe must replay only requests the bank's own site issues to view history.",

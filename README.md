@@ -6,7 +6,7 @@ PeerLink collects banking transcripts from account owners. Your local agent
 finds the read-only requests your bank's own site uses to show transaction
 history. An attested AWS Nitro enclave replays them with your session, keeps a
 value-free transcript of the request and response structure, and pays a fixed
-$5 or $10 USDC on Base when the transcript is useful. Peer engineers turn
+$10 USDC on Base when the transcript is useful. Peer engineers turn
 accepted transcripts into Curator metadata and attestation transformers. You do
 not write a provider or open a pull request.
 
@@ -21,15 +21,26 @@ Peer pays contributor grants in USDC on Base. There is no application and no
 review queue: the enclave checks your transcript and sends the grant to your
 address as soon as it is accepted.
 
-| Grant per accepted transcript | Banks |
+Every bank below pays **$10 per accepted transcript** to up to **five
+contributors**: up to **$50 per bank**.
+
+| Region | Banks |
 | --- | --- |
-| **$10** | Mercury, Chase, Bank of America, Wells Fargo |
-| **$5** | Monobank, Vietcombank, OPay, Easypaisa, BCA, Bancolombia, GCash, bKash, Safaricom M-Pesa, Kaspi Bank, BBVA Mexico, Banco de Credito del Peru, Ziraat Bank, Uala Argentina, Itau Brazil, MTN MoMo Ghana, BBVA Spain |
+| Americas | Chase, Bank of America, Wells Fargo, Capital One, Citi, BBVA Mexico, Bancolombia, Banco de Credito del Peru, Uala Argentina, Itau Brazil |
+| Asia | KB Kookmin Bank (Korea), Rakuten Bank (Japan), Kasikornbank (Thailand), DBS Bank (Singapore), HSBC Hong Kong, Maybank (Malaysia), Bank Mandiri and BCA (Indonesia), China Merchants Bank, Vietcombank and BIDV (Vietnam), GCash (Philippines), bKash (Bangladesh), Easypaisa (Pakistan), Kaspi Bank (Kazakhstan) |
+| Europe | PKO Bank Polski (Poland), Monobank and PUMB (Ukraine), Paysera (Lithuania), Ziraat Bank (Turkey), BBVA Spain |
+| Africa | OPay (Nigeria), MTN MoMo (Ghana), Safaricom M-Pesa (Kenya) |
+
+Mercury pays $10 to one organization through its read-only API. Each bank has a
+[campaign issue](https://github.com/zkp2p/peer-link/issues/64) with its accepted
+domains; the same issues are listed on
+[Merit](https://terminal.merit.systems/zkp2p/peer-link) for discovery, but
+grants are paid only by PeerLink: no Merit claim and no tax form.
 
 - **You need** an account at one of these banks, a local coding agent, a Base
   address and an API key for any OpenAI-compatible model. Your key pays for one
   model call per attempt.
-- **Up to two contributors per bank** (one for Mercury), and one grant per bank
+- **Up to five contributors per bank** (one for Mercury), and one grant per bank
   account.
 - **Grants come from one shared, limited budget per release.** Run
   `campaigns --live` to see what is left before you start.
@@ -70,7 +81,7 @@ flowchart TD
 
     bank[("Your bank<br/>read-only requests in,<br/>your history out")]
     model["The AI model you chose<br/>sees structure only,<br/>never your session"]
-    paid(["You receive<br/>$5 or $10 USDC"])
+    paid(["You receive<br/>$10 USDC"])
     peer(["Peer receives the<br/>value-free transcript"])
 
     you == "encrypted: instructions, bank session, model key" ==> enclave
@@ -121,7 +132,7 @@ sequenceDiagram
     Note over Enclave: Code checks every role<br/>against the live rows
 
     alt Score passes
-        Enclave->>Base: Send $5 or $10 USDC to your address
+        Enclave->>Base: Send $10 USDC to your address
         Note over Enclave: Signed transcript goes<br/>to Peer's private archive
         Enclave-->>Agent: Signed receipt with the transaction
         Agent-->>You: Paid. Log out and revoke the keys.
@@ -137,7 +148,7 @@ enclave, usually in under a minute.
 
 ### In detail
 
-1. **Pick a campaign.** Twenty banks have an `open_recipe` campaign in which the
+1. **Pick a campaign.** Thirty-four banks have an `open_recipe` campaign in which the
    contributor's agent supplies the read route. Mercury has a
    `reviewed_descriptor` campaign with a fixed API route. After
    `npm run transcripts:setup`, run
@@ -177,10 +188,10 @@ inference endpoint can be allowed without letting a model award a reward.
 
 ## Campaigns, rewards and costs
 
-- Each accepted contribution earns the campaign's fixed **$5 or $10 USDC**; one
-  paid contribution per bank account per campaign.
-- All campaigns share one funded budget of at most **$50** per release epoch
-  with no automatic refill. `campaigns` prints the amount funded for the
+- Each accepted contribution earns a fixed **$10 USDC**, for up to five
+  contributors per bank; one paid contribution per bank account per campaign.
+- All campaigns share one funded budget per release epoch, with no automatic
+  refill; Peer tops it up by rolling a new release. `campaigns` prints the amount funded for the
   current release as `epochBudgetUSDC` (`pilotBudgetMinor` in the measured
   [policy](transcripts/policy.json)), and `campaigns --live` shows what is
   left. A successful reservation, valid for ten minutes, is

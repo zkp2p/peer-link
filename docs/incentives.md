@@ -1,8 +1,8 @@
 # Transcript contribution rewards
 
-Each campaign pays a fixed **$5 or $10 USDC on Base** for one accepted
-transcript. All campaigns in a release share one funded budget of at most
-**$50**, with no automatic refill; the amount funded for the current release is
+Each campaign pays a fixed **$10 USDC on Base** for one accepted transcript, to
+up to five contributors per bank. All campaigns in a release share one funded
+budget, with no automatic refill; the amount funded for the current release is
 stated in its manifest and may be much less than the sum of all slots. A successful reservation, made by the client
 after it verifies the enclave against the pinned
 [release manifest](../transcripts/release.json), is what admits a job. A bank
@@ -13,7 +13,7 @@ issue, a logo or this page does not guarantee remaining capacity; run
 
 | Campaign kind | Banks | Reward | Slots |
 | --- | --- | --- | --- |
-| `open_recipe` | The twenty banks with a `<bank>-open-v1` campaign in [`transcripts/policy.json`](../transcripts/policy.json) | $10 for Chase, Bank of America and Wells Fargo; $5 for the others | 2 per bank |
+| `open_recipe` | The thirty-four banks with a `<bank>-open-v1` campaign in [`transcripts/policy.json`](../transcripts/policy.json) | $10 | 5 per bank (up to $50 per bank) |
 | `reviewed_descriptor` | Mercury, [`mercury-api-source-v1`](https://github.com/zkp2p/peer-link/issues/1) | $10 | 1 organization |
 
 Mercury remains first-contributor [source validation](source-validation.md):
@@ -76,9 +76,9 @@ or production approval.
 
 ## Pilot budget and availability
 
-The architecture reward ceiling is **$50 USDC** per funded epoch, with separate
+The architecture ceiling is **$1,000 USDC** per funded epoch, with separate
 bounded gas and no automatic refill. The open-recipe release funds one amount
-up to that ceiling, currently $10, and shares it across every campaign, first
+up to that ceiling, currently $120, and shares it across every campaign, first
 come first served; refilling
 means retiring the epoch and publishing a new measured release. The completed
 supervised Wise experiment used a measured

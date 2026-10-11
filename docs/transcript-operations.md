@@ -153,8 +153,10 @@ slots per campaign and remaining epoch budget.
 
 ### Rolling a release epoch
 
-The open-recipe release of 2026-10-09 (`open-public-v1`) and its two validation
-epochs were rolled on the existing host in this order. Each step gates the next.
+The open-recipe release of 2026-10-09 (`open-public-v1`), its two validation
+epochs and the grants release of 2026-10-11 (`open-public-v2`: 35 campaigns,
+$10 per contributor, up to five per bank, $120 funded) were rolled on the
+existing host in this order. Each step gates the next.
 
 1. Close the running epoch first: signed `pause`, confirm no obligations, return
    any unspent USDC through operator custody, then signed `retire`. Retirement
@@ -176,6 +178,13 @@ epochs were rolled on the existing host in this order. Each step gates the next.
    signed `activate`.
 7. Publish `transcripts/release.json` on `main`. Until it merges, contributors
    on `main` are pinned to the retired release and cannot contribute.
+
+The payout wallet is the same KMS wallet in every release, but the budget is
+fixed by the measured policy: activation requires the wallet to hold exactly
+`pilotBudgetMinor`, and USDC sent to it during an epoch does not raise that
+epoch's budget. To add funds, roll a new release with a larger budget; the next
+operator `preflight` needs the wallet empty, so move any USDC out through
+operator custody first, as step 1 does.
 
 A code fix that leaves the measured policy unchanged does not need a new
 namespace. Pause, build and approve the new PCR0 on the same state key, install,
@@ -360,7 +369,7 @@ review of old obligations, transactions and balances before any wallet reuse.
 
 After the paused signing preflight, complete a separately authorized $1 KMS recovery
 test and confirm its return before allocating the new candidate's measured $5 budget.
-The architecture maximum is $50; it is not the current funding amount. The paused
+The architecture maximum is $1,000; it is not the current funding amount. The paused
 The completed internal one-slot Wise pilot had capacity one. For any future
 campaign, require
 descriptor `budgetMinor` to match measured `pilotBudgetMinor` exactly. Fund only an
@@ -412,8 +421,8 @@ The default is plan-only: read the KMS public key and Base balances, fees and
 nonce. It uses AWS profile `peer`, region `us-east-1`, and checks the exact
 policy-bound ARN/wallet, Base chain 8453, native USDC and fixed deployer refund
 recipient. Review the destination, balance and proposed bounded transfer before
-adding `--execute` under the task's fund-transfer authority. The maximum is $50
-USDC and residual ETH is not swept.
+adding `--execute` under the task's fund-transfer authority. The maximum is $1,000
+USDC (the architecture ceiling) and residual ETH is not swept.
 
 Execution signs and fsyncs the raw transaction/hash to the ignored local state
 before broadcasting. Re-run the same command and state path to reconcile the

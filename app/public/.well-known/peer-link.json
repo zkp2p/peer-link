@@ -20,17 +20,17 @@
   },
   "rewards": {
     "currency": "USDC",
-    "fixedCampaignAmounts": [5, 10],
+    "fixedCampaignAmounts": [10],
     "contributorsPerBank": {
       "minimum": 1,
-      "maximum": 2
+      "maximum": 5
     },
     "paidContributionsPerAccountPerCampaign": 1,
     "allCampaignsFunded": false,
     "automaticRefill": false,
     "publicCampaignsAvailable": true,
     "wiseIncentivized": false,
-    "currentEpochBudgetUSDC": 10,
+    "currentEpochBudgetUSDC": 120,
     "sharedEpochBudget": true
   },
   "inference": {

@@ -11,7 +11,7 @@ recipe, and send the recipe, the owner's bank session and the owner's inference
 API key, encrypted, to an attested AWS Nitro enclave. The enclave replays the
 reads, keeps a value-free transcript, asks the owner's chosen model which fields
 carry payment details, checks that answer against the live records in code, and
-pays a fixed $5 or $10 USDC on Base when the checked answer is good enough. Peer
+pays a fixed $10 USDC on Base when the checked answer is good enough. Peer
 engineers use accepted transcripts to write bank integrations. You do not write
 provider code or open a pull request.
 
@@ -72,7 +72,7 @@ inference routes. An open campaign prints `domains`: any `https` host on that
 domain or a subdomain is accepted. Mercury prints `origins`: exactly those
 hosts. `--live` adds `availability`: remaining slots per campaign and
 the remaining shared budget. One funded budget covers all campaigns for the
-release: `epochBudgetUSDC` in the output, at most $50 and often less. It is not
+release: `epochBudgetUSDC` in the output, often less than all slots together. It is not
 refilled automatically, so stop here if the bank's
 `slotsRemaining` is 0 or `budgetRemainingMinor` is below the reward (USDC has six
 decimals, so 5000000 is $5). The budget is usually the scarcer of the two: a
