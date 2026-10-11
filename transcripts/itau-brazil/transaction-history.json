@@ -1,0 +1,38 @@
+{
+  "name": "itau-brazil-transaction-history",
+  "description": "Itau Brazil BRL transaction history",
+  "requests": [
+    {
+      "endpoint": "https://api.itau.com.br/v1/transactions",
+      "method": "GET",
+      "headers": {
+        "Authorization": "Bearer <token>",
+        "Content-Type": "application/json"
+      },
+      "params": {
+        "account": "<account_id>",
+        "start_date": "<start_date>",
+        "end_date": "<end_date>"
+      },
+      "response": {
+        "type": "object",
+        "properties": {
+          "transactions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "date": { "type": "string", "format": "date" },
+                "amount": { "type": "number" },
+                "currency": { "type": "string", "enum": ["BRL"] },
+                "description": { "type": "string" },
+                "type": { "type": "string", "enum": ["debit", "credit"] }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
