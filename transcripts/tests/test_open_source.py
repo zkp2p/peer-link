@@ -884,7 +884,7 @@ class DurableCapacityTests(unittest.TestCase):
                                  authority, head)
             snapshot = anchor.open(head) if head else None
             with patch("transcripts.epoch._require_nsm"), patch("transcripts.epoch.time.time", return_value=NOW + 5):
-                return BootEpoch.create(signer, budget_minor=50_000_000, state_anchor=anchor, initial_snapshot=snapshot)
+                return BootEpoch.create(signer, budget_minor=policy["pilotBudgetMinor"], state_anchor=anchor, initial_snapshot=snapshot)
 
         epoch = boot()
         # More distinct campaigns than the old five-campaign snapshot bound, within in-flight capacity.

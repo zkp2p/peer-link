@@ -249,7 +249,7 @@ class ArtifactTests(unittest.TestCase):
         validate_archive_record(self.campaign,record,policy=policy)
         with self.assertRaises(Rejected):validate_epoch_descriptor(kms_descriptor(),policy)
         with self.assertRaises(Rejected):validate_epoch_descriptor(epoch,kms_policy(self.campaign))
-        for value in (True,5_000_000.0,'5000000',4_999_999,50_000_001,None):
+        for value in (True,5_000_000.0,'5000000',4_999_999,MAX_BUDGET+1,None):
             modified=dict(policy,pilotBudgetMinor=value)
             candidate=dict(epoch,budgetMinor=value)
             with self.subTest(value=value),self.assertRaises(Rejected):

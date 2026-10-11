@@ -4,7 +4,7 @@ import re
 from .common import address, canonical, digest, fields, integer, opaque_id, require
 
 REWARDS = (5_000_000, 10_000_000)
-MAX_BUDGET = 50_000_000
+MAX_BUDGET = 1_000_000_000
 CAMPAIGN_FIELDS = {"version", "id", "bankId", "bankName", "country", "issueUrl", "status",
                    "rewardMinor", "maxContributors", "sources", "inferenceRoutes", "rubricVersion",
                    "evidenceRequirements", "safeSchemaFields"}

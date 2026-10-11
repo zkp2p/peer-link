@@ -535,7 +535,7 @@ class DurableReviewRegressions(DurableFixture):
             runtime.operator(command(first,'preflight','a'*64))
             witness=first.ledger.runtime_state()['fundingPreflight']
             self.assertEqual(witness,{'descriptorDigest':digest(first.public_descriptor()),'nonce':7})
-            rpc.balance=50_000_000
+            rpc.balance=first.budget_minor
             second=self.epoch();new_runtime=Runtime(self.policy,second,None,FakeArchive([]),attester=lambda nonce,key,user:nonce)
             new_runtime.rpc=rpc;new_runtime.payment=BaseUSDCPayoutTransport(second,rpc,pinned_rpc_url=rpc.endpoint)
             self.assertEqual(new_runtime.funding_preflight,witness['descriptorDigest'])

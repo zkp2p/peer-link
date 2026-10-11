@@ -90,7 +90,7 @@ class EpochTests(unittest.TestCase):
     def test_external_key_survives_closed_epoch_but_new_ledger_is_paused(self):
         first=synthetic_epoch();signer=first._signer;first.close()
         with patch("transcripts.epoch._require_nsm"):
-            second=BootEpoch.create(signer)
+            second=BootEpoch.create(signer,budget_minor=50_000_000)
         try:
             self.assertEqual(first.wallet,second.wallet)
             with self.assertRaisesRegex(Rejected,"payout_paused"):second.require_active()

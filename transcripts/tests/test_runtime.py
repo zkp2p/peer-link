@@ -60,7 +60,8 @@ class FakeEpoch:
     epoch_id="1"*32;wallet="0x"+"1"*40
     def __init__(self):
         self.active=True;self.activations=[];self.anchor=Anchor()
-        self.ledger=Ledger(":memory:",KEY,anchor=self.anchor)
+        # The suite exercises a $50 epoch; the shipped policy funds its own amount.
+        self.ledger=Ledger(":memory:",KEY,anchor=self.anchor,global_budget_minor=50_000_000)
     def require_active(self):
         if not self.active: raise Rejected("payout_paused")
     def require_admission(self):

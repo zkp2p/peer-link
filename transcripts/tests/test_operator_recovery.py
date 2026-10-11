@@ -17,6 +17,7 @@ from transcripts.kms_signer import KmsSigner
 from transcripts.operator_recovery import AWSKMSExchange,OperatorRecovery
 from transcripts.tests.test_core_eth_payout import SyntheticRPC,BLOCKHASH
 from transcripts.tests.test_kms_signer import KEY_ID,WALLET,PUBLIC_DER,SyntheticBroker,b64,transaction,FIXTURE_KEY
+from transcripts.policy import MAX_BUDGET
 
 
 class RecoveryRPC(SyntheticRPC):
@@ -118,7 +119,7 @@ class RecoveryTests(unittest.TestCase):
     def test_unknown_pending_nonce_and_balance_limit_fail_before_sign(self):
         self.rpc.pending=self.rpc.nonce+1
         with self.assertRaisesRegex(Rejected,'recovery_unknown_pending_nonce'):self.recovery().run(execute=True)
-        self.rpc.pending=self.rpc.nonce;self.rpc.amount=50_000_001
+        self.rpc.pending=self.rpc.nonce;self.rpc.amount=MAX_BUDGET+1
         with self.assertRaisesRegex(Rejected,'recovery_balance_limit'):self.recovery().run(execute=True)
         self.assertEqual(self.broker.requests,[]);self.assertEqual(self.rpc.sent,[])
 

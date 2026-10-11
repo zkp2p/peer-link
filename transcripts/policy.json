@@ -157,7 +157,7 @@
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/73",
       "status": "active",
       "rewardMinor": 10000000,
-      "maxContributors": 2,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://chase.com",
@@ -212,7 +212,7 @@
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/235",
       "status": "active",
       "rewardMinor": 10000000,
-      "maxContributors": 2,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://bankofamerica.com",
@@ -267,10 +267,120 @@
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/75",
       "status": "active",
       "rewardMinor": 10000000,
-      "maxContributors": 2,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://wellsfargo.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "capital-one-open-v1",
+      "bankId": "us/capital-one",
+      "bankName": "Capital One",
+      "country": "US",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/263",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://capitalone.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "citi-us-open-v1",
+      "bankId": "us/citi",
+      "bankName": "Citi",
+      "country": "US",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/264",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://citi.com",
           "paths": ["/"],
           "methods": ["GET", "POST"],
           "parameterNames": [],
@@ -321,8 +431,8 @@
       "country": "UA",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/6",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://monobank.ua",
@@ -376,8 +486,8 @@
       "country": "VN",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/8",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://vietcombank.com.vn",
@@ -431,8 +541,8 @@
       "country": "NG",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/4",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://opayweb.com",
@@ -493,8 +603,8 @@
       "country": "PK",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/86",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://easypaisa.com.pk",
@@ -548,8 +658,8 @@
       "country": "ID",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/7",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://klikbca.com",
@@ -610,8 +720,8 @@
       "country": "CO",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/9",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://bancolombia.com",
@@ -665,8 +775,8 @@
       "country": "PH",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/10",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://gcash.com",
@@ -720,8 +830,8 @@
       "country": "BD",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/13",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://bkash.com",
@@ -775,8 +885,8 @@
       "country": "KE",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/14",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://safaricom.co.ke",
@@ -830,8 +940,8 @@
       "country": "KZ",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/15",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://kaspi.kz",
@@ -885,8 +995,8 @@
       "country": "MX",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/16",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://bbva.mx",
@@ -940,8 +1050,8 @@
       "country": "PE",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/17",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://viabcp.com",
@@ -995,8 +1105,8 @@
       "country": "TR",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/18",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://ziraatbank.com.tr",
@@ -1050,8 +1160,8 @@
       "country": "AR",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/20",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://uala.com.ar",
@@ -1105,8 +1215,8 @@
       "country": "BR",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/21",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://itau.com.br",
@@ -1160,8 +1270,8 @@
       "country": "GH",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/32",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://mtn.com.gh",
@@ -1215,11 +1325,685 @@
       "country": "ES",
       "issueUrl": "https://github.com/zkp2p/peer-link/issues/24",
       "status": "active",
-      "rewardMinor": 5000000,
-      "maxContributors": 2,
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
       "sources": [
         {
           "origin": "https://bbva.es",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "kb-kookmin-open-v1",
+      "bankId": "kr/kb-kookmin",
+      "bankName": "KB Kookmin Bank",
+      "country": "KR",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/254",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://kbstar.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "rakuten-bank-open-v1",
+      "bankId": "jp/rakuten-bank",
+      "bankName": "Rakuten Bank",
+      "country": "JP",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/255",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://rakuten-bank.co.jp",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "kasikornbank-open-v1",
+      "bankId": "th/kasikornbank",
+      "bankName": "Kasikornbank",
+      "country": "TH",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/256",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://kasikornbank.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "dbs-singapore-open-v1",
+      "bankId": "sg/dbs",
+      "bankName": "DBS Bank",
+      "country": "SG",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/257",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://dbs.com.sg",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        },
+        {
+          "origin": "https://dbs.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "hsbc-hong-kong-open-v1",
+      "bankId": "hk/hsbc-hk",
+      "bankName": "HSBC Hong Kong",
+      "country": "HK",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/258",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://hsbc.com.hk",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "maybank-open-v1",
+      "bankId": "my/maybank",
+      "bankName": "Maybank Malaysia",
+      "country": "MY",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/259",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://maybank2u.com.my",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "mandiri-open-v1",
+      "bankId": "id/mandiri",
+      "bankName": "Bank Mandiri",
+      "country": "ID",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/260",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://bankmandiri.co.id",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "cmb-china-open-v1",
+      "bankId": "cn/cmb",
+      "bankName": "China Merchants Bank",
+      "country": "CN",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/261",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://cmbchina.com",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "bidv-open-v1",
+      "bankId": "vn/bidv",
+      "bankName": "BIDV",
+      "country": "VN",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/262",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://bidv.com.vn",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "pko-bp-open-v1",
+      "bankId": "pl/pko-bp",
+      "bankName": "PKO Bank Polski",
+      "country": "PL",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/265",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://pkobp.pl",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        },
+        {
+          "origin": "https://ipko.pl",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "pumb-open-v1",
+      "bankId": "ua/pumb",
+      "bankName": "PUMB",
+      "country": "UA",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/266",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://pumb.ua",
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openrouter",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "near",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 1,
+        "kind": "open-json-read-v1",
+        "maxReads": 6
+      }
+    },
+    {
+      "version": 1,
+      "id": "paysera-open-v1",
+      "bankId": "lt/paysera",
+      "bankName": "Paysera Lithuania",
+      "country": "LT",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/267",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://paysera.com",
           "paths": ["/"],
           "methods": ["GET", "POST"],
           "parameterNames": [],
@@ -1282,15 +2066,15 @@
     "keyId": "arn:aws:kms:us-east-1:411399509833:key/5e49914d-80d9-4140-a4c2-4bf00e3ac7ea",
     "wallet": "0xd297f105b145cd1d4ddb1d31392300e934bc3559"
   },
-  "pilotBudgetMinor": 10000000,
+  "pilotBudgetMinor": 120000000,
   "stateAuthority": {
     "kind": "aws_lambda_dynamodb",
     "region": "us-east-1",
-    "functionArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-open-v1-authority:1",
-    "namespace": "open-public-v1",
-    "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/34433f8c-357e-4011-9f05-a23ce8da7bd8",
+    "functionArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-open-v2-authority:1",
+    "namespace": "open-public-v2",
+    "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/8f248c8c-3bfb-49ef-b300-be7fb0f939ae",
     "credentialRoleArn": "arn:aws:iam::411399509833:role/peerlink-transcript-kms-pilot-HostRole-CtMw2KLCWL9c",
     "maxCiphertextBytes": 327680,
-    "initialWalletNonce": 10
+    "initialWalletNonce": 11
   }
 }

@@ -12,7 +12,10 @@ from transcripts.common import Rejected, digest
 from transcripts.policy import validate_campaign, validate_reservation
 from transcripts.recipe import LiveRead, validate_recipe
 from transcripts.artifacts import extract_artifact, validate_artifact, account_fingerprint
-from transcripts.ledger import Ledger
+from functools import partial
+from transcripts.ledger import Ledger as _Ledger
+# These cases are written against a $50 epoch; callers may still pass their own budget.
+Ledger = partial(_Ledger, global_budget_minor=50_000_000)
 from transcripts.payout import PayoutCoordinator
 
 KEY = b"synthetic-test-key-32-bytes-long!!"
