@@ -24,12 +24,20 @@
     "mark": "W"
   },
   {
-    "name": "Wise",
-    "country": "GB",
-    "currency": "GBP, EUR, USD",
-    "issue": "https://wise.com/",
-    "logo": "/logos/wise.png",
-    "mark": "W"
+    "name": "Capital One",
+    "country": "US",
+    "currency": "USD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/263",
+    "logo": "/logos/capital-one.webp",
+    "mark": "C"
+  },
+  {
+    "name": "Citi",
+    "country": "US",
+    "currency": "USD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/264",
+    "logo": "/logos/citi.png",
+    "mark": "C"
   },
   {
     "name": "Monobank",
@@ -168,6 +176,110 @@
     "mark": "BS"
   },
   {
+    "name": "Paysera Lithuania",
+    "country": "LT",
+    "currency": "EUR",
+    "issue": "https://github.com/zkp2p/peer-link/issues/267",
+    "logo": "/logos/paysera.png",
+    "mark": "PL"
+  },
+  {
+    "name": "Maybank Malaysia",
+    "country": "MY",
+    "currency": "MYR",
+    "issue": "https://github.com/zkp2p/peer-link/issues/259",
+    "logo": "/logos/maybank.png",
+    "mark": "MM"
+  },
+  {
+    "name": "PUMB",
+    "country": "UA",
+    "currency": "UAH",
+    "issue": "https://github.com/zkp2p/peer-link/issues/266",
+    "logo": "/logos/pumb.png",
+    "mark": "P"
+  },
+  {
+    "name": "Bank Mandiri",
+    "country": "ID",
+    "currency": "IDR",
+    "issue": "https://github.com/zkp2p/peer-link/issues/260",
+    "logo": "/logos/mandiri.png",
+    "mark": "BM"
+  },
+  {
+    "name": "BIDV",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/262",
+    "logo": "/logos/bidv.png",
+    "mark": "B"
+  },
+  {
+    "name": "KB Kookmin Bank",
+    "country": "KR",
+    "currency": "KRW",
+    "issue": "https://github.com/zkp2p/peer-link/issues/254",
+    "logo": "/logos/kb-kookmin.png",
+    "mark": "K"
+  },
+  {
+    "name": "Rakuten Bank",
+    "country": "JP",
+    "currency": "JPY",
+    "issue": "https://github.com/zkp2p/peer-link/issues/255",
+    "logo": "/logos/rakuten-bank.png",
+    "mark": "R"
+  },
+  {
+    "name": "Kasikornbank",
+    "country": "TH",
+    "currency": "THB",
+    "issue": "https://github.com/zkp2p/peer-link/issues/256",
+    "logo": "/logos/kasikornbank.png",
+    "mark": "K"
+  },
+  {
+    "name": "DBS Bank",
+    "country": "SG",
+    "currency": "SGD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/257",
+    "logo": "/logos/dbs.svg",
+    "mark": "D"
+  },
+  {
+    "name": "HSBC Hong Kong",
+    "country": "HK",
+    "currency": "HKD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/258",
+    "logo": "/logos/hsbc-hk.png",
+    "mark": "H"
+  },
+  {
+    "name": "China Merchants Bank",
+    "country": "CN",
+    "currency": "CNY",
+    "issue": "https://github.com/zkp2p/peer-link/issues/261",
+    "logo": "/logos/cmb.png",
+    "mark": "C"
+  },
+  {
+    "name": "PKO Bank Polski",
+    "country": "PL",
+    "currency": "PLN",
+    "issue": "https://github.com/zkp2p/peer-link/issues/265",
+    "logo": "/logos/pko-bp.png",
+    "mark": "P"
+  },
+  {
+    "name": "Wise",
+    "country": "GB",
+    "currency": "GBP, EUR, USD",
+    "issue": "https://wise.com/",
+    "logo": "/logos/wise.png",
+    "mark": "W"
+  },
+  {
     "name": "ICICI Bank",
     "country": "IN",
     "currency": "INR",
@@ -208,14 +320,6 @@
     "mark": "BO"
   },
   {
-    "name": "Paysera Lithuania",
-    "country": "LT",
-    "currency": "EUR",
-    "issue": "https://github.com/zkp2p/peer-link/issues/25",
-    "logo": "/logos/paysera.png",
-    "mark": "PL"
-  },
-  {
     "name": "Lloyds Bank",
     "country": "GB",
     "currency": "GBP",
@@ -246,14 +350,6 @@
     "issue": "https://github.com/zkp2p/peer-link/issues/29",
     "logo": "/logos/truemoney.png",
     "mark": "TT"
-  },
-  {
-    "name": "Maybank Malaysia",
-    "country": "MY",
-    "currency": "MYR",
-    "issue": "https://github.com/zkp2p/peer-link/issues/30",
-    "logo": "/logos/maybank.png",
-    "mark": "MM"
   },
   {
     "name": "FNB South Africa",
@@ -408,14 +504,6 @@
     "mark": "S"
   },
   {
-    "name": "PUMB",
-    "country": "UA",
-    "currency": "UAH",
-    "issue": "https://github.com/zkp2p/peer-link/issues/51",
-    "logo": "/logos/pumb.png",
-    "mark": "P"
-  },
-  {
     "name": "A-Bank",
     "country": "UA",
     "currency": "UAH",
@@ -438,22 +526,6 @@
     "issue": "https://github.com/zkp2p/peer-link/issues/54",
     "logo": "/logos/bri.png",
     "mark": "BB"
-  },
-  {
-    "name": "Bank Mandiri",
-    "country": "ID",
-    "currency": "IDR",
-    "issue": "https://github.com/zkp2p/peer-link/issues/55",
-    "logo": "/logos/mandiri.png",
-    "mark": "BM"
-  },
-  {
-    "name": "BIDV",
-    "country": "VN",
-    "currency": "VND",
-    "issue": "https://github.com/zkp2p/peer-link/issues/56",
-    "logo": "/logos/bidv.png",
-    "mark": "B"
   },
   {
     "name": "Nequi",

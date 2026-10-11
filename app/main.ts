@@ -157,6 +157,13 @@ function render(providers: Provider[], catalogUnavailable = false) {
     card.className = "integration-tile";
     card.href = integration.href;
     const place = countryNames.of(integration.country) ?? integration.country;
+    // Open campaigns pay each of several contributors; the tag shows the bank's whole pool.
+    const bankPool =
+      integration.campaignStatus === "open" &&
+      integration.bounty &&
+      (integration.maxContributorOrganizations ?? 0) > 1
+        ? integration.bounty * (integration.maxContributorOrganizations ?? 0)
+        : null;
     const organizationLimit = integration.maxContributorOrganizations
       ? ` Limit: ${integration.maxContributorOrganizations} contributor organization.`
       : "";
@@ -164,7 +171,7 @@ function render(providers: Provider[], catalogUnavailable = false) {
       integration.campaignStatus === "source_validation"
         ? `First-contributor source validation: $${integration.bounty} per accepted contribution.${organizationLimit} A verified release and funded reservation are required; availability is not guaranteed.`
         : integration.campaignStatus === "open"
-          ? `Open transcript campaign: $${integration.bounty} per accepted contribution. All banks share one funded budget; a reservation admits a job and availability is not guaranteed.`
+          ? `Open transcript campaign: $${integration.bounty} per accepted contribution${bankPool ? `, up to ${integration.maxContributorOrganizations} contributors (up to $${bankPool} for this bank)` : ""}. All banks share one funded budget; a reservation admits a job and availability is not guaranteed.`
           : `Planned $${integration.bounty} per accepted transcript.${organizationLimit} This bank’s campaign is planned.`;
     card.setAttribute(
       "aria-label",
@@ -205,7 +212,7 @@ function render(providers: Provider[], catalogUnavailable = false) {
       const tag = document.createElement("span");
       tag.className = "bounty-tag";
       tag.setAttribute("aria-hidden", "true");
-      tag.textContent = `$${integration.bounty}`;
+      tag.textContent = bankPool ? `up to $${bankPool}` : `$${integration.bounty}`;
       card.title = rewardDescription;
       card.append(tag);
     }

@@ -16,24 +16,26 @@
     "name": "Monobank",
     "country": "UA",
     "currency": "UAH",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/6",
     "logo": "/logos/monobank.png",
     "adapter": "ua/monobank",
     "status": "open",
-    "campaign": "monobank-open-v1"
+    "campaign": "monobank-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 8,
     "name": "Vietcombank",
     "country": "VN",
     "currency": "VND",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/8",
     "logo": "/logos/vietcombank.png",
     "adapter": "vn/vietcombank",
     "status": "open",
-    "campaign": "vietcombank-open-v1"
+    "campaign": "vietcombank-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 73,
@@ -45,7 +47,8 @@
     "logo": "/logos/chase.jpg",
     "adapter": "us/chase",
     "status": "open",
-    "campaign": "chase-open-v1"
+    "campaign": "chase-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 235,
@@ -57,7 +60,8 @@
     "logo": "/logos/bank-of-america.png",
     "adapter": "us/bank-of-america",
     "status": "open",
-    "campaign": "bank-of-america-open-v1"
+    "campaign": "bank-of-america-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 75,
@@ -69,186 +73,384 @@
     "logo": "/logos/wells-fargo.png",
     "adapter": "us/wells-fargo",
     "status": "open",
-    "campaign": "wells-fargo-open-v1"
+    "campaign": "wells-fargo-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 4,
     "name": "OPay",
     "country": "NG",
     "currency": "NGN",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/4",
     "logo": "/logos/opay.png",
     "adapter": "ng/opay",
     "status": "open",
-    "campaign": "opay-open-v1"
+    "campaign": "opay-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 86,
     "name": "Easypaisa",
     "country": "PK",
     "currency": "PKR",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/86",
     "logo": "/logos/easypaisa.png",
     "adapter": "pk/easypaisa",
     "status": "open",
-    "campaign": "easypaisa-open-v1"
+    "campaign": "easypaisa-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 7,
     "name": "BCA",
     "country": "ID",
     "currency": "IDR",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/7",
     "logo": "/logos/bca.png",
     "adapter": "id/bca",
     "status": "open",
-    "campaign": "bca-open-v1"
+    "campaign": "bca-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 9,
     "name": "Bancolombia",
     "country": "CO",
     "currency": "COP",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/9",
     "logo": "/logos/bancolombia.png",
     "adapter": "co/bancolombia",
     "status": "open",
-    "campaign": "bancolombia-open-v1"
+    "campaign": "bancolombia-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 10,
     "name": "GCash",
     "country": "PH",
     "currency": "PHP",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/10",
     "logo": "/logos/gcash.png",
     "adapter": "ph/gcash",
     "status": "open",
-    "campaign": "gcash-open-v1"
+    "campaign": "gcash-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 13,
     "name": "bKash",
     "country": "BD",
     "currency": "BDT",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/13",
     "logo": "/logos/bkash.png",
     "adapter": "bd/bkash",
     "status": "open",
-    "campaign": "bkash-open-v1"
+    "campaign": "bkash-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 14,
     "name": "Safaricom M-Pesa",
     "country": "KE",
     "currency": "KES",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/14",
     "logo": "/logos/14.png",
     "adapter": "ke/mpesa",
     "status": "open",
-    "campaign": "mpesa-open-v1"
+    "campaign": "mpesa-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 15,
     "name": "Kaspi Bank",
     "country": "KZ",
     "currency": "KZT",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/15",
     "logo": "/logos/kaspi.png",
     "adapter": "kz/kaspi",
     "status": "open",
-    "campaign": "kaspi-open-v1"
+    "campaign": "kaspi-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 16,
     "name": "BBVA Mexico",
     "country": "MX",
     "currency": "MXN",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/16",
     "logo": "/logos/16.png",
     "adapter": "mx/bbva-mexico",
     "status": "open",
-    "campaign": "bbva-mexico-open-v1"
+    "campaign": "bbva-mexico-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 17,
     "name": "Banco de Credito del Peru",
     "country": "PE",
     "currency": "PEN",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/17",
     "logo": "/logos/bcp.png",
     "adapter": "pe/bcp",
     "status": "open",
-    "campaign": "bcp-open-v1"
+    "campaign": "bcp-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 18,
     "name": "Ziraat Bank",
     "country": "TR",
     "currency": "TRY",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/18",
     "logo": "/logos/ziraat.png",
     "adapter": "tr/ziraat",
     "status": "open",
-    "campaign": "ziraat-open-v1"
+    "campaign": "ziraat-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 20,
     "name": "Uala Argentina",
     "country": "AR",
     "currency": "ARS",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/20",
     "logo": "/logos/uala.png",
     "adapter": "ar/uala",
     "status": "open",
-    "campaign": "uala-open-v1"
+    "campaign": "uala-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 21,
     "name": "Itau Brazil",
     "country": "BR",
     "currency": "BRL",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/21",
     "logo": "/logos/itau.png",
     "adapter": "br/itau",
     "status": "open",
-    "campaign": "itau-open-v1"
+    "campaign": "itau-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 32,
     "name": "MTN MoMo Ghana",
     "country": "GH",
     "currency": "GHS",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/32",
     "logo": "/logos/mtn-momo.png",
     "adapter": "gh/mtn-momo",
     "status": "open",
-    "campaign": "mtn-momo-open-v1"
+    "campaign": "mtn-momo-open-v1",
+    "maxContributorOrganizations": 5
   },
   {
     "issue": 24,
     "name": "BBVA Spain",
     "country": "ES",
     "currency": "EUR",
-    "amount": 5,
+    "amount": 10,
     "url": "https://github.com/zkp2p/peer-link/issues/24",
     "logo": "/logos/24.png",
     "adapter": "es/bbva-spain",
     "status": "open",
-    "campaign": "bbva-spain-open-v1"
+    "campaign": "bbva-spain-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 254,
+    "name": "KB Kookmin Bank",
+    "country": "KR",
+    "currency": "KRW",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/254",
+    "logo": "/logos/kb-kookmin.png",
+    "adapter": "kr/kb-kookmin",
+    "status": "open",
+    "campaign": "kb-kookmin-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 255,
+    "name": "Rakuten Bank",
+    "country": "JP",
+    "currency": "JPY",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/255",
+    "logo": "/logos/rakuten-bank.png",
+    "adapter": "jp/rakuten-bank",
+    "status": "open",
+    "campaign": "rakuten-bank-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 256,
+    "name": "Kasikornbank",
+    "country": "TH",
+    "currency": "THB",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/256",
+    "logo": "/logos/kasikornbank.png",
+    "adapter": "th/kasikornbank",
+    "status": "open",
+    "campaign": "kasikornbank-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 257,
+    "name": "DBS Bank",
+    "country": "SG",
+    "currency": "SGD",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/257",
+    "logo": "/logos/dbs.svg",
+    "adapter": "sg/dbs",
+    "status": "open",
+    "campaign": "dbs-singapore-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 258,
+    "name": "HSBC Hong Kong",
+    "country": "HK",
+    "currency": "HKD",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/258",
+    "logo": "/logos/hsbc-hk.png",
+    "adapter": "hk/hsbc-hk",
+    "status": "open",
+    "campaign": "hsbc-hong-kong-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 259,
+    "name": "Maybank Malaysia",
+    "country": "MY",
+    "currency": "MYR",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/259",
+    "logo": "/logos/maybank.png",
+    "adapter": "my/maybank",
+    "status": "open",
+    "campaign": "maybank-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 260,
+    "name": "Bank Mandiri",
+    "country": "ID",
+    "currency": "IDR",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/260",
+    "logo": "/logos/mandiri.png",
+    "adapter": "id/mandiri",
+    "status": "open",
+    "campaign": "mandiri-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 261,
+    "name": "China Merchants Bank",
+    "country": "CN",
+    "currency": "CNY",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/261",
+    "logo": "/logos/cmb.png",
+    "adapter": "cn/cmb",
+    "status": "open",
+    "campaign": "cmb-china-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 262,
+    "name": "BIDV",
+    "country": "VN",
+    "currency": "VND",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/262",
+    "logo": "/logos/bidv.png",
+    "adapter": "vn/bidv",
+    "status": "open",
+    "campaign": "bidv-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 263,
+    "name": "Capital One",
+    "country": "US",
+    "currency": "USD",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/263",
+    "logo": "/logos/capital-one.webp",
+    "adapter": "us/capital-one",
+    "status": "open",
+    "campaign": "capital-one-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 264,
+    "name": "Citi",
+    "country": "US",
+    "currency": "USD",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/264",
+    "logo": "/logos/citi.png",
+    "adapter": "us/citi",
+    "status": "open",
+    "campaign": "citi-us-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 265,
+    "name": "PKO Bank Polski",
+    "country": "PL",
+    "currency": "PLN",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/265",
+    "logo": "/logos/pko-bp.png",
+    "adapter": "pl/pko-bp",
+    "status": "open",
+    "campaign": "pko-bp-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 266,
+    "name": "PUMB",
+    "country": "UA",
+    "currency": "UAH",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/266",
+    "logo": "/logos/pumb.png",
+    "adapter": "ua/pumb",
+    "status": "open",
+    "campaign": "pumb-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 267,
+    "name": "Paysera Lithuania",
+    "country": "LT",
+    "currency": "EUR",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/267",
+    "logo": "/logos/paysera.png",
+    "adapter": "lt/paysera",
+    "status": "open",
+    "campaign": "paysera-open-v1",
+    "maxContributorOrganizations": 5
   }
 ]

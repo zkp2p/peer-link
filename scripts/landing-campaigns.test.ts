@@ -51,8 +51,11 @@ it("keeps the Mercury campaign and Wise reference when the adapter catalog fails
   expect(mercury.children[0].children[0].style.colorScheme).toBe("light");
   const chase = list.children[1];
   expect(chase.href).toBe("https://github.com/zkp2p/peer-link/issues/73");
-  expect(chase.children.at(-1)?.textContent).toBe("$10");
+  expect(chase.children.at(-1)?.textContent).toBe("up to $50");
   expect(chase.attributes["aria-label"]).toContain("Open transcript campaign");
+  expect(chase.attributes["aria-label"]).toContain(
+    "up to 5 contributors (up to $50 for this bank)",
+  );
   expect(chase.attributes["aria-label"]).toContain("share one funded budget");
   const wise = list.children.find((card) => card.children[1].textContent === "Wise");
   expect(wise?.href).toBe("https://wise.com/");
