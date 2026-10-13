@@ -61,5 +61,20 @@ it("keeps the Mercury campaign and Wise reference when the adapter catalog fails
   expect(wise?.href).toBe("https://wise.com/");
   expect(wise?.children).toHaveLength(3);
   expect(wise?.attributes["aria-label"]).toContain("no transcript reward recruitment");
+  const palmpay = list.children.find((card) => card.children[1].textContent === "PalmPay");
+  expect(palmpay?.href).toBe("https://github.com/zkp2p/peer-link/issues/45");
+  expect(palmpay?.children.at(-1)?.textContent).toBe("soon");
+  expect(palmpay?.attributes["aria-label"]).toBe(
+    "PalmPay, Nigeria. Next release: $10 per accepted transcript, up to 5 contributors. Not accepting transcripts yet.",
+  );
+  const request = list.children.at(-1);
+  expect(request?.href).toBe(
+    "https://github.com/zkp2p/peer-link/issues/new?template=bank-request.md",
+  );
+  expect(request?.children.map((child) => child.textContent)).toEqual([
+    "+",
+    "Your bank",
+    "Every bank is welcome. Request yours.",
+  ]);
   expect(catalogStatus.textContent).toContain("catalog could not load");
 });

@@ -66,3 +66,70 @@ observed as its logo element’s background image.
 Source: https://now.hdfc.bank.in/retail-app/assets/common-assets-bank/images/hdfc-bank-logo-now.svg
 
 SHA-256: `7352799547d8df77bbde7055bd712ce54e52fb6f057400d463091be89ad6ef3a`.
+
+## Next-release banks — October 13, 2026
+
+The China, Singapore, Korea and VietinBank logos were retrieved for the planned
+campaigns on October 5–7, 2026. Standard Chartered, Trust Bank and VietinBank
+publish a square icon on their own homepages (VietinBank serves PNG bytes as
+`image/x-icon`). ICBC, CCB, ABC, Bank of China, OCBC and UOB serve only 16 to
+48 px favicons, so their icons come from each bank's own Apple App Store
+listing (seller verified through the App Store lookup API), served by Apple at
+128 × 128. Most Korean bank apps use app-brand icons, so Shinhan Bank and Hana
+Bank use their financial groups' symbols, which match the banks' own favicons.
+NongHyup's symbol comes from its CI download, which is a GIF, converted
+losslessly to a pixel-identical PNG. The others are stored unchanged:
+
+| Local file | Official source | Asset URL |
+| --- | --- | --- |
+| `icbc.png` | [ICBC App Store listing](https://apps.apple.com/cn/app/id423514795), seller Industrial and Commercial Bank of China | https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/c9/6e/49/c96e4981-d3a9-f9d0-cff5-4d36135fdc3b/AppIcon-0-0-1x_U007ephone-0-1-0-0-sRGB-85-220.png/128x128bb.png |
+| `ccb.png` | [CCB App Store listing](https://apps.apple.com/cn/app/id391965015), seller China Construction Bank | https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/40/31/4c/40314c85-48eb-3376-cd85-2a5cd85c2fae/AppIcon-0-0-1x_U007ephone-0-1-0-sRGB-85-220.png/128x128bb.png |
+| `abc.png` | [ABC App Store listing](https://apps.apple.com/cn/app/id515651240), seller Agricultural Bank of China Limited | https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/14/1f/68/141f68e4-112d-40de-0e7a-d1c188d0ce41/AppIcon-Release-1x_U007emarketing-0-6-0-sRGB-85-220-0.png/128x128bb.png |
+| `boc.png` | [BOC App Store listing](https://apps.apple.com/cn/app/id399608199), seller Bank of China Limited | https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/a9/81/13/a981130c-a9d3-1ed8-1828-95d986c0e116/AppIcon-1x_U007emarketing-0-8-0-sRGB-85-220-0.png/128x128bb.png |
+| `ocbc.png` | [OCBC Singapore App Store listing](https://apps.apple.com/sg/app/id292506828), seller Oversea-Chinese Banking Corporation Limited | https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/6c/d8/65/6cd8655f-2fee-8d61-7bd7-62b05fef11b1/AppIcon-0-0-1x_U007ephone-0-11-0-sRGB-85-220.png/128x128bb.png |
+| `uob.png` | [UOB TMRW App Store listing](https://apps.apple.com/sg/app/id1049286296), seller United Overseas Bank Limited | https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/c9/03/b3/c903b35f-2ee9-9282-87fc-3d4941ae5475/AppIcon-0-0-1x_U007emarketing-0-7-0-85-220.png/128x128bb.png |
+| `standard-chartered.png` | https://www.sc.com/sg/ | https://av.sc.com/sg/content/images/content/images/cropped-cropped-favicon-cropped-512x512-1-200x200.png |
+| `trust.png` | https://trustbank.sg/ | https://trustbank.sg/images/trust_favicon.png |
+| `shinhan.png` | https://www.shinhangroup.com/kr/main (Shinhan Financial Group) | https://www.shinhangroup.com/resources/publish/kr/images/common/favicon_192_192.png |
+| `hana.png` | https://www.hanafn.com/ (Hana Financial Group) | https://www.hanafn.com/assets/img/favicon/apple-touch-icon.png |
+| `woori.png` | https://spot.wooribank.com/pot/Dream?withyou=BPBKI0056 | https://simg.wooribank.com/img/section/nbp/icons/apple-touch-icon.png |
+| `nonghyup.png` | https://www.nonghyup.com/introduce/ci/symbol.do | `cyber_symbol.gif` in https://www.nonghyup.com/cmm/file/resourceDownLoad.do?filepath=ai02.zip |
+| `vietinbank.png` | https://www.vietinbank.vn/ | https://vietinbank.vn/assets/4ed6cd47-8286-40df-b66f-4ccb71e09b4b |
+
+These assets were retrieved unchanged on October 13, 2026. PrivatBank, MoMo,
+Airtm and Brubank link them as icons from their official homepages (Brubank's is
+hosted on its website builder's CDN); Starling Bank declares its logo in its
+homepage's structured data. Skrill's own site icons are blurry at card size, so
+its icon comes from its own App Store listing (seller verified through the App
+Store lookup API):
+
+| Local file | Official source | Asset URL |
+| --- | --- | --- |
+| `privatbank.png` | https://privatbank.ua/ | https://privatbank.ua/sites/pb/img/favicon/favicon-192x192.png |
+| `momo.png` | https://www.momo.vn/ | https://homepage.momocdn.net/img/momo-amazone-s3-api-241023152559-638652939595693626.png |
+| `skrill.png` | [Skrill App Store listing](https://apps.apple.com/us/app/skrill-pay-transfer-money/id718248239), seller Skrill Ltd | https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/e6/0b/be/e60bbea5-3f31-5940-7701-6b4339b90b57/AppIcon-0-0-1x_U007epad-0-1-P3-85-220.png/128x128bb.png |
+| `airtm.png` | https://www.airtm.com/en/ | https://www.airtm.com/wp-content/uploads/2022/09/cropped-favicon-white-1-192x192.png |
+| `starling.png` | https://www.starlingbank.com/ | https://www.starlingbank.com/media-library/sb-logo.png |
+| `brubank.png` | https://www.brubank.com/ | https://cdn.prod.website-files.com/63091bbd808ef433808b70cd/633336b1beaf6e8c27e2da15_Favicon%20(2).png |
+
+SHA-256 of the stored files:
+
+- `icbc.png`: `eb583ecdf825b602c748d3e62f0f0368b1a800841ddb2a8f2847b8777e1ae0f1`
+- `ccb.png`: `0daba6bce6db30ba191201a3846517eb6e6bbedb29eccd7d2cc42b2a5c6417c0`
+- `abc.png`: `3279a7b6727eb13efbcc159adaf681bfa5fa4f862ae092f253d5da9b0030c632`
+- `boc.png`: `d4d502000df40868624ba0f0558d5caebd17a2e43b0db4dee88f25ee325cefb1`
+- `ocbc.png`: `2f43e0cf7a681cf6d44d037afbb37f07634b0814f2df34ce704b0b86854ca285`
+- `uob.png`: `f33beaa6876cec1c53420f541111b05062fa8b5eae22150a28abe7741337f168`
+- `standard-chartered.png`: `e6f38c51972eba5604ed7ac633492bcdcb37e76c2b01fb71dfb187a7489f09b3`
+- `trust.png`: `79723c03fbc5da0de580a8dfb51ff3659e65d0e4961c068091a191f431d58f4e`
+- `shinhan.png`: `7b8df713a02858706392092ab80e2363b8ba85f975119c7e0f06b4b06843dd8d`
+- `hana.png`: `f81823bbb871d8f81bed135de7f0568a825dbdcf4583f5a989ae3a5df48e9619`
+- `woori.png`: `77407e849207e2b00bd507d4d2221e33376aa17d23f66168725540f2b41ca54a`
+- `nonghyup.png`: `33170aaae190f9be8c2d31492c6f12be861ccbf8ebf436a516a322d482dad57d`
+- `vietinbank.png`: `77e8526ff9bab977948142eba7854017edd28a80deae14accdc667d11c51174e`
+- `privatbank.png`: `9f677469fe5006cce4e02db76e8edb6198ea12dd7c8f0974360b6befe5bb87a2`
+- `momo.png`: `12d1f736345a09acdf1fdef665d8809ced4ebf9fdfc9cc108df20db67cf11d39`
+- `skrill.png`: `ec5ddc79868f3d4b2bade4bfaa884d832cdf491c0e4b4fe69a8561eb955e6f31`
+- `airtm.png`: `832bc56bb1148a9da1f355661fafa977ae0380d89c3ee57b4af0e97ee100c8a8`
+- `starling.png`: `147bb3ca71471cfec37f95699aa2211c82b1925ba5780fa2675ff6773f69be82`
+- `brubank.png`: `5b99b6587549abf4cd1265ed4d44431997ae5f04f06b137fecd537024f7f3a32`

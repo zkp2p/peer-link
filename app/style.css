@@ -153,9 +153,27 @@ h2 {
   margin-bottom: 0;
 }
 
-.how-section h2,
-.integrations-section h2 {
+.how-section h2 {
   margin-bottom: 32px;
+}
+.integrations-section h2 {
+  margin-bottom: 16px;
+}
+.integrations-lead {
+  max-width: 760px;
+  margin-bottom: 32px;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.55;
+}
+.integrations-lead strong,
+.integrations-lead a {
+  color: var(--ink);
+  font-weight: 600;
+}
+.integrations-lead a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .collaboration-map {
   position: relative;
@@ -421,6 +439,17 @@ h2 {
   font-size: 12px;
   font-weight: 700;
   line-height: 1.3;
+}
+.bounty-tag.soon {
+  background: #f0f0f0;
+  color: #555;
+}
+.request-tile {
+  border-style: dashed;
+}
+.request-tile .integration-logo {
+  font-size: 22px;
+  font-weight: 500;
 }
 .integration-meta {
   color: #666;
