@@ -2045,6 +2045,88 @@
         "kind": "open-json-read-v1",
         "maxReads": 6
       }
+    },
+    {
+      "version": 1,
+      "id": "hdfc-open-v1",
+      "bankId": "in/hdfc",
+      "bankName": "HDFC Bank",
+      "country": "IN",
+      "issueUrl": "https://github.com/zkp2p/peer-link/issues/272",
+      "status": "active",
+      "rewardMinor": 10000000,
+      "maxContributors": 5,
+      "sources": [
+        {
+          "origin": "https://hdfc.bank.in",
+          "paths": [
+            "/"
+          ],
+          "methods": [
+            "GET",
+            "POST"
+          ],
+          "parameterNames": [],
+          "headerNames": []
+        }
+      ],
+      "inferenceRoutes": [
+        {
+          "provider": "openai",
+          "models": [
+            "*"
+          ],
+          "privacyModes": [
+            "provider_visible"
+          ]
+        },
+        {
+          "provider": "openrouter",
+          "models": [
+            "*"
+          ],
+          "privacyModes": [
+            "provider_visible"
+          ]
+        },
+        {
+          "provider": "near",
+          "models": [
+            "*"
+          ],
+          "privacyModes": [
+            "provider_visible"
+          ]
+        },
+        {
+          "provider": "openai_compatible",
+          "models": [
+            "*"
+          ],
+          "privacyModes": [
+            "provider_visible"
+          ]
+        }
+      ],
+      "rubricVersion": "transcript-mapping-v1",
+      "safeSchemaFields": [],
+      "evidenceRequirements": {
+        "historyPath": [],
+        "minRecords": 3,
+        "requiredFields": [
+          "paymentId",
+          "amount",
+          "timestamp",
+          "counterparty"
+        ],
+        "minScore": 85
+      },
+      "openSource": {
+        "version": 2,
+        "kind": "open-json-read-v1",
+        "maxReads": 1,
+        "transport": "hdfc-aes-gcm-v1"
+      }
     }
   ],
   "privacy": {
@@ -2070,11 +2152,11 @@
   "stateAuthority": {
     "kind": "aws_lambda_dynamodb",
     "region": "us-east-1",
-    "functionArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-open-v2-authority:1",
-    "namespace": "open-public-v2",
-    "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/8f248c8c-3bfb-49ef-b300-be7fb0f939ae",
+    "functionArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-hdfc-v1-authority:1",
+    "namespace": "open-hdfc-v1",
+    "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/99ac0087-0653-4507-8755-17a97231b8f2",
     "credentialRoleArn": "arn:aws:iam::411399509833:role/peerlink-transcript-kms-pilot-HostRole-CtMw2KLCWL9c",
     "maxCiphertextBytes": 327680,
-    "initialWalletNonce": 11
+    "initialWalletNonce": 12
   }
 }
