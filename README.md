@@ -27,7 +27,7 @@ contributors**: up to **$50 per bank**.
 | Region | Banks |
 | --- | --- |
 | Americas | Chase, Bank of America, Wells Fargo, Capital One, Citi, BBVA Mexico, Bancolombia, Banco de Credito del Peru, Uala Argentina, Itau Brazil |
-| Asia | KB Kookmin Bank (Korea), Rakuten Bank (Japan), Kasikornbank (Thailand), DBS Bank (Singapore), HSBC Hong Kong, Maybank (Malaysia), Bank Mandiri and BCA (Indonesia), China Merchants Bank, Vietcombank and BIDV (Vietnam), GCash (Philippines), bKash (Bangladesh), Easypaisa (Pakistan), Kaspi Bank (Kazakhstan) |
+| Asia | [HDFC Bank (India)](https://github.com/zkp2p/peer-link/issues/272), KB Kookmin Bank (Korea), Rakuten Bank (Japan), Kasikornbank (Thailand), DBS Bank (Singapore), HSBC Hong Kong, Maybank (Malaysia), Bank Mandiri and BCA (Indonesia), China Merchants Bank, Vietcombank and BIDV (Vietnam), GCash (Philippines), bKash (Bangladesh), Easypaisa (Pakistan), Kaspi Bank (Kazakhstan) |
 | Europe | PKO Bank Polski (Poland), Monobank and PUMB (Ukraine), Paysera (Lithuania), Ziraat Bank (Turkey), BBVA Spain |
 | Africa | OPay (Nigeria), MTN MoMo (Ghana), Safaricom M-Pesa (Kenya) |
 

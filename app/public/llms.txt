@@ -16,28 +16,31 @@
 
 ## Status
 
-Grants are open. Thirty-four banks have an open-recipe transcript campaign in
+Grants are open. Thirty-five banks have an open-recipe transcript campaign in
 the current release, each paying $10 USDC per accepted transcript to up to five
 contributors (up to $50 per bank), and Mercury has a first-contributor
 source-validation campaign ([$10 USDC for one accepted
 organization](https://github.com/zkp2p/peer-link/issues/1); its first positive
 live API acquisition is still pending). All campaigns share one funded budget
-with no automatic refill, and the current release holds $120 USDC in total; Peer
+with no automatic refill, and the current release started with $120 USDC in total; Peer
 tops it up by rolling a new release. Banks: Chase, Bank of America, Wells Fargo,
 Capital One, Citi, KB Kookmin Bank, Rakuten Bank, Kasikornbank, DBS Bank, HSBC
-Hong Kong, Maybank, Bank Mandiri, BCA, China Merchants Bank, Vietcombank, BIDV,
+Hong Kong, HDFC Bank, Maybank, Bank Mandiri, BCA, China Merchants Bank, Vietcombank, BIDV,
 GCash, bKash, Easypaisa, Kaspi Bank, PKO Bank Polski, Monobank, PUMB, Paysera,
 Ziraat Bank, BBVA Spain, BBVA Mexico, Bancolombia, Banco de Credito del Peru, Uala,
 Itau, OPay, MTN MoMo Ghana and Safaricom M-Pesa. The campaign issues are listed
 on Merit for discovery only; grants are paid by PeerLink, with no Merit claim or
 tax form.
-No listed bank has an accepted contribution yet. Wise is already integrated and
-has no reward. Static copy cannot guarantee capacity: verify the pinned release
+HDFC has one verified accepted transcript and confirmed $10 payout, including
+same-image paid-receipt recovery after restart. This is transcript acquisition,
+not a completed Peer payment integration. Other listed banks have no accepted
+contribution yet. Wise is already integrated and has no reward. Static copy cannot guarantee capacity: verify the pinned release
 and check live capacity before collecting keys or spending on inference.
 
 Release manifest: https://github.com/zkp2p/peer-link/blob/main/transcripts/release.json
 Measured campaign policy: https://github.com/zkp2p/peer-link/blob/main/transcripts/policy.json
 Recipe guide: https://github.com/zkp2p/peer-link/blob/main/docs/transcript-recipes.md
+HDFC encrypted-session guide: https://github.com/zkp2p/peer-link/blob/main/docs/hdfc-transcripts.md
 Validation evidence: https://github.com/zkp2p/peer-link/blob/main/docs/evidence.md
 
 ## How an agent contributes

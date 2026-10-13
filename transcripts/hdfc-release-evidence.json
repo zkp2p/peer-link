@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "date": "2026-10-13",
+  "scope": "Owner-authorized release validation of one HDFC account using the fixed encrypted Recent Transactions read. Fresh independent Nitro verification preceded submission; this is transcript acquisition evidence, not a completed Peer payment integration.",
+  "sourceCommit": "4cba61e76773af05cbc24dedaff451f05e060865",
+  "serviceUrl": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
+  "policyDigest": "95da9f438b7fe82af490b4842c9ab32fe3a5aa2dcf81cf6377fac34c64a848f5",
+  "measurements": {
+    "0": "432c9fa3cae37d7708dab222f5466d456251f97a3cf79198352ace5c3f5187260b5681abf7b0b5706e1350ff5a9148db",
+    "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
+    "2": "9618f1763183c92895b82da16b52a4b975f2c30150bae67d709e504dd4efc052fb63d000d3d6f8fbd8ccc23b4043e29b",
+    "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
+  },
+  "ciRunUrl": "https://github.com/zkp2p/peer-link/actions/runs/38359251383",
+  "independentCiBuildsMatchHardwareBuild": true,
+  "signedEifSha384": "4e3733fd8f5cb57ae3fac9a1f0cd56b93e1e6d2e30eea9b24b1c969cb52f751b74e1d335835a8b834659c88557b35fc3",
+  "epochId": "bb8a4c09162511559cd79a4f4117fa38",
+  "stateNamespace": "open-hdfc-v1",
+  "stateAuthorityArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-hdfc-v1-authority:1",
+  "stateWrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/99ac0087-0653-4507-8755-17a97231b8f2",
+  "payoutWallet": "0xd297f105b145cd1d4ddb1d31392300e934bc3559",
+  "budgetMinor": 120000000,
+  "fundingTransaction": "0x335da90ef10ef50ba686a5f676735ab3d51582b2eabb2c464240a08e82929409",
+  "gasTopupWei": 242226719038,
+  "gasFundingTransaction": "0x9bdc5396eefee188629c8d3659ec62294da3c086a2ff593c863492f946d0b94a",
+  "previousEpochRefund": {
+    "epochId": "258ff4ecd43f2a06ff3bc9426a744eaf",
+    "state": "refunded",
+    "amountMinor": 120000000,
+    "transaction": "0x200f174f882b299d7f3d853e7434a078a7552f9f9cf491d26566855474acba7b",
+    "confirmedTransferAndBalanceDelta": true
+  },
+  "hardwareRecovery": {
+    "verified": true,
+    "epochId": "bb8a4c09162511559cd79a4f4117fa38",
+    "stableReceiptKey": true,
+    "freshIngressKey": true,
+    "sameWrappedMaster": true,
+    "writerGenerationBefore": 1,
+    "writerGenerationAfter": 2,
+    "revisionBefore": 2,
+    "revisionAfter": 3,
+    "zeroWalletAndNonceAnchorPreserved": true
+  },
+  "validation": {
+    "localEncryptedPreview": true,
+    "syntheticPythonTests": 375,
+    "javascriptTests": 395,
+    "bankAcquisitionInsideEnclave": true,
+    "paidContribution": true
+  },
+  "limitations": [
+    "This is transcript acquisition for future engineering, not a completed Peer payment integration.",
+    "Description is narration, not a verified payee identifier; booking date and billing status do not prove finality.",
+    "Ordinary provider-visible NEAR inference; no confidential inference attestation.",
+    "Payout custody is operator-recoverable AWS KMS, not escrow.",
+    "One owner-authorized account, one recent-history page and one inference call; no claim of pagination, stable ids across reads or general account coverage. Provider token counts are reported usage, not a reconciled dollar invoice."
+  ],
+  "job": {
+    "jobId": "86128a21fe1b8ed11f20568719f4ad20",
+    "campaignId": "hdfc-open-v1",
+    "state": "paid",
+    "rewardMinor": 10000000,
+    "transactionId": "0xc49955122186ec668d6c432388ed8ae7f0b85558d69d23e68bbdf0f3976f03ba",
+    "provider": "near",
+    "model": "z-ai/glm-5.3-flash",
+    "privacyMode": "provider_visible",
+    "inputTokens": 1020,
+    "outputTokens": 67,
+    "score": 100,
+    "automaticPayout": true,
+    "operatorPayoutReconciliationRequired": false,
+    "confirmedTransferAndRecipientBalanceDelta": true
+  },
+  "archive": {
+    "archivedRecords": 3,
+    "states": ["accepted", "paid", "payout_pending"],
+    "paidRecordMatchesVerifiedReceipt": true,
+    "paidRecordSha256": "8fbd7cc7c7c9371a03a27f3ffc07c4b4d353fa09a906288386d37f57756db12d"
+  },
+  "paidRecovery": {
+    "verified": true,
+    "epochId": "bb8a4c09162511559cd79a4f4117fa38",
+    "paidReceiptUnchanged": true,
+    "sameTransaction": "0xc49955122186ec668d6c432388ed8ae7f0b85558d69d23e68bbdf0f3976f03ba",
+    "noAdditionalInferenceOrPayout": true,
+    "stableReceiptKey": true,
+    "freshIngressKey": true,
+    "writerGenerationBefore": 2,
+    "writerGenerationAfter": 3,
+    "revisionBefore": 17,
+    "revisionAfter": 18,
+    "walletUsdcMinor": 110000000,
+    "walletNonce": 13
+  }
+}

@@ -153,6 +153,14 @@ slots per campaign and remaining epoch budget.
 
 ### Rolling a release epoch
 
+The October 13 HDFC release uses `open-hdfc-v1`, 35 open-recipe campaigns plus
+Mercury and the same 120 USDC budget. The old epoch's runtime returned 120 USDC
+in [this confirmed refund](https://basescan.org/tx/0x200f174f882b299d7f3d853e7434a078a7552f9f9cf491d26566855474acba7b)
+and finalized as `refunded` before replacement. Fresh attestation, unfunded
+signing, zero-balance restore and later paid-receipt restore passed for the exact
+image; one HDFC contribution was paid automatically. See
+[HDFC release evidence](../transcripts/hdfc-release-evidence.json).
+
 The open-recipe release of 2026-10-09 (`open-public-v1`), its two validation
 epochs and the grants release of 2026-10-11 (`open-public-v2`: 35 campaigns,
 $10 per contributor, up to five per bank, $120 funded) were rolled on the

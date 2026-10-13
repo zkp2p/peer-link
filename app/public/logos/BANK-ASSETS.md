@@ -57,3 +57,12 @@ SHA-256 of the unchanged files:
 - `capital-one.webp`: `a795c89c267576676498a35348b2a3f84d73d80f795b4e616b22d2a794ef9eca`
 - `citi.png`: `2f6d73a312361b30f573d8f97bf9b345f2316c3d8b40723592b3145e360f8c32`
 - `pko-bp.png`: `ffffc25af992fc247fd7f70edaf64ed1a45438fe30f9c4db7d67661ba7d30152`
+
+## HDFC Bank — October 13, 2026
+
+`hdfc-bank.svg` is the unchanged HDFC NetBanking logo served by the bank itself,
+observed as its logo element’s background image.
+
+Source: https://now.hdfc.bank.in/retail-app/assets/common-assets-bank/images/hdfc-bank-logo-now.svg
+
+SHA-256: `7352799547d8df77bbde7055bd712ce54e52fb6f057400d463091be89ad6ef3a`.

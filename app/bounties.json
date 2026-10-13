@@ -452,5 +452,18 @@
     "status": "open",
     "campaign": "paysera-open-v1",
     "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 272,
+    "name": "HDFC Bank",
+    "country": "IN",
+    "currency": "INR",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/272",
+    "logo": "/logos/hdfc-bank.svg",
+    "adapter": "in/hdfc",
+    "status": "open",
+    "campaign": "hdfc-open-v1",
+    "maxContributorOrganizations": 5
   }
 ]

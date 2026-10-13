@@ -132,8 +132,8 @@ the fix and its regression test are in the release.
 That evidence covers one bank API reached with a personal token. It does not
 show a web session, cookie, CSRF header, POST or GraphQL read working against a
 real bank, and it does not show live acquisition for any listed campaign bank.
-Treat each of those as not yet demonstrated until a contribution for that bank
-is accepted.
+Those historical Wise checks do not establish other banks' behavior. HDFC has
+separate live evidence below; the remaining listed banks are not yet demonstrated.
 
 The grants release (`open-public-v2`, 2026-10-11) changes only the measured
 policy and the per-release ceiling: 35 campaigns, $10 per accepted open-recipe
@@ -141,7 +141,29 @@ transcript for up to five contributors per bank, and a $120 funded budget. Its
 image was built on the host and reproduced by both CI builders before approval;
 after activation an operator job with an invalid bank token was reserved,
 submitted and rejected as `bank_http_unauthorized` with the budget untouched. No
-positive contribution has been made on it yet.
+positive contribution was made on that epoch before retirement.
+
+## HDFC encrypted-history release
+
+The October 13 release (`open-hdfc-v1`) adds HDFC's single encrypted Recent
+Transactions POST, retaining TLS and AES-GCM authentication. Its signed host image
+matches both independent CI builds. The old epoch returned its full 120 USDC to
+the fixed deployer; that same budget funded the new attested epoch.
+
+One owner-authorized HDFC contribution passed enclave bank acquisition, anonymous
+gating, account matching, value-free redaction and NEAR model mapping verified in
+code at 100/100. The automatic [10 USDC
+payout](https://basescan.org/tx/0xc49955122186ec668d6c432388ed8ae7f0b85558d69d23e68bbdf0f3976f03ba)
+and recipient balance increase were independently verified. All three signed
+settlement records reached the private archive. A controlled same-image restart
+returned the identical paid receipt with a fresh ingress key and unchanged
+110 USDC balance/nonce, without resubmission or another model call/payment.
+
+This proves one account's transcript acquisition, not payment verification,
+pagination, general HDFC account coverage or the other campaigns. Description is
+narration; booking date and billing status do not establish finality. See the
+[HDFC guide](hdfc-transcripts.md) and [release
+evidence](../transcripts/hdfc-release-evidence.json).
 
 ## Internal durable Wise evidence
 

@@ -50,7 +50,7 @@
       }
     },
     {
-      "includes": ["app/public/logos/mercury.svg"],
+      "includes": ["app/public/logos/mercury.svg", "app/public/logos/hdfc-bank.svg"],
       "linter": {
         "rules": {
           "a11y": {

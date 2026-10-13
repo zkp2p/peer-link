@@ -40,6 +40,14 @@
     "mark": "C"
   },
   {
+    "name": "HDFC Bank",
+    "country": "IN",
+    "currency": "INR",
+    "issue": "https://github.com/zkp2p/peer-link/issues/272",
+    "logo": "/logos/hdfc-bank.svg",
+    "mark": "H"
+  },
+  {
     "name": "Monobank",
     "country": "UA",
     "currency": "UAH",

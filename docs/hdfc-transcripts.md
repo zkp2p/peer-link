@@ -1,8 +1,10 @@
 # HDFC encrypted transcript support
 
-This is implementation and validation guidance for Peer engineers. HDFC is not
-enabled in the published policy. A contributor must wait for an approved release
-that lists an HDFC campaign; editing a local policy does not enable submissions.
+The approved release includes `hdfc-open-v1`: a fixed $10 USDC reward for each
+accepted transcript, up to five distinct accounts, subject to the shared budget
+and a successful reservation. One owner-authorized contribution completed enclave
+acquisition, NEAR grading and payment on October 13, 2026. This is transcript
+acquisition support, not a completed Peer payment integration.
 
 ## Observed read
 
@@ -32,8 +34,8 @@ the contribution is rejected. An unreadable encrypted success also fails closed.
 
 ## Campaign opt-in
 
-An operator can prepare an HDFC campaign through the normal measured-release
-process. It uses `bankId: in/hdfc`, `country: IN` and these exact descriptors:
+The measured HDFC campaign uses `bankId: in/hdfc`, `country: IN` and these exact
+source descriptors:
 
 ```json
 {
@@ -149,10 +151,28 @@ read scope, wrong keys, tampered ciphertext, plaintext rejection, account
 mismatch, size/history limits and secret cleanup references. Synthetic payout
 coordination is not a real reward payment.
 
-No real inference call, enclave replay, accepted contribution, payout or
-production deployment is established by this evidence. The public policy and
-release remain unchanged. Temporary browser hooks were restored; private capture
-files must be deleted at the end of the local session and the owner should log out.
+The subsequent operator-owned release validation used measured source
+`4cba61e76773af05cbc24dedaff451f05e060865`, independently matching both CI
+builders and the signed host image. Fresh Nitro attestation preceded an encrypted
+submission. The enclave acquired authenticated HDFC history, passed its anonymous
+and account-matching gates, and sent only the value-free transcript and notes to
+NEAR `z-ai/glm-5.3-flash`. Code verified the model mapping at 100/100; the model
+asserted no completed-status token. Reported usage was 1,020 input tokens and
+67 output tokens.
+
+The contribution received an automatic [10 USDC payout on
+Base](https://basescan.org/tx/0xc49955122186ec668d6c432388ed8ae7f0b85558d69d23e68bbdf0f3976f03ba).
+The transfer and recipient balance increase were independently verified. Accepted,
+payout-pending and paid signed records reached the private archive. A controlled
+same-image restart preserved the identical paid receipt, epoch, remaining budget
+and payout nonce, with a fresh ingress key and no new submission or payment.
+See [scoped release evidence](../transcripts/hdfc-release-evidence.json).
+
+The existing 120 USDC was refunded and reused for this epoch; after this payment,
+110 USDC remained. That observation is not a current capacity promise. Temporary
+browser hooks were restored and private bank capture files deleted. Contributors
+must sign out after their job and delete temporary bank inputs. An explicitly
+retained inference key should remain capped and outside Git.
 
 To validate code locally:
 
@@ -162,7 +182,7 @@ npm run check:bank
 npm run build
 ```
 
-Before activation, review the full diff, run the staged/range privacy scans,
-complete the measured release gates and perform a fresh enclave replay with
-explicit owner consent for the selected inference endpoint/model. Never send
-the draft policy or development checkout to contributors as an approved release.
+Future measured changes still require the full diff and privacy scans, independent
+builds, release gates and owner-authorized live validation. Contributors use the
+unmodified published `main` release; the internal validation above used the
+operator's independently verified candidate pin before publication.
