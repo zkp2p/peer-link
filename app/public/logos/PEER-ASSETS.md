@@ -4,4 +4,4 @@ The three `peer-logo-*.svg` files are unchanged official Peer wordmarks, supplie
 
 The page uses Inter as a fallback; no proprietary font files are redistributed.
 
-Use 🔗 (Slack shortcode `:link:`) as the Peer Link project symbol on identity surfaces, including the separate Link label and favicon. Keep names, URL slugs and machine identifiers unchanged. The emoji is not part of the official Peer wordmark.
+Use the chain-link symbol only as the site favicon. Keep page titles, social titles and the separate Link label free of decorative chain emojis to avoid repeated icons. Keep names, URL slugs and machine identifiers unchanged. The emoji is not part of the official Peer wordmark.
