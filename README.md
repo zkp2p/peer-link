@@ -26,12 +26,12 @@ contributors**: up to **$50 per bank**.
 
 | Region | Banks |
 | --- | --- |
-| Americas | Chase, Bank of America, Wells Fargo, Capital One, Citi, BBVA Mexico, Bancolombia, Banco de Credito del Peru, Uala Argentina, Itau Brazil |
-| Asia | [HDFC Bank (India)](https://github.com/zkp2p/peer-link/issues/272), KB Kookmin Bank (Korea), Rakuten Bank (Japan), Kasikornbank (Thailand), DBS Bank (Singapore), HSBC Hong Kong, Maybank (Malaysia), Bank Mandiri and BCA (Indonesia), China Merchants Bank, Vietcombank and BIDV (Vietnam), GCash (Philippines), bKash (Bangladesh), Easypaisa (Pakistan), Kaspi Bank (Kazakhstan) |
-| Europe | PKO Bank Polski (Poland), Monobank and PUMB (Ukraine), Paysera (Lithuania), Ziraat Bank (Turkey), BBVA Spain |
-| Africa | OPay (Nigeria), MTN MoMo (Ghana), Safaricom M-Pesa (Kenya) |
+| Americas | Chase, Bank of America, Wells Fargo, Capital One, Citi, Airtm, BBVA Mexico, Bancolombia and Nequi (Colombia), Banco de Credito del Peru, Uala Argentina and Brubank (Argentina), Itau Brazil |
+| Asia | [HDFC Bank (India)](https://github.com/zkp2p/peer-link/issues/272), KB Kookmin Bank, Shinhan Bank, Hana Bank, Woori Bank and NH NongHyup Bank (Korea), Rakuten Bank (Japan), Kasikornbank (Thailand), DBS Bank, OCBC, UOB, Standard Chartered and Trust Bank (Singapore), HSBC Hong Kong, Maybank (Malaysia), Bank Mandiri and BCA (Indonesia), China Merchants Bank, ICBC, China Construction Bank, Agricultural Bank of China and Bank of China, Vietcombank, BIDV, VietinBank and MoMo (Vietnam), ABA Bank (Cambodia), GCash and Maya (Philippines), bKash (Bangladesh), Easypaisa and SadaPay (Pakistan), Kaspi Bank and Halyk Bank (Kazakhstan), Bank of Georgia and TBC Bank (Georgia) |
+| Middle East | Al Rajhi Bank (Saudi Arabia), ADCB (UAE) |
+| Europe | PKO Bank Polski (Poland), Monobank, PUMB, PrivatBank and A-Bank (Ukraine), Paysera (Lithuania), Ziraat Bank (Turkey), BBVA Spain, Lloyds, Starling Bank and Skrill (UK) |
+| Africa | OPay, PalmPay, Kuda Bank and Access Bank (Nigeria), MTN MoMo (Ghana), Safaricom M-Pesa (Kenya), Wave (Senegal) |
 
-**Next release:** 34 more banks and payment apps are planned, on the same terms: PalmPay, Kuda Bank and Access Bank (Nigeria), PrivatBank and A-Bank (Ukraine), MoMo and VietinBank (Vietnam), Bank of Georgia and TBC Bank (Georgia), Al Rajhi Bank (Saudi Arabia), ADCB (UAE), Lloyds, Starling Bank and Skrill (UK), Airtm, Halyk Bank (Kazakhstan), Wave (Senegal), ABA Bank (Cambodia), Maya (Philippines), Nequi (Colombia), SadaPay (Pakistan), Brubank (Argentina), ICBC, China Construction Bank, Agricultural Bank of China and Bank of China, OCBC, UOB, Standard Chartered and Trust Bank (Singapore), and Shinhan, Hana, Woori and NH NongHyup (Korea). Each campaign issue says when it opens.
 
 Mercury pays $10 to one organization through its read-only API. Each bank has a
 [campaign issue](https://github.com/zkp2p/peer-link/issues/64) with its accepted
@@ -151,7 +151,7 @@ enclave, usually in under a minute.
 
 ### In detail
 
-1. **Pick a campaign.** Thirty-four banks have an `open_recipe` campaign in which the
+1. **Pick a campaign.** Sixty-nine banks have an `open_recipe` campaign in which the
    contributor's agent supplies the read route. Mercury has a
    `reviewed_descriptor` campaign with a fixed API route. After
    `npm run transcripts:setup`, run

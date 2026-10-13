@@ -63,9 +63,9 @@ it("keeps the Mercury campaign and Wise reference when the adapter catalog fails
   expect(wise?.attributes["aria-label"]).toContain("no transcript reward recruitment");
   const palmpay = list.children.find((card) => card.children[1].textContent === "PalmPay");
   expect(palmpay?.href).toBe("https://github.com/zkp2p/peer-link/issues/45");
-  expect(palmpay?.children.at(-1)?.textContent).toBe("soon");
-  expect(palmpay?.attributes["aria-label"]).toBe(
-    "PalmPay, Nigeria. Next release: $10 per accepted transcript, up to 5 contributors. Not accepting transcripts yet.",
+  expect(palmpay?.children.at(-1)?.textContent).toBe("up to $50");
+  expect(palmpay?.attributes["aria-label"]).toContain(
+    "up to 5 contributors (up to $50 for this bank)",
   );
   const request = list.children.at(-1);
   expect(request?.href).toBe(

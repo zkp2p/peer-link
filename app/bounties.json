@@ -475,7 +475,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/45",
     "logo": "/logos/palmpay.png",
     "adapter": "ng/palmpay",
-    "status": "planned",
+    "status": "open",
     "campaign": "palmpay-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -488,7 +488,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/46",
     "logo": "/logos/kuda.png",
     "adapter": "ng/kuda",
-    "status": "planned",
+    "status": "open",
     "campaign": "kuda-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -501,7 +501,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/47",
     "logo": "/logos/access.png",
     "adapter": "ng/access-bank",
-    "status": "planned",
+    "status": "open",
     "campaign": "access-bank-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -514,7 +514,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/275",
     "logo": "/logos/privatbank.png",
     "adapter": "ua/privatbank",
-    "status": "planned",
+    "status": "open",
     "campaign": "privatbank-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -527,7 +527,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/276",
     "logo": "/logos/momo.png",
     "adapter": "vn/momo",
-    "status": "planned",
+    "status": "open",
     "campaign": "momo-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -540,7 +540,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/23",
     "logo": "/logos/bog.png",
     "adapter": "ge/bank-of-georgia",
-    "status": "planned",
+    "status": "open",
     "campaign": "bank-of-georgia-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -553,7 +553,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/62",
     "logo": "/logos/tbc.png",
     "adapter": "ge/tbc",
-    "status": "planned",
+    "status": "open",
     "campaign": "tbc-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -566,7 +566,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/52",
     "logo": "/logos/abank.png",
     "adapter": "ua/a-bank",
-    "status": "planned",
+    "status": "open",
     "campaign": "a-bank-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -579,7 +579,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/43",
     "logo": "/logos/alrajhi.png",
     "adapter": "sa/al-rajhi",
-    "status": "planned",
+    "status": "open",
     "campaign": "al-rajhi-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -592,7 +592,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/26",
     "logo": "/logos/lloyds.png",
     "adapter": "gb/lloyds",
-    "status": "planned",
+    "status": "open",
     "campaign": "lloyds-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -605,7 +605,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/61",
     "logo": "/logos/halyk.png",
     "adapter": "kz/halyk",
-    "status": "planned",
+    "status": "open",
     "campaign": "halyk-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -618,7 +618,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/22",
     "logo": "/logos/wave.png",
     "adapter": "sn/wave",
-    "status": "planned",
+    "status": "open",
     "campaign": "wave-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -631,7 +631,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/277",
     "logo": "/logos/skrill.png",
     "adapter": "gb/skrill",
-    "status": "planned",
+    "status": "open",
     "campaign": "skrill-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -644,7 +644,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/278",
     "logo": "/logos/airtm.png",
     "adapter": "us/airtm",
-    "status": "planned",
+    "status": "open",
     "campaign": "airtm-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -657,7 +657,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/12",
     "logo": "/logos/aba.png",
     "adapter": "kh/aba",
-    "status": "planned",
+    "status": "open",
     "campaign": "aba-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -670,7 +670,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/19",
     "logo": "/logos/adcb.png",
     "adapter": "ae/adcb",
-    "status": "planned",
+    "status": "open",
     "campaign": "adcb-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -683,7 +683,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/279",
     "logo": "/logos/starling.png",
     "adapter": "gb/starling",
-    "status": "planned",
+    "status": "open",
     "campaign": "starling-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -696,7 +696,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/58",
     "logo": "/logos/58.png",
     "adapter": "ph/maya",
-    "status": "planned",
+    "status": "open",
     "campaign": "maya-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -709,7 +709,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/57",
     "logo": "/logos/nequi.png",
     "adapter": "co/nequi",
-    "status": "planned",
+    "status": "open",
     "campaign": "nequi-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -722,7 +722,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/50",
     "logo": "/logos/sadapay.png",
     "adapter": "pk/sadapay",
-    "status": "planned",
+    "status": "open",
     "campaign": "sadapay-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -735,7 +735,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/280",
     "logo": "/logos/brubank.png",
     "adapter": "ar/brubank",
-    "status": "planned",
+    "status": "open",
     "campaign": "brubank-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -748,7 +748,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/153",
     "logo": "/logos/icbc.png",
     "adapter": "cn/icbc",
-    "status": "planned",
+    "status": "open",
     "campaign": "icbc-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -761,7 +761,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/154",
     "logo": "/logos/ccb.png",
     "adapter": "cn/ccb",
-    "status": "planned",
+    "status": "open",
     "campaign": "ccb-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -774,7 +774,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/155",
     "logo": "/logos/abc.png",
     "adapter": "cn/abc",
-    "status": "planned",
+    "status": "open",
     "campaign": "abc-china-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -787,7 +787,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/156",
     "logo": "/logos/boc.png",
     "adapter": "cn/boc",
-    "status": "planned",
+    "status": "open",
     "campaign": "boc-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -800,7 +800,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/159",
     "logo": "/logos/ocbc.png",
     "adapter": "sg/ocbc",
-    "status": "planned",
+    "status": "open",
     "campaign": "ocbc-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -813,7 +813,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/160",
     "logo": "/logos/uob.png",
     "adapter": "sg/uob",
-    "status": "planned",
+    "status": "open",
     "campaign": "uob-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -826,7 +826,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/161",
     "logo": "/logos/standard-chartered.png",
     "adapter": "sg/standard-chartered",
-    "status": "planned",
+    "status": "open",
     "campaign": "standard-chartered-sg-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -839,7 +839,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/162",
     "logo": "/logos/trust.png",
     "adapter": "sg/trust",
-    "status": "planned",
+    "status": "open",
     "campaign": "trust-bank-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -852,7 +852,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/186",
     "logo": "/logos/shinhan.png",
     "adapter": "kr/shinhan",
-    "status": "planned",
+    "status": "open",
     "campaign": "shinhan-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -865,7 +865,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/187",
     "logo": "/logos/hana.png",
     "adapter": "kr/hana",
-    "status": "planned",
+    "status": "open",
     "campaign": "hana-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -878,7 +878,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/188",
     "logo": "/logos/woori.png",
     "adapter": "kr/woori",
-    "status": "planned",
+    "status": "open",
     "campaign": "woori-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -891,7 +891,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/189",
     "logo": "/logos/nonghyup.png",
     "adapter": "kr/nonghyup",
-    "status": "planned",
+    "status": "open",
     "campaign": "nonghyup-open-v1",
     "maxContributorOrganizations": 5
   },
@@ -904,7 +904,7 @@
     "url": "https://github.com/zkp2p/peer-link/issues/193",
     "logo": "/logos/vietinbank.png",
     "adapter": "vn/vietinbank",
-    "status": "planned",
+    "status": "open",
     "campaign": "vietinbank-open-v1",
     "maxContributorOrganizations": 5
   }
