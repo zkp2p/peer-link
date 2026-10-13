@@ -2059,13 +2059,8 @@
       "sources": [
         {
           "origin": "https://hdfc.bank.in",
-          "paths": [
-            "/"
-          ],
-          "methods": [
-            "GET",
-            "POST"
-          ],
+          "paths": ["/"],
+          "methods": ["GET", "POST"],
           "parameterNames": [],
           "headerNames": []
         }
@@ -2073,39 +2068,23 @@
       "inferenceRoutes": [
         {
           "provider": "openai",
-          "models": [
-            "*"
-          ],
-          "privacyModes": [
-            "provider_visible"
-          ]
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
         },
         {
           "provider": "openrouter",
-          "models": [
-            "*"
-          ],
-          "privacyModes": [
-            "provider_visible"
-          ]
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
         },
         {
           "provider": "near",
-          "models": [
-            "*"
-          ],
-          "privacyModes": [
-            "provider_visible"
-          ]
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
         },
         {
           "provider": "openai_compatible",
-          "models": [
-            "*"
-          ],
-          "privacyModes": [
-            "provider_visible"
-          ]
+          "models": ["*"],
+          "privacyModes": ["provider_visible"]
         }
       ],
       "rubricVersion": "transcript-mapping-v1",
@@ -2113,12 +2092,7 @@
       "evidenceRequirements": {
         "historyPath": [],
         "minRecords": 3,
-        "requiredFields": [
-          "paymentId",
-          "amount",
-          "timestamp",
-          "counterparty"
-        ],
+        "requiredFields": ["paymentId", "amount", "timestamp", "counterparty"],
         "minScore": 85
       },
       "openSource": {
