@@ -46,10 +46,6 @@ p {
   margin: auto;
   padding-inline: 40px;
 }
-.link-emoji {
-  font-size: 0.8em;
-  letter-spacing: normal;
-}
 .nav {
   display: flex;
   align-items: center;
