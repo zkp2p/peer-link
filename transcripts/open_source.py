@@ -26,6 +26,7 @@ RUBRIC = "transcript-mapping-v1"
 ROLE_WEIGHTS = {"paymentId": 25, "amount": 25, "timestamp": 20, "counterparty": 15, "status": 10, "currency": 5}
 ROLES = tuple(ROLE_WEIGHTS)
 OPEN_FAILURES = {"recipe_invalid", "credential_headers_invalid", "credential_not_secret", "anonymous_access_allowed",
+                 "bank_encryption_credential", "bank_encryption_invalid", "bank_account_mismatch",
                  "write_request_refused", "identity_path_invalid", "history_path_invalid", "unsafe_notes",
                  "transcript_too_large", "model_output_not_json", "model_output_truncated"} | {
                      "mapping_missing_" + role for role in ROLES}
@@ -188,9 +189,13 @@ latest oldest newest free paid premium basic savings checking joint individual p
 def validate_open_campaign(campaign):
     """Policy shape for a campaign whose reads come from the contributor's recipe."""
     descriptor = campaign["openSource"]
-    fields(descriptor, {"version", "kind", "maxReads"})
-    require(type(descriptor["version"]) is int and descriptor["version"] == 1 and descriptor["kind"] == KIND,
+    require(isinstance(descriptor, dict), "invalid_policy")
+    fields(descriptor, {"version", "kind", "maxReads"} | ({"transport"} if descriptor.get("version") == 2 else set()))
+    require(type(descriptor["version"]) is int and descriptor["version"] in (1, 2) and descriptor["kind"] == KIND,
             "invalid_policy")
+    if descriptor["version"] == 2:
+        from .hdfc_session import validate_campaign_transport
+        validate_campaign_transport(campaign)
     integer(descriptor["maxReads"], 1, 8, "invalid_policy")
     require("sourceDescriptor" not in campaign and campaign["rubricVersion"] == RUBRIC
             and campaign["safeSchemaFields"] == [], "invalid_policy")
@@ -363,13 +368,26 @@ def validate_open_recipe(campaign, recipe, max_reads=20):
         integer(recipe[name]["read"], 0, len(recipe["reads"]) - 1, code)
         _segments(recipe[name]["path"], code)
     require(len(canonical(recipe)) <= 131072, "recipe_limits")
+    if descriptor["version"] == 2:
+        from .hdfc_session import validate_recipe
+        validate_recipe(recipe)
     return recipe
+
+
+def validate_credential_kind(campaign, kind):
+    encrypted = validate_open_campaign(campaign)["version"] == 2
+    require(kind == "hdfc_session" if encrypted else kind in ("bearer", "headers"), "invalid_credential")
 
 
 def credential_headers(credential, origin):
     """Session headers sent only to the contributor-declared campaign origin."""
     fields(credential, {"origin", "kind", "value"})
     require(credential["origin"] == origin, "invalid_credential")
+    if credential["kind"] == "hdfc_session":
+        from .hdfc_session import ORIGIN, session_parts
+        require(origin == ORIGIN, "invalid_credential")
+        headers, _ = session_parts(credential["value"])
+        return credential_headers({"origin": origin, "kind": "headers", "value": headers}, origin)
     if credential["kind"] == "bearer":
         value = credential["value"]
         require(isinstance(value, str) and 1 <= len(value) <= 16384 and all(33 <= ord(char) < 127 for char in value),
@@ -410,8 +428,15 @@ def submission_context(campaign, payload):
     recipe = validate_open_recipe(campaign, payload["recipe"], descriptor["maxReads"])
     require(payload["profileId"] is None and payload["transcript"] == [], "invalid_submission")
     origin = "https://" + urlsplit(recipe["reads"][0]["url"]).hostname
+    require(isinstance(payload["credential"], dict), "invalid_credential")
+    validate_credential_kind(campaign, payload["credential"].get("kind"))
     names = sorted(name.lower() for name in credential_headers(payload["credential"], origin))
-    return {"recipe": copy.deepcopy(recipe), "notes": validate_notes(payload["notes"]), "headerNames": names}
+    notes = validate_notes(payload["notes"])
+    if descriptor["version"] == 2:
+        # AES-128 base64 can be shorter than the generic long-token filter.
+        # This private comparison must happen before notes enter any artifact.
+        require(_alnum(payload["credential"]["value"]["aesKey"]) not in _alnum(notes), "unsafe_notes")
+    return {"recipe": copy.deepcopy(recipe), "notes": notes, "headerNames": names}
 
 
 def select(body, path):
@@ -441,11 +466,17 @@ class OpenBankClient:
         require(profile_id is None, "invalid_profile")
         require(isinstance(credential, dict) and any(origin_in_domain(credential.get("origin"), source["origin"])
                                                      for source in campaign["sources"]), "invalid_credential")
+        validate_credential_kind(campaign, credential.get("kind"))
         self.headers = credential_headers(credential, credential["origin"])
         self.origin = credential["origin"]
         self.campaign = copy.deepcopy(campaign)
         self.domain = campaign_domain(campaign, self.origin)
         self.transport = transport or HTTPTransport()
+        self.encrypted_transport = None
+        if self.descriptor["version"] == 2:
+            from .hdfc_session import HDFCTransport
+            self.encrypted_transport = HDFCTransport(self.transport, credential["value"])
+            self.transport = self.encrypted_transport
         self.max_reads = integer(max_reads, 1, 20, "recipe_limits")
         require(type(timeout) in (int, float) and 0 < timeout <= 300, "request_timeout")
         self.timeout = timeout
@@ -515,6 +546,8 @@ class OpenBankClient:
 
     def close(self):
         self.headers.clear()
+        if self.encrypted_transport is not None:
+            self.encrypted_transport.close()
 
 
 def _normal(name):

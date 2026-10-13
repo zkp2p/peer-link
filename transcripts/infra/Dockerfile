@@ -17,7 +17,7 @@ COPY verification/trust/aws-nitro-root.pem /opt/peer-link/verification/trust/aws
 # independently pinned discovery metadata and cannot recursively measure itself.
 # Host relay/client/CLI, tests, infrastructure configs and local caches stay out.
 COPY transcripts/__init__.py transcripts/acquisition.py transcripts/artifacts.py transcripts/aws_state.py transcripts/channel.py \
-    transcripts/common.py transcripts/epoch.py transcripts/eth_payout.py \
+    transcripts/common.py transcripts/epoch.py transcripts/eth_payout.py transcripts/hdfc_session.py \
     transcripts/ledger.py transcripts/kms_signer.py transcripts/open_source.py transcripts/payout.py transcripts/policy.py \
     transcripts/providers.py transcripts/recipe.py transcripts/runtime.py \
     transcripts/storage.py transcripts/transport.py transcripts/wire.py /opt/peer-link/transcripts/

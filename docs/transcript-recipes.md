@@ -6,6 +6,10 @@ provides it, and how to describe it so the contribution is accepted. The step
 order and commands are in the
 [contribution skill](../skills/contribute-transcript/SKILL.md).
 
+HDFC's application-encrypted history read needs an explicit measured transport;
+see [HDFC implementation and release status](hdfc-transcripts.md). It is not
+enabled by the current public policy.
+
 ## What an integration needs
 
 A Peer bank integration fetches one payment from the bank inside an enclave and

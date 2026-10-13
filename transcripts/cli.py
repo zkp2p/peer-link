@@ -79,8 +79,8 @@ def secret_free(payload):
 
 
 def bank_secret(payload,value):
-    # Header credentials are a JSON object of header name to value.
-    if payload['credential']['kind']=='headers':
+    # Session credentials are JSON; HDFC also carries a private application key.
+    if payload['credential']['kind'] in {'headers','hdfc_session'}:
         try:value=strict_json(value,65536)
         except Rejected:raise Rejected('credential_headers_invalid') from None
         require(isinstance(value,dict),'credential_headers_invalid')
@@ -208,8 +208,9 @@ def lint(policy,campaign_id,payload):
     fields({name:value for name,value in credential.items() if name!='value'},{'origin','kind'})
     if 'openSource' not in campaign:
         return {'campaignId':campaign_id,'ok':True,'checked':'payload shape only; this campaign fixes its own reads'}
-    from .open_source import origin_in_domain,validate_notes,validate_open_recipe
-    require(credential['kind'] in {'bearer','headers'} and any(origin_in_domain(credential['origin'],source['origin'])
+    from .open_source import origin_in_domain,validate_notes,validate_open_recipe,validate_credential_kind
+    validate_credential_kind(campaign,credential['kind'])
+    require(any(origin_in_domain(credential['origin'],source['origin'])
                                                              for source in campaign['sources']),'invalid_credential')
     require(payload['profileId'] is None and payload['transcript']==[],'invalid_submission')
     recipe=validate_open_recipe(campaign,payload['recipe'],campaign_limits(campaign)['maxBankReads'])
@@ -235,6 +236,9 @@ def lookup(policy,campaign_id,payload,index,path):
     require(isinstance(recipe,dict) and isinstance(recipe.get('reads'),list) and type(index) is int
             and 0<=index<len(recipe['reads']),'recipe_invalid')
     read=recipe['reads'][index];selector={'read':0,'path':path}
+    # This transport fixes identity/history to the same account-bound history read;
+    # preview already supplies both. Do not send a plaintext lookup request.
+    require(campaign['openSource']['version']==1,'encrypted_lookup_unavailable')
     # The same URL, method and write rules the enclave applies to that read.
     validate_open_recipe(campaign,{'version':3,'reads':[read],'identity':selector,'history':selector})
     cautious({'reads':[read]})

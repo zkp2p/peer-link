@@ -1,6 +1,10 @@
 """Client-side next steps for fixed service codes. Never part of the measured image."""
 
 HINTS = {
+    "bank_encryption_credential": "HDFC needs the current session headers and its base64 AES key in the private hdfc_session credential. Re-capture from the owner's signed-in session; never paste these values into chat.",
+    "bank_encryption_invalid": "The HDFC response could not be authenticated and decoded with this session key. Re-capture the matching session; do not disable encryption or change transaction headers to request plaintext.",
+    "bank_account_mismatch": "HDFC history did not belong entirely to the account in the read request. Stop and check the selected account locally.",
+    "encrypted_lookup_unavailable": "Use preview for HDFC: the one history read already supplies the account identity. Plaintext lookup is unavailable for encrypted sessions.",
     "release_not_approved": "transcripts/release.json is not approved or has expired; pull the latest main of zkp2p/peer-link.",
     "policy_mismatch": "Local transcripts/policy.json differs from the released service; use an unmodified checkout of main.",
     "campaign_unavailable": "That campaign id is not in the released policy or is not active; run `campaigns`.",
