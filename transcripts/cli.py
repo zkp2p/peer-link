@@ -66,7 +66,8 @@ def campaign_summary(campaign):
             'methods':sorted({method for source in campaign['sources'] for method in source['methods']}),
             'inferenceRoutes':[{'provider':route['provider'],'models':route['models']} for route in campaign['inferenceRoutes']],
             'maxBankReads':campaign_limits(campaign)['maxBankReads'],'issueUrl':campaign['issueUrl'],
-            **({'requiredRoles':campaign['evidenceRequirements']['requiredFields'],
+            **({'sourceRequirements':dict(campaign['openSource']),
+                'requiredRoles':campaign['evidenceRequirements']['requiredFields'],
                 'minScore':campaign['evidenceRequirements']['minScore']} if 'openSource' in campaign else {})}
 
 

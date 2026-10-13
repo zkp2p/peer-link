@@ -1044,6 +1044,7 @@ class HostAndCliTests(unittest.TestCase):
         from transcripts.cli import campaign_summary, terms
         card = campaign_summary(campaign())
         self.assertEqual((card["kind"], card["domains"], card["maxBankReads"]), ("open_recipe", [ORIGIN], 4))
+        self.assertEqual(card["sourceRequirements"], campaign()["openSource"])
         release = {"status": "approved", "expiresAt": 2**40}
         shown = terms(release, {"campaigns": [campaign()]}, "synthetic-open-v1", "openai_compatible", "any/model-1")
         self.assertEqual((shown["kind"], shown["model"]), ("open_recipe", "any/model-1"))

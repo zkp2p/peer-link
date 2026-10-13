@@ -8,7 +8,7 @@ from unittest.mock import patch
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from transcripts.artifacts import extract_artifact
-from transcripts.cli import bank_secret, lint, lookup, preview
+from transcripts.cli import bank_secret, campaign_summary, lint, lookup, preview
 from transcripts.common import Rejected, canonical
 from transcripts.hdfc_session import (HISTORY_URL, MAX_RESPONSE, ORIGIN, TRANSPORT,
                                       session_parts)
@@ -96,6 +96,15 @@ def acquire(bank=None, data=None):
 
 
 class HDFCSessionTests(unittest.TestCase):
+    def test_discovery_exposes_encrypted_transport_before_session_capture(self):
+        card = campaign_summary(hdfc_campaign())
+        self.assertEqual(card["sourceRequirements"]["transport"], TRANSPORT)
+        self.assertEqual(card["maxBankReads"], 1)
+        # Generic open campaigns do not inherit this bank's credential requirements.
+        self.assertNotIn("transport", campaign_summary(campaign())["sourceRequirements"])
+        for private in (ACCOUNT, HEADERS["X-Synthetic-Session"], base64.b64encode(SYNTHETIC_KEY).decode()):
+            self.assertNotIn(private, json.dumps(card))
+
     def test_encrypted_acquisition_redaction_and_mapping(self):
         bank = EncryptedBank()
         reads, artifact = acquire(bank)

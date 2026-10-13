@@ -1,6 +1,6 @@
 # PeerLink agent entrypoint
 
-Read AGENTS.md first. To help someone contribute a banking transcript, follow skills/contribute-transcript/SKILL.md and docs/transcript-recipes.md: pick a campaign, write a recipe, `preview` it locally, get the owner's consent, then `contribute`. Provider-code bounties are retired.
+Read AGENTS.md first. To help someone contribute a banking transcript, follow skills/contribute-transcript/SKILL.md and docs/transcript-recipes.md. Recover an existing job before starting another. Finish setup, attestation/capacity checks and inference access before asking the owner to sign in; then write a read-only recipe, preview it, get consent for the exact terms, and contribute. A verified paid receipt completes the contribution or end-to-end test. Creating integrations, campaigns, pull requests or deployments is separate maintainer work. Provider-code bounties are retired.
 
 
 ## Required logos for main-page integrations

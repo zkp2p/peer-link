@@ -11,6 +11,20 @@ code, claim issues or open pull requests.
 - Changing this repository: read the rest of this file, then
   [docs/transcript-contributions-prd.md](docs/transcript-contributions-prd.md).
 
+## Stay within the requested outcome
+
+A contribution or end-to-end test uses the existing campaign and approved release.
+First recover any saved job; a verified paid receipt completes that contribution.
+Creating a bank integration, campaign, pull request or deployment is separate
+maintainer work, not a prerequisite for an available campaign. If support is
+missing, report the exact blocker and obtain maintainer direction before expanding
+the task. Check for an existing bank issue before proposing a new one.
+
+Finish setup, attestation/capacity checks, inference access and payout selection
+before asking the owner to sign in. Bank sessions can expire during unrelated
+work. Preserve the owner's explicit approvals across interruptions; ask again
+only for missing consent or changed terms, subject to the active tool's rules.
+
 ## How a contribution works
 
 1. The local agent finds read-only JSON requests for transaction history, from

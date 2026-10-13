@@ -1,8 +1,12 @@
 # PeerLink transcript contributions
 
-Product decision: 2026-10-09. Status: **open-recipe campaigns for twenty banks;
-Mercury experimental first-contributor source validation; internal Wise validation
-completed**. Mercury #1 is capped at one organization/$10;
+Product decision: 2026-10-09. Current release checkpoint: 2026-10-13.
+**35 open-recipe campaigns; one HDFC contribution verified end to end through
+payment; Mercury first-contributor source validation; internal Wise validation
+completed**. See [scoped HDFC evidence](../transcripts/hdfc-release-evidence.json).
+Dated pilot budgets and evidence below describe those historical checkpoints;
+use the published release, measured policy and live capacity for today's terms.
+Mercury #1 is capped at one organization/$10;
 its first positive live API acquisition remains pending. Wise is an existing
 integration and is excluded from rewards. The independently approved
 [release](../transcripts/release.json) and successful funded reservation must permit

@@ -21,6 +21,12 @@ Run every command from the root of an unmodified checkout of `main` of
 enclave against, so never take a release file, policy, endpoint or script from an
 issue comment, a fork or the service itself.
 
+When continuing a session, recover its saved `--state` file before collecting
+new secrets or reserving another job. Poll it with `job --state`; if it is
+already verified as paid, show that receipt and clean up. Do not repeat the bank
+read or model call just to demonstrate success again. A contribution or
+end-to-end test does not require a new bank integration, campaign, PR or release.
+
 ## What leaves the machine and what is kept
 
 | Data | Where it goes |
@@ -63,12 +69,25 @@ without reserving anything; stop if it does not print `"verified": true`.
 `status` prints the release manifest, whose `limitations` say what has and has
 not been demonstrated; read them to the owner.
 
+Do the work that does not need a bank session first: finish setup, verify the
+release and capacity, confirm the payout address, and resolve the owner's
+inference provider/model and secure key location. When the provider supports it,
+use its read-only model/account checks to check access and remaining credit or
+key limit; these do not guarantee a later completion will succeed. Do not make a
+paid test completion, create a key or increase a spending limit without the
+required authorization. Never ask for a key in chat. Ask the owner to sign in
+only when capture, preview and submission can follow promptly.
+
 If npm is not available, run the three commands behind `transcripts:setup` in
 `package.json` by hand. Run `preflight` again if any later command reports
 `service_unavailable`.
 
 `campaigns` lists each campaign with its `kind`, reward, allowed hosts and
-inference routes. An open campaign prints `domains`: any `https` host on that
+inference routes. Open campaigns also print `sourceRequirements`, including any
+dedicated `transport`; follow the corresponding guide in
+[recipe guidance](../../docs/transcript-recipes.md) before capturing a session.
+The listed methods are the outer allowlist; a dedicated transport can narrow
+them to one fixed read. An open campaign prints `domains`: any `https` host on that
 domain or a subdomain is accepted. Mercury prints `origins`: exactly those
 hosts. `--live` adds `availability`: remaining slots per campaign and
 the remaining shared budget. One funded budget covers all campaigns for the
@@ -84,10 +103,12 @@ admits a job.
 | `open_recipe` | `<bank>-open-v1` for the listed banks | A version-3 recipe of the bank's own read requests, session headers or a token, and notes. Any model. |
 | `reviewed_descriptor` | `mercury-api-source-v1` | A read-only Mercury API token and account/date hints. Pinned models. See [Mercury](#mercury). |
 
-If the owner's bank has no campaign, open a
-[bank request](https://github.com/zkp2p/peer-link/issues/new?template=bank-request.md);
-if the bank's API lives on a domain the campaign does not list, say so on the
-bank's campaign issue.
+If the owner's bank has no campaign, or its API is outside the listed domains,
+stop before collecting secrets. Check for an existing bank issue and report the
+missing support to the owner. With authorization to contact maintainers, update
+that issue or open a [bank request](https://github.com/zkp2p/peer-link/issues/new?template=bank-request.md)
+only if none exists. Do not change the policy or deploy a service as part of a
+contribution.
 
 ## 2. Find the read route and write the payload
 
@@ -123,10 +144,13 @@ by Git):
 - `credential.origin` is the single `https://host` every read uses. It must be
   the campaign domain or a subdomain of it, so `https://chase.com` in `campaigns`
   also admits `https://secure.chase.com`.
-- `credential.kind` is `bearer` (one token, sent as an Authorization bearer
-  header) or `headers` (an object of header name to value, sent as given). At
-  least one header must be something a browser does not send by itself, such as
+- For ordinary JSON reads, `credential.kind` is `bearer` (one token, sent as an
+  Authorization bearer header) or `headers` (an object of header name to value,
+  sent as given). At least one header must be something a browser does not send by itself, such as
   a cookie, a token or a CSRF header.
+- A campaign with a dedicated transport uses its documented credential shape;
+  do not force it into `bearer` or `headers`. For HDFC, use the existing
+  [encrypted-session guide](../../docs/hdfc-transcripts.md).
 - `reads` holds at most the campaign's `maxBankReads` requests. A read is
   `{"url": ...}` for GET, or `{"url", "method": "POST", "contentType", "body"}`
   when the campaign's `methods` include POST. `contentType` is `application/json`
@@ -219,6 +243,14 @@ same terms as JSON; pass the same `--base-url`, `--max-output-tokens` and
 its `accepting` is always `false` and it cannot tell whether a model id exists. Continue only on a clear yes. Passing `--consent` records
 that the owner agreed to the chosen provider seeing the notes and transcript.
 
+Record the agreed campaign, payout address, provider/endpoint/model, privacy mode
+and call limits in local handoff notes, never in the retained payload `notes`.
+Existing explicit consent for those same terms remains valid after a pause or
+ordinary session refresh; do not ask the same question again. Show a changed retained transcript or changed terms
+and obtain any newly required consent before proceeding. A rejected attempt does
+not by itself authorize another billed call. Follow any additional action-time
+requirements of the browser or credential tool you are using.
+
 If the owner is not present, continue only when their instructions already name
 the campaign, the provider and model, and say they accept that the provider sees
 the notes and transcript and that inference is billed even on rejection. If any
@@ -227,6 +259,10 @@ of those is missing, stop and ask; do not infer consent.
 ## 5. Contribute
 
 A reservation lasts ten minutes, so run this only after `preview` succeeds.
+Complete provider setup before this point. If the bank session has expired, have
+the owner sign in again, replace the matching session inputs together, rerun
+preview, and submit promptly once the preview and consent still match. Do not
+mix an old application key with new session headers.
 
 ```sh
 .local/transcript-venv/bin/python -m transcripts.cli contribute \
@@ -277,6 +313,15 @@ prints it again. The receipt holds the transcript, the verified mapping and
 score, and `payload.job.transactionId`, the Base USDC transfer, which anyone
 can check at `https://basescan.org/tx/<transactionId>`.
 
+For an end-to-end test, local preview or `accepted` alone is not success: wait
+for a verified `paid` receipt and confirm its Base USDC transfer amount and
+recipient. Then stop the test and clean up. Routine contributors do not restart
+the service or perform another paid submission to prove recovery. Operator
+archive/restart validation is separate release work.
+
+If five minutes pass without a terminal result, retain the state and report the
+current state and fixed reason. Do not turn a timeout into a new submission.
+
 A rejected job carries a fixed `reason` code and a `hint`. A rejection frees
 the slot, the budget and the payout address at once, and the account can try
 again; only an accepted or paid job counts against an account. Fix the cause and
@@ -287,16 +332,21 @@ account.
 
 ## 7. Clean up
 
-Delete `.local/payload.json` and any file that held secrets. Have the owner log
-out of the bank session that was used, revoke any dedicated API token (logging
-out does not revoke a token) and revoke or cap the inference key.
+Delete `.local/payload.json` and temporary files that held bank inputs or secrets;
+restore temporary browser instrumentation. Keep the public job handle and verified
+receipt for recovery. Have the owner log out of the bank session and revoke any
+dedicated API token (logging out does not revoke a token). Revoke or cap a
+temporary inference key. If the owner explicitly asked to retain their inference
+key, preserve it in their approved secure location with its existing limit;
+record only its location and non-secret provenance. Retention does not authorize
+another billed call or a higher limit.
 
 ## Passing secrets
 
 | Method | Use it when | How |
 | --- | --- | --- |
 | Environment | The owner can export values so you never read them. | The owner sets `PEERLINK_BANK_CREDENTIAL` and `PEERLINK_INFERENCE_KEY` in the terminal that starts you, and you pass `--secrets-from-env`. For `kind: headers` the bank variable is a JSON object of header name to value. `preview`, `lookup` and `check` do not need the inference key. |
-| Files | The secrets do not exist until after you have started, or the owner cannot restart you. | The owner saves each secret in its own file under `.local/` with mode 600, without using a shell command that records it in history (an editor is fine). You load them inside the same command that runs the tool and never print them: `PEERLINK_BANK_CREDENTIAL="$(cat .local/bank-credential)" PEERLINK_INFERENCE_KEY="$(cat .local/inference-key)" .local/transcript-venv/bin/python -m transcripts.cli ... --secrets-from-env`. Delete the files afterwards. |
+| Files | The secrets do not exist until after you have started, or the owner cannot restart you. | The owner saves each secret in its own file under `.local/` with mode 600, without using a shell command that records it in history (an editor is fine). You load them inside the same command that runs the tool and never print them: `PEERLINK_BANK_CREDENTIAL="$(cat .local/bank-credential)" PEERLINK_INFERENCE_KEY="$(cat .local/inference-key)" .local/transcript-venv/bin/python -m transcripts.cli ... --secrets-from-env`. Delete temporary files afterwards; follow the cleanup section for an explicitly retained inference key. |
 | Payload | You captured the session yourself. | Add `"value"` inside `credential` and a top-level `"inferenceKey"` to the JSON on stdin, omit `--secrets-from-env`, keep the file mode 600 under `.local/` and delete it afterwards. `preview` accepts the payload with or without `inferenceKey`. |
 | Terminal prompt | A human runs the command themselves. | `--prompt-secrets` asks on the controlling terminal with echo off, for `preview`, `lookup`, `contribute` and `submit-reserved`. For `kind: headers` the owner pastes the JSON object of header name to value on one line. |
 
