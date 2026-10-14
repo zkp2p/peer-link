@@ -60,8 +60,9 @@ class RelayEventTests(unittest.TestCase):
         self.assertEqual(event["jobId"], JOB)  # From the validated route only.
         for name in ("state", "reason", "error"):
             self.assertNotIn(name, event)
-        unrouted = self.event(None, None, {"error": "service_unavailable"}, 503, "DELETE")
-        self.assertEqual((unrouted["command"], unrouted["method"], unrouted["error"]), ("unrouted", "other", "service_unavailable"))
+        unrouted = self.event(None, None, {"error": "route_not_found"}, 404, "DELETE")
+        self.assertEqual((unrouted["command"], unrouted["method"], unrouted["status"], unrouted["error"]),
+                         ("unrouted", "other", 404, "route_not_found"))
 
     def test_operator_action_is_logged_without_its_signature(self):
         body = {"payload": {"action": "pause", "nonce": "d" * 64, "wallet": PAYOUT}, "signature": CIPHER}
