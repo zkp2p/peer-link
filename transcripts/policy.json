@@ -4055,15 +4055,15 @@
     "keyId": "arn:aws:kms:us-east-1:411399509833:key/5e49914d-80d9-4140-a4c2-4bf00e3ac7ea",
     "wallet": "0xd297f105b145cd1d4ddb1d31392300e934bc3559"
   },
-  "pilotBudgetMinor": 120000000,
+  "pilotBudgetMinor": 110000000,
   "stateAuthority": {
     "kind": "aws_lambda_dynamodb",
     "region": "us-east-1",
-    "functionArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-hdfc-v1-authority:1",
-    "namespace": "open-hdfc-v1",
-    "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/99ac0087-0653-4507-8755-17a97231b8f2",
+    "functionArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-p2p-v1-Authority-7DyTInKAcbHl:1",
+    "namespace": "open-p2p-v1",
+    "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/7c19bc4a-9612-4521-95f1-9784439930b9",
     "credentialRoleArn": "arn:aws:iam::411399509833:role/peerlink-transcript-kms-pilot-HostRole-CtMw2KLCWL9c",
     "maxCiphertextBytes": 327680,
-    "initialWalletNonce": 12
+    "initialWalletNonce": 14
   }
 }

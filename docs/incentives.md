@@ -78,7 +78,7 @@ or production approval.
 
 The architecture ceiling is **$1,000 USDC** per funded epoch, with separate
 bounded gas and no automatic refill. The open-recipe release funds one amount
-up to that ceiling, currently $120, and shares it across every campaign, first
+up to that ceiling, currently $110, and shares it across every campaign, first
 come first served; refilling
 means retiring the epoch and publishing a new measured release. The completed
 supervised Wise experiment used a measured
