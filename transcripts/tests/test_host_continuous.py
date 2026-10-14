@@ -97,6 +97,19 @@ class ContinuousTests(unittest.TestCase):
         with patch.object(publisher, 'checked_health', return_value={'accepting': False}):
             self.assertEqual([x['Value'] for x in publisher.sample({}, INSTANCE, lambda: {})], [1, 0])
 
+    def test_each_sample_is_one_fixed_journal_line_for_axiom(self):
+        def private_error():
+            raise RuntimeError('secret request data')
+        self.assertEqual(publisher.journal_line(publisher.sample({}, INSTANCE, private_error)),
+                         '{"AdmissionsOpen":0,"RuntimeHealth":0,"event":"health"}')
+        with patch.object(publisher, 'checked_health', return_value={'accepting': False}):
+            paused = publisher.sample({}, INSTANCE, lambda: {})
+        self.assertEqual(publisher.journal_line(paused), '{"AdmissionsOpen":0,"RuntimeHealth":1,"event":"health"}')
+        unit = re.search(r"peer-link-transcript-health.service <<UNIT\n(.*?)\nUNIT",
+                         Path('transcripts/infra/install_continuous.sh').read_text(), re.S).group(1)
+        self.assertEqual(re.findall(r'^Standard(?:Output|Error)=.*$', unit, re.M),
+                         ['StandardOutput=journal', 'StandardError=null'])
+
     def test_metric_cli_cannot_inherit_credentials_or_endpoint_overrides(self):
         bad = {'AWS_SECRET_ACCESS_KEY': 'private', 'AWS_PROFILE': 'other',
                'AWS_ENDPOINT_URL_CLOUDWATCH': 'https://bad', 'AWS_CA_BUNDLE': '/bad',
