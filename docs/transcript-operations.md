@@ -176,10 +176,10 @@ existing host in this order. Each step gates the next.
 
 1. Close the running epoch first: signed `pause`, confirm no obligations, return
    any unspent USDC through operator custody, then signed `retire`. Retirement
-   reports `refunded` with amount 0 when the wallet holds no USDC. If it stays
-   `refund_pending` after the refund transaction confirms, send `retire` again:
-   the runtime's reconcile stops when the RPC rejects a rebroadcast of the
-   still-pending refund, and a repeated `retire` only re-runs that reconcile.
+   reports `refunded` with amount 0 when the wallet holds no USDC. The runtime
+   checks a pending refund for about a minute; if it is still `refund_pending`
+   after the refund transaction confirms, send `retire` again, which only re-runs
+   that reconcile.
 2. Create a new state stack for the new namespace and add its authority version
    and state key to the host role with an additive change set. A namespace holds
    one epoch: genesis is refused when the namespace already has a head.

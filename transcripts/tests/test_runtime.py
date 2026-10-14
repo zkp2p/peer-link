@@ -495,6 +495,14 @@ class RuntimeTests(unittest.TestCase):
             self.runtime.dispatch('reserve',request(self.policy['campaigns'][0]))
         self.assertNotEqual(self.epoch.ledger.status(reservation['jobId'])['state'],'reserved')
 
+    def test_rejected_refund_rebroadcast_keeps_reconciling_until_confirmed(self):
+        from unittest.mock import Mock
+        self.runtime.retirement=Mock()
+        self.runtime.retirement.reconcile.side_effect=[{'state':'refund_pending'},Rejected('rpc_error'),{'state':'refunded'}]
+        with patch('transcripts.runtime.time.sleep') as sleep:self.runtime.reconcile_retirement()
+        self.assertEqual(self.runtime.retirement.reconcile.call_count,3)
+        self.assertEqual(sleep.call_count,2)
+
     def test_refund_waits_for_pending_archive_and_never_discards_obligation(self):
         from unittest.mock import Mock
         job_id=self.job();self.archive.fail_calls=set(range(1,2*SETTLEMENT_MAX_ATTEMPTS+1));self.process(job_id)
