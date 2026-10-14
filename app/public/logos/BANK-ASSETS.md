@@ -133,3 +133,33 @@ SHA-256 of the stored files:
 - `airtm.png`: `832bc56bb1148a9da1f355661fafa977ae0380d89c3ee57b4af0e97ee100c8a8`
 - `starling.png`: `147bb3ca71471cfec37f95699aa2211c82b1925ba5780fa2675ff6773f69be82`
 - `brubank.png`: `5b99b6587549abf4cd1265ed4d44431997ae5f04f06b137fecd537024f7f3a32`
+
+## Vietnamese banks — October 14, 2026
+
+These assets were retrieved unchanged on October 14, 2026. ACB and Sacombank
+link them as icons from their official homepages. Agribank's homepage serves
+only a 16 and 32 px icon file, so its symbol is the logo served by Agribank
+Retail, the bank's personal internet banking linked from that homepage.
+Techcombank, MB, VPBank and TPBank serve only 16 to 48 px favicons, so their
+icons come from each bank's own Apple App Store listing (seller verified
+through the App Store lookup API), served by Apple at 128 × 128:
+
+| Local file | Official source | Asset URL |
+| --- | --- | --- |
+| `techcombank.png` | [Techcombank Mobile App Store listing](https://apps.apple.com/vn/app/id1548623362), seller Vietnam Technological and Commercial Joint Stock Bank | https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/26/68/33/2668331a-bf08-af0a-b540-77b209f72bcc/AppIcon-0-0-1x_U007ephone-0-1-85-220.png/128x128bb.png |
+| `mb-bank.png` | [MB Bank App Store listing](https://apps.apple.com/vn/app/id1205807363), seller Military Commercial Joint Stock Bank | https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/ea/3a/6c/ea3a6c74-6211-f357-7289-4a9820139ba4/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/128x128bb.png |
+| `acb.webp` | https://acb.com.vn/ | https://acb.com.vn/favicon.webp |
+| `vpbank.png` | [VPBank NEO App Store listing](https://apps.apple.com/vn/app/id1209349510), seller Vietnam Prosperity Joint Stock Commercial Bank | https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/ae/3a/ad/ae3aad77-d781-86c0-4762-9f3200c19dc8/AppIcon-0-0-1x_U007ephone-0-11-0-sRGB-85-220.jpeg/128x128bb.png |
+| `agribank.png` | https://www.agribank.com.vn/ (Agribank Retail, https://ebanking.agribank.com.vn/retail/) | https://ebanking.agribank.com.vn/retail/assets/image/logo_agribank_1.png |
+| `sacombank.png` | https://www.sacombank.com.vn/ | https://www.sacombank.com.vn/android-chrome-512x512.png |
+| `tpbank.png` | [TPBank Mobile App Store listing](https://apps.apple.com/vn/app/id450464147), seller TienPhong Bank | https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/4b/3a/6d/4b3a6d80-d391-fc9d-088b-d6779ab67e32/AppIcon-0-0-1x_U007emarketing-0-8-0-sRGB-85-220.png/128x128bb.png |
+
+SHA-256 of the stored files:
+
+- `techcombank.png`: `4d91511042055860967bc64982faa3a8bb28c484a7523eddaa188ebf869be4aa`
+- `mb-bank.png`: `78373c1f38bc2a9957917df0664f9e133c6189ae5491688cd6c6344b1542ee77`
+- `acb.webp`: `e62bf42b1edc53e7d0a78b0b18de1d586ea286c786557a15ad8b29d19203d58b`
+- `vpbank.png`: `77e5adec59ac4f0ab61b7f6cf13d822091f0f0454bb64080bf5d6452b31d76cb`
+- `agribank.png`: `23d161150df3e2aaa88bcf6c819615f3d57abd282b741681eb5020f1f93983c8`
+- `sacombank.png`: `95330a5ce1376b149be1e86fa9503dfb8c040bf491b9621bfcdcef41df6feed9`
+- `tpbank.png`: `aa4d15f151627f1f0dcc1f890de4080251ff80a1e8a1195adcd75f23f5aebd35`
