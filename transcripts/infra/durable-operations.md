@@ -98,7 +98,9 @@ The default finite guard and Restart=no remain active. The durable installer use
 CID16/2CPU/2048MiB, records the exact host-prefixed enclave ID and requires paused
 policy-bound health within90seconds. After readiness it polls actual Nitro
 liveness every5seconds. Startup/liveness failure cleans up only that ID; each
-Nitro command is bounded30seconds and systemd stop allows75seconds. No terminate-all,
+Nitro command is bounded30seconds and systemd stop allows75seconds. Stop signals
+only the supervisor (KillMode=mixed), so an operator stop exits0 and only a
+startup or liveness failure exits1 for Restart=on-failure. No terminate-all,
 autoactivation, auto-funding or signed operator action is used. Transient HTTP
 failures produce alarms instead of monitor-driven enclave replacement.
 

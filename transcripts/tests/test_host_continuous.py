@@ -1,6 +1,7 @@
 """Host-only synthetic supervision/metrics/CF checks; no hardware or AWS calls."""
 import json
 import os
+import re
 import tempfile
 import threading
 import unittest
@@ -65,6 +66,15 @@ class ContinuousTests(unittest.TestCase):
         self.run_supervisor(run, notify=lambda: notified.append(1))
         self.assertEqual(notified, [1])
         self.assertEqual(calls[-1], ('terminate-enclave', '--enclave-id', ID))
+
+    def test_operator_stop_signals_only_the_supervisor(self):
+        # nitro-cli's enclave process shares the unit cgroup and closes its enclave on
+        # SIGTERM. A control-group stop raced the supervisor's own terminate-enclave,
+        # which then failed, so every operator stop was recorded as status=1/FAILURE.
+        source = Path('transcripts/infra/install_release.sh').read_text()
+        durable = re.search(r'durable-state.conf <<UNIT\n(.*?)\nUNIT', source, re.S).group(1)
+        self.assertEqual(re.findall(r'^KillMode=.*$', durable, re.M), ['KillMode=mixed'])
+        self.assertEqual(re.findall(r'^ExecStop=.*$', durable, re.M), ['ExecStop='])
 
     def test_health_startup_failure_terminates_exact_id_without_ready(self):
         calls, notifications = [], []
