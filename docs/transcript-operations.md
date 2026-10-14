@@ -153,6 +153,14 @@ slots per campaign and remaining epoch budget.
 
 ### Rolling a release epoch
 
+The October 14 release uses `open-p2p-v1`: 69 open-recipe campaigns plus Mercury
+and a 610 USDC budget, the 110 USDC the HDFC epoch returned in
+[this confirmed refund](https://basescan.org/tx/0xb06d6da1a8811eeb61843e7329f56c6daa2c723bad6affe4241433b9682403c6)
+plus 500 new, funded in
+[one transfer](https://basescan.org/tx/0x258c13f029b68b4e92fb3539cc74c0e9921e140dacb2a7d41afa2c674036cf96).
+The host build of `ab9ba19` matched both CI builders; fresh attestation,
+unfunded operator preflight and activation passed for the signed image.
+
 The October 13 HDFC release uses `open-hdfc-v1`, 35 open-recipe campaigns plus
 Mercury and the same 120 USDC budget. The old epoch's runtime returned 120 USDC
 in [this confirmed refund](https://basescan.org/tx/0x200f174f882b299d7f3d853e7434a078a7552f9f9cf491d26566855474acba7b)
