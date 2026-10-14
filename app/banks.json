@@ -552,6 +552,62 @@
     "mark": "V"
   },
   {
+    "name": "Techcombank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/285",
+    "logo": "/logos/techcombank.png",
+    "mark": "T"
+  },
+  {
+    "name": "MB Bank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/286",
+    "logo": "/logos/mb-bank.png",
+    "mark": "M"
+  },
+  {
+    "name": "ACB",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/287",
+    "logo": "/logos/acb.webp",
+    "mark": "A"
+  },
+  {
+    "name": "VPBank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/288",
+    "logo": "/logos/vpbank.png",
+    "mark": "V"
+  },
+  {
+    "name": "Agribank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/289",
+    "logo": "/logos/agribank.png",
+    "mark": "A"
+  },
+  {
+    "name": "Sacombank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/290",
+    "logo": "/logos/sacombank.png",
+    "mark": "S"
+  },
+  {
+    "name": "TPBank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/291",
+    "logo": "/logos/tpbank.png",
+    "mark": "T"
+  },
+  {
     "name": "Wise",
     "country": "GB",
     "currency": "GBP, EUR, USD",
