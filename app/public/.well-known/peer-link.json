@@ -30,7 +30,7 @@
     "automaticRefill": false,
     "publicCampaignsAvailable": true,
     "wiseIncentivized": false,
-    "currentEpochBudgetUSDC": 110,
+    "currentEpochBudgetUSDC": 610,
     "sharedEpochBudget": true
   },
   "inference": {

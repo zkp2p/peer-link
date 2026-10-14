@@ -4055,7 +4055,7 @@
     "keyId": "arn:aws:kms:us-east-1:411399509833:key/5e49914d-80d9-4140-a4c2-4bf00e3ac7ea",
     "wallet": "0xd297f105b145cd1d4ddb1d31392300e934bc3559"
   },
-  "pilotBudgetMinor": 110000000,
+  "pilotBudgetMinor": 610000000,
   "stateAuthority": {
     "kind": "aws_lambda_dynamodb",
     "region": "us-east-1",
