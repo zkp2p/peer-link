@@ -2,16 +2,16 @@
   "version": 1,
   "status": "approved",
   "serviceUrl": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
-  "policyDigest": "fdac4e7d560cef9cb723ee29681110d351fdd0b66c9d775f1fe81754cfe3fbce",
+  "policyDigest": "24c482a6b55d777fab9368763f833cea202601a0e9759e5d4c0e2e6943822f56",
   "measurements": {
-    "0": "25a5dc99b86725011a18cee381b977184d573b7a3b584143ccc49e9624bce15b5ac58bcfffa9f04abed6c5e855366074",
+    "0": "49ec5e987e215848c7f78b62ec633c94dec9668d8dad4f76c5769b18c3e71f105945774054c8f280226e0bc434ff8fe2",
     "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
-    "2": "4c230fb281381330b47a1b06d32b209d16eb0b4f9146880d11db3d7b07eb3c4f16393647aade4a9d9c23987eabe20751",
+    "2": "73f3c9c19fd21c046b62b7ed8c20a5961706ab4100f97bee9de20e8ff329f19d3c80b509622f5bd426e8947dd46895be",
     "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
   },
   "expiresAt": 1794467051,
   "limitations": [
-    "Open-recipe transcript campaigns for 69 banks plus the Mercury API source-validation campaign. Each accepted open-recipe transcript pays $10, for up to five contributors per bank. This release epoch is funded with 610 Base USDC in total, enough for sixty-one $10 grants, with no automatic refill; Peer tops it up by rolling a new release. A successful live reservation is required; a listing is not a capacity guarantee.",
+    "Open-recipe transcript campaigns for 76 banks plus the Mercury API source-validation campaign. Each accepted open-recipe transcript pays $10, for up to five contributors per bank. This release epoch is funded with 610 Base USDC in total, enough for sixty-one $10 grants, with no automatic refill; Peer tops it up by rolling a new release. A successful live reservation is required; a listing is not a capacity guarantee.",
     "In the previous open-hdfc-v1 epoch, one HDFC account completed authenticated encrypted history acquisition inside the enclave, provider-visible NEAR grading and a confirmed $10 payout; its signed paid receipt survived a same-image restart without another submission or payment. Other listed banks have no accepted contribution yet. The open-recipe flow was also validated against Wise on retired internal epochs. A bank may refuse the enclave data-centre address; this evidence does not establish general web-session, cookie, CSRF or GraphQL compatibility.",
     "The contributor's bank session and raw responses stay inside the attested enclave. The contributor's notes and the value-free transcript are sent to the inference endpoint the contributor chooses and, if accepted, are signed, archived and read by Peer. Redaction of field names, URL path words and status tokens is heuristic; review the local preview before contributing.",
     "The anonymous-access gate, the POST write guard and duplicate-account detection are heuristics. A recipe must replay only requests the bank's own site issues to view history.",
