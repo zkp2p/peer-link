@@ -206,7 +206,7 @@ def main():
             except Exception as error:code,result=failure(command,error)
             finally:slots.release()
             data=canonical(result)
-            # Local probes poll health every minute; only a change in the answer is worth a line.
+            # The health publisher probes every minute and logs its own sample; a failed probe is still a line.
             if not (isinstance(command,dict) and command['command']=='health' and code==200 and self.client_address[0]=='127.0.0.1'):
                 emit(request_event(self.command,command,body,result,code,started,length,len(data)))
             self.send_response(code);self.send_header('Content-Type','application/json');self.send_header('Cache-Control','no-store')
