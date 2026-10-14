@@ -40,6 +40,10 @@ the outside as the public job status the relay passes back, which is what the
 | `transactionId` | The Base payout transaction once a job is paid |
 | `action` | On `operator` only: `pause`, `resume`, `activate`, `reconcile`, `retire` or `preflight` |
 
+An `unrouted` request never reached the enclave: it is answered 404 `route_not_found`,
+or 400 with a framing code such as `input_size` or `invalid_json`. Status 503 with
+`service_unavailable` on a routed command means the enclave did not answer.
+
 `egress` events, one per outbound connection the enclave opens through the relay:
 `target`, `outcome` (`closed`, `idle`, `denied`, `unavailable`, `limit`, `error`),
 `ms` and `bytes`. `target` is a fixed service host, a named model provider, or the
