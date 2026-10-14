@@ -4444,11 +4444,11 @@
   "stateAuthority": {
     "kind": "aws_lambda_dynamodb",
     "region": "us-east-1",
-    "functionArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-p2p-v1-Authority-7DyTInKAcbHl:1",
-    "namespace": "open-p2p-v1",
-    "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/7c19bc4a-9612-4521-95f1-9784439930b9",
+    "functionArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-vn-v1-authority:1",
+    "namespace": "open-vn-v1",
+    "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/8762b68e-676e-4d63-abdc-629540a6f095",
     "credentialRoleArn": "arn:aws:iam::411399509833:role/peerlink-transcript-kms-pilot-HostRole-CtMw2KLCWL9c",
     "maxCiphertextBytes": 327680,
-    "initialWalletNonce": 14
+    "initialWalletNonce": 15
   }
 }
