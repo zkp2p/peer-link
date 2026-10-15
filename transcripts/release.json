@@ -4,12 +4,12 @@
   "serviceUrl": "https://9lb70whku9.execute-api.us-east-1.amazonaws.com",
   "policyDigest": "24c482a6b55d777fab9368763f833cea202601a0e9759e5d4c0e2e6943822f56",
   "measurements": {
-    "0": "49ec5e987e215848c7f78b62ec633c94dec9668d8dad4f76c5769b18c3e71f105945774054c8f280226e0bc434ff8fe2",
+    "0": "1062e17bd65656a58dbbb2606456e116e20c4ac93a3dd9aa0a0796adc4eec04e410f6cc7e5023a6298192ea76885ffab",
     "1": "4b4d5b3661b3efc12920900c80e126e4ce783c522de6c02a2a5bf7af3a2b9327b86776f188e4be1c1c404a129dbda493",
-    "2": "73f3c9c19fd21c046b62b7ed8c20a5961706ab4100f97bee9de20e8ff329f19d3c80b509622f5bd426e8947dd46895be",
+    "2": "7a04f6862e00814aff2117deaff58cbead94f3d034763d5dc01956873e448d54c4bf262f615f80228dac4bdae12026b3",
     "8": "5419f7791246e688592eaab6db755f436f8766435b6474f22156f8d823820b738ee0164597ff900d8428c02aa4d07fd3"
   },
-  "expiresAt": 1794467051,
+  "expiresAt": 1794540654,
   "limitations": [
     "Open-recipe transcript campaigns for 76 banks plus the Mercury API source-validation campaign. Each accepted open-recipe transcript pays $10, for up to five contributors per bank. This release epoch is funded with 610 Base USDC in total, enough for sixty-one $10 grants, with no automatic refill; Peer tops it up by rolling a new release. A successful live reservation is required; a listing is not a capacity guarantee.",
     "In the previous open-hdfc-v1 epoch, one HDFC account completed authenticated encrypted history acquisition inside the enclave, provider-visible NEAR grading and a confirmed $10 payout; its signed paid receipt survived a same-image restart without another submission or payment. Other listed banks have no accepted contribution yet. The open-recipe flow was also validated against Wise on retired internal epochs. A bank may refuse the enclave data-centre address; this evidence does not establish general web-session, cookie, CSRF or GraphQL compatibility.",

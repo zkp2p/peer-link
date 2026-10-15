@@ -153,6 +153,17 @@ slots per campaign and remaining epoch budget.
 
 ### Rolling a release epoch
 
+On October 15 `open-vn-v1` took a code-only release (#248 follow-ups: settings
+words in the enclave's POST write guard, numeric currency and boolean status
+roles, `bank_http_rate_limited`, `unsafe_notes_response_value`). The policy was
+unchanged, so the epoch, ledger and 610 USDC budget were kept. The host build of
+`c9de454` matched both CI builders (PCR0 `1062e17b…`, PCR2 `7a04f686…`, PCR1 and
+the PCR8 signer unchanged). Signed `pause`, new PCR0 approved on the
+`open-vn-v1` state key, install, paused restore of the same epoch, fresh
+attestation against the new pins, `install_continuous.sh`, then signed `resume`.
+The previous image is kept on the host as `releases/open-vn-v1-before-248`;
+rolling back means approving PCR0 `49ec5e98…` again and reinstalling it.
+
 The October 14 Vietnam release uses `open-vn-v1`: seven more Vietnamese banks,
 76 open-recipe campaigns plus Mercury, and the same 610 USDC, which the
 `open-p2p-v1` epoch returned in
