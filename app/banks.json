@@ -280,20 +280,116 @@
     "mark": "P"
   },
   {
-    "name": "Wise",
-    "country": "GB",
-    "currency": "GBP, EUR, USD",
-    "issue": "https://wise.com/",
-    "logo": "/logos/wise.png",
-    "mark": "W"
+    "name": "PalmPay",
+    "country": "NG",
+    "currency": "NGN",
+    "issue": "https://github.com/zkp2p/peer-link/issues/45",
+    "logo": "/logos/palmpay.png",
+    "mark": "P"
   },
   {
-    "name": "ICICI Bank",
-    "country": "IN",
-    "currency": "INR",
-    "issue": "https://github.com/zkp2p/peer-link/issues/11",
-    "logo": "/logos/icici.png",
-    "mark": "IB"
+    "name": "Kuda Bank",
+    "country": "NG",
+    "currency": "NGN",
+    "issue": "https://github.com/zkp2p/peer-link/issues/46",
+    "logo": "/logos/kuda.png",
+    "mark": "KB"
+  },
+  {
+    "name": "Access Bank",
+    "country": "NG",
+    "currency": "NGN",
+    "issue": "https://github.com/zkp2p/peer-link/issues/47",
+    "logo": "/logos/access.png",
+    "mark": "AB"
+  },
+  {
+    "name": "PrivatBank",
+    "country": "UA",
+    "currency": "UAH",
+    "issue": "https://github.com/zkp2p/peer-link/issues/275",
+    "logo": "/logos/privatbank.png",
+    "mark": "P"
+  },
+  {
+    "name": "MoMo",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/276",
+    "logo": "/logos/momo.png",
+    "mark": "M"
+  },
+  {
+    "name": "Bank of Georgia",
+    "country": "GE",
+    "currency": "GEL",
+    "issue": "https://github.com/zkp2p/peer-link/issues/23",
+    "logo": "/logos/bog.png",
+    "mark": "BO"
+  },
+  {
+    "name": "TBC Bank Georgia",
+    "country": "GE",
+    "currency": "GEL",
+    "issue": "https://github.com/zkp2p/peer-link/issues/62",
+    "logo": "/logos/tbc.png",
+    "mark": "TB"
+  },
+  {
+    "name": "A-Bank",
+    "country": "UA",
+    "currency": "UAH",
+    "issue": "https://github.com/zkp2p/peer-link/issues/52",
+    "logo": "/logos/abank.png",
+    "mark": "AB"
+  },
+  {
+    "name": "Al Rajhi Bank",
+    "country": "SA",
+    "currency": "SAR",
+    "issue": "https://github.com/zkp2p/peer-link/issues/43",
+    "logo": "/logos/alrajhi.png",
+    "mark": "AR"
+  },
+  {
+    "name": "Lloyds Bank",
+    "country": "GB",
+    "currency": "GBP",
+    "issue": "https://github.com/zkp2p/peer-link/issues/26",
+    "logo": "/logos/lloyds.png",
+    "mark": "LB"
+  },
+  {
+    "name": "Halyk Bank",
+    "country": "KZ",
+    "currency": "KZT",
+    "issue": "https://github.com/zkp2p/peer-link/issues/61",
+    "logo": "/logos/halyk.png",
+    "mark": "HB"
+  },
+  {
+    "name": "Wave Senegal",
+    "country": "SN",
+    "currency": "XOF",
+    "issue": "https://github.com/zkp2p/peer-link/issues/22",
+    "logo": "/logos/wave.png",
+    "mark": "WS"
+  },
+  {
+    "name": "Skrill",
+    "country": "GB",
+    "currency": "USD, EUR",
+    "issue": "https://github.com/zkp2p/peer-link/issues/277",
+    "logo": "/logos/skrill.png",
+    "mark": "S"
+  },
+  {
+    "name": "Airtm",
+    "country": "US",
+    "currency": "USD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/278",
+    "logo": "/logos/airtm.png",
+    "mark": "A"
   },
   {
     "name": "ABA Bank",
@@ -312,28 +408,220 @@
     "mark": "AD"
   },
   {
-    "name": "Wave Senegal",
-    "country": "SN",
-    "currency": "XOF",
-    "issue": "https://github.com/zkp2p/peer-link/issues/22",
-    "logo": "/logos/wave.png",
-    "mark": "WS"
-  },
-  {
-    "name": "Bank of Georgia",
-    "country": "GE",
-    "currency": "GEL",
-    "issue": "https://github.com/zkp2p/peer-link/issues/23",
-    "logo": "/logos/bog.png",
-    "mark": "BO"
-  },
-  {
-    "name": "Lloyds Bank",
+    "name": "Starling Bank",
     "country": "GB",
     "currency": "GBP",
-    "issue": "https://github.com/zkp2p/peer-link/issues/26",
-    "logo": "/logos/lloyds.png",
-    "mark": "LB"
+    "issue": "https://github.com/zkp2p/peer-link/issues/279",
+    "logo": "/logos/starling.png",
+    "mark": "S"
+  },
+  {
+    "name": "Maya",
+    "country": "PH",
+    "currency": "PHP",
+    "issue": "https://github.com/zkp2p/peer-link/issues/58",
+    "logo": "/logos/58.png",
+    "mark": "M"
+  },
+  {
+    "name": "Nequi",
+    "country": "CO",
+    "currency": "COP",
+    "issue": "https://github.com/zkp2p/peer-link/issues/57",
+    "logo": "/logos/nequi.png",
+    "mark": "N"
+  },
+  {
+    "name": "SadaPay",
+    "country": "PK",
+    "currency": "PKR",
+    "issue": "https://github.com/zkp2p/peer-link/issues/50",
+    "logo": "/logos/sadapay.png",
+    "mark": "S"
+  },
+  {
+    "name": "Brubank",
+    "country": "AR",
+    "currency": "ARS",
+    "issue": "https://github.com/zkp2p/peer-link/issues/280",
+    "logo": "/logos/brubank.png",
+    "mark": "B"
+  },
+  {
+    "name": "ICBC",
+    "country": "CN",
+    "currency": "CNY",
+    "issue": "https://github.com/zkp2p/peer-link/issues/153",
+    "logo": "/logos/icbc.png",
+    "mark": "I"
+  },
+  {
+    "name": "China Construction Bank",
+    "country": "CN",
+    "currency": "CNY",
+    "issue": "https://github.com/zkp2p/peer-link/issues/154",
+    "logo": "/logos/ccb.png",
+    "mark": "C"
+  },
+  {
+    "name": "Agricultural Bank of China",
+    "country": "CN",
+    "currency": "CNY",
+    "issue": "https://github.com/zkp2p/peer-link/issues/155",
+    "logo": "/logos/abc.png",
+    "mark": "A"
+  },
+  {
+    "name": "Bank of China",
+    "country": "CN",
+    "currency": "CNY",
+    "issue": "https://github.com/zkp2p/peer-link/issues/156",
+    "logo": "/logos/boc.png",
+    "mark": "B"
+  },
+  {
+    "name": "OCBC",
+    "country": "SG",
+    "currency": "SGD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/159",
+    "logo": "/logos/ocbc.png",
+    "mark": "O"
+  },
+  {
+    "name": "UOB",
+    "country": "SG",
+    "currency": "SGD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/160",
+    "logo": "/logos/uob.png",
+    "mark": "U"
+  },
+  {
+    "name": "Standard Chartered Singapore",
+    "country": "SG",
+    "currency": "SGD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/161",
+    "logo": "/logos/standard-chartered.png",
+    "mark": "S"
+  },
+  {
+    "name": "Trust Bank",
+    "country": "SG",
+    "currency": "SGD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/162",
+    "logo": "/logos/trust.png",
+    "mark": "T"
+  },
+  {
+    "name": "Shinhan Bank",
+    "country": "KR",
+    "currency": "KRW",
+    "issue": "https://github.com/zkp2p/peer-link/issues/186",
+    "logo": "/logos/shinhan.png",
+    "mark": "S"
+  },
+  {
+    "name": "Hana Bank",
+    "country": "KR",
+    "currency": "KRW",
+    "issue": "https://github.com/zkp2p/peer-link/issues/187",
+    "logo": "/logos/hana.png",
+    "mark": "H"
+  },
+  {
+    "name": "Woori Bank",
+    "country": "KR",
+    "currency": "KRW",
+    "issue": "https://github.com/zkp2p/peer-link/issues/188",
+    "logo": "/logos/woori.png",
+    "mark": "W"
+  },
+  {
+    "name": "NH NongHyup Bank",
+    "country": "KR",
+    "currency": "KRW",
+    "issue": "https://github.com/zkp2p/peer-link/issues/189",
+    "logo": "/logos/nonghyup.png",
+    "mark": "N"
+  },
+  {
+    "name": "VietinBank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/193",
+    "logo": "/logos/vietinbank.png",
+    "mark": "V"
+  },
+  {
+    "name": "Techcombank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/285",
+    "logo": "/logos/techcombank.png",
+    "mark": "T"
+  },
+  {
+    "name": "MB Bank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/286",
+    "logo": "/logos/mb-bank.png",
+    "mark": "M"
+  },
+  {
+    "name": "ACB",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/287",
+    "logo": "/logos/acb.webp",
+    "mark": "A"
+  },
+  {
+    "name": "VPBank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/288",
+    "logo": "/logos/vpbank.png",
+    "mark": "V"
+  },
+  {
+    "name": "Agribank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/289",
+    "logo": "/logos/agribank.png",
+    "mark": "A"
+  },
+  {
+    "name": "Sacombank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/290",
+    "logo": "/logos/sacombank.png",
+    "mark": "S"
+  },
+  {
+    "name": "TPBank",
+    "country": "VN",
+    "currency": "VND",
+    "issue": "https://github.com/zkp2p/peer-link/issues/291",
+    "logo": "/logos/tpbank.png",
+    "mark": "T"
+  },
+  {
+    "name": "Wise",
+    "country": "GB",
+    "currency": "GBP, EUR, USD",
+    "issue": "https://wise.com/",
+    "logo": "/logos/wise.png",
+    "mark": "W"
+  },
+  {
+    "name": "ICICI Bank",
+    "country": "IN",
+    "currency": "INR",
+    "issue": "https://github.com/zkp2p/peer-link/issues/11",
+    "logo": "/logos/icici.png",
+    "mark": "IB"
   },
   {
     "name": "ANZ Australia",
@@ -448,44 +736,12 @@
     "mark": "BA"
   },
   {
-    "name": "Al Rajhi Bank",
-    "country": "SA",
-    "currency": "SAR",
-    "issue": "https://github.com/zkp2p/peer-link/issues/43",
-    "logo": "/logos/alrajhi.png",
-    "mark": "AR"
-  },
-  {
     "name": "Banco Pichincha Ecuador",
     "country": "EC",
     "currency": "USD",
     "issue": "https://github.com/zkp2p/peer-link/issues/44",
     "logo": "/logos/44.png",
     "mark": "BP"
-  },
-  {
-    "name": "PalmPay",
-    "country": "NG",
-    "currency": "NGN",
-    "issue": "https://github.com/zkp2p/peer-link/issues/45",
-    "logo": "/logos/palmpay.png",
-    "mark": "P"
-  },
-  {
-    "name": "Kuda Bank",
-    "country": "NG",
-    "currency": "NGN",
-    "issue": "https://github.com/zkp2p/peer-link/issues/46",
-    "logo": "/logos/kuda.png",
-    "mark": "KB"
-  },
-  {
-    "name": "Access Bank",
-    "country": "NG",
-    "currency": "NGN",
-    "issue": "https://github.com/zkp2p/peer-link/issues/47",
-    "logo": "/logos/access.png",
-    "mark": "AB"
   },
   {
     "name": "Meezan Bank",
@@ -504,22 +760,6 @@
     "mark": "N"
   },
   {
-    "name": "SadaPay",
-    "country": "PK",
-    "currency": "PKR",
-    "issue": "https://github.com/zkp2p/peer-link/issues/50",
-    "logo": "/logos/sadapay.png",
-    "mark": "S"
-  },
-  {
-    "name": "A-Bank",
-    "country": "UA",
-    "currency": "UAH",
-    "issue": "https://github.com/zkp2p/peer-link/issues/52",
-    "logo": "/logos/abank.png",
-    "mark": "AB"
-  },
-  {
     "name": "SeaBank Indonesia",
     "country": "ID",
     "currency": "IDR",
@@ -536,22 +776,6 @@
     "mark": "BB"
   },
   {
-    "name": "Nequi",
-    "country": "CO",
-    "currency": "COP",
-    "issue": "https://github.com/zkp2p/peer-link/issues/57",
-    "logo": "/logos/nequi.png",
-    "mark": "N"
-  },
-  {
-    "name": "Maya",
-    "country": "PH",
-    "currency": "PHP",
-    "issue": "https://github.com/zkp2p/peer-link/issues/58",
-    "logo": "/logos/58.png",
-    "mark": "M"
-  },
-  {
     "name": "Nagad",
     "country": "BD",
     "currency": "BDT",
@@ -566,22 +790,6 @@
     "issue": "https://github.com/zkp2p/peer-link/issues/60",
     "logo": "/logos/60.png",
     "mark": "IP"
-  },
-  {
-    "name": "Halyk Bank",
-    "country": "KZ",
-    "currency": "KZT",
-    "issue": "https://github.com/zkp2p/peer-link/issues/61",
-    "logo": "/logos/halyk.png",
-    "mark": "HB"
-  },
-  {
-    "name": "TBC Bank Georgia",
-    "country": "GE",
-    "currency": "GEL",
-    "issue": "https://github.com/zkp2p/peer-link/issues/62",
-    "logo": "/logos/tbc.png",
-    "mark": "TB"
   },
   {
     "name": "ACLEDA Bank",

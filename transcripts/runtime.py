@@ -335,10 +335,12 @@ class Runtime:
             # A paid receipt still awaiting durable archive blocks wallet retirement.
             if self.pending_records:return
             for _ in range(30):
+                # The RPC rejects a rebroadcast of the still-pending refund; keep
+                # checking its confirmation within the same bound instead of stopping.
                 try:
                     result=self.retirement.reconcile()
                     if result['state']=='refunded':return
-                except Exception:return
+                except Exception:pass
                 time.sleep(2)
 
     def accept_graded(self,job_id,reads,grade,evidence,deadline,context=None):

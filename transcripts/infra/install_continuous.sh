@@ -51,7 +51,8 @@ PrivateTmp=yes
 ProtectSystem=strict
 ProtectHome=yes
 RestrictAddressFamilies=AF_INET AF_INET6
-StandardOutput=null
+# stdout is one fixed RuntimeHealth/AdmissionsOpen line per minute for the log shipper.
+StandardOutput=journal
 StandardError=null
 [Install]
 WantedBy=multi-user.target

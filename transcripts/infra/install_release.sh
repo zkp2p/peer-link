@@ -121,6 +121,10 @@ NotifyAccess=main
 RemainAfterExit=no
 TimeoutStartSec=150
 TimeoutStopSec=75
+# Stop signals only the supervisor, which terminates its own enclave and exits 0.
+# nitro-cli's enclave process, in this cgroup, closes the enclave on SIGTERM; a
+# control-group stop made the supervisor's cleanup fail and every stop exit 1.
+KillMode=mixed
 ExecStart=
 ExecStart=$base/venv/bin/python -m transcripts.infra.supervise_enclave --root $base/current --instance-id $4 --record /run/peer-link-transcripts/enclave.json
 ExecStop=

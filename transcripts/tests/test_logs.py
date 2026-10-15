@@ -9,7 +9,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-from transcripts.infra import axiom_forwarder, log_shipper, logs_template
+from transcripts.infra import axiom_forwarder, health_publisher, log_shipper, logs_template
 from transcripts.server import egress_target, emit, request_event
 
 JOB = "a" * 32
@@ -60,8 +60,9 @@ class RelayEventTests(unittest.TestCase):
         self.assertEqual(event["jobId"], JOB)  # From the validated route only.
         for name in ("state", "reason", "error"):
             self.assertNotIn(name, event)
-        unrouted = self.event(None, None, {"error": "service_unavailable"}, 503, "DELETE")
-        self.assertEqual((unrouted["command"], unrouted["method"], unrouted["error"]), ("unrouted", "other", "service_unavailable"))
+        unrouted = self.event(None, None, {"error": "route_not_found"}, 404, "DELETE")
+        self.assertEqual((unrouted["command"], unrouted["method"], unrouted["status"], unrouted["error"]),
+                         ("unrouted", "other", 404, "route_not_found"))
 
     def test_operator_action_is_logged_without_its_signature(self):
         body = {"payload": {"action": "pause", "nonce": "d" * 64, "wallet": PAYOUT}, "signature": CIPHER}
@@ -99,6 +100,12 @@ class ShipperTests(unittest.TestCase):
         self.assertEqual(item["timestamp"], 1791600000123)
         self.assertEqual(body, {"unit": "relay", "priority": 6, "event": "request", "command": "status", "status": 200,
                                 "ms": 12, "jobId": JOB, "transactionId": TX})
+
+    def test_health_sample_reaches_axiom_as_two_numbers(self):
+        with patch.object(health_publisher, "checked_health", return_value={"accepting": False}):
+            line = health_publisher.journal_line(health_publisher.sample({}, "i-" + "0" * 17, lambda: {}))
+        body = json.loads(log_shipper.record(self.entry(line, unit="peer-link-transcript-health.service"))["message"])
+        self.assertEqual(body, {"unit": "health", "priority": 6, "event": "health", "RuntimeHealth": 1, "AdmissionsOpen": 0})
 
     def test_free_text_loses_addresses_and_opaque_runs(self):
         text = "Exception during request from ('203.0.113.9', 51234) or 2001:db8:0:1::2 with " + CIPHER

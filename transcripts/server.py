@@ -85,6 +85,15 @@ def route(method,path,body):
     return {'command':PUBLIC_POST[path],'body':body}
 
 
+def failure(command,error):
+    """Status and body for a failed request. Refused before routing (unknown route or
+    malformed framing) it never reached the enclave and is the caller's error; any
+    later failure means the enclave did not answer."""
+    if command is None and isinstance(error,Rejected):
+        return (404 if str(error)=='route_not_found' else 400),{'error':str(error)}
+    return 503,{'error':'service_unavailable'}
+
+
 def connect_public(host):
     addresses=socket.getaddrinfo(host,443,type=socket.SOCK_STREAM)
     require(bool(addresses) and all(ipaddress.ip_address(item[4][0]).is_global for item in addresses),'egress_denied')
@@ -194,10 +203,10 @@ def main():
                     channel.settimeout(25);channel.connect((args.enclave_cid,args.vsock_port));send(channel,command);result=receive(channel)
                 if 'error' in result:code=400
                 elif command['command']=='submit':code=202
-            except Exception:code,result=503,{'error':'service_unavailable'}
+            except Exception as error:code,result=failure(command,error)
             finally:slots.release()
             data=canonical(result)
-            # Local probes poll health every minute; only a change in the answer is worth a line.
+            # The health publisher probes every minute and logs its own sample; a failed probe is still a line.
             if not (isinstance(command,dict) and command['command']=='health' and code==200 and self.client_address[0]=='127.0.0.1'):
                 emit(request_event(self.command,command,body,result,code,started,length,len(data)))
             self.send_response(code);self.send_header('Content-Type','application/json');self.send_header('Cache-Control','no-store')

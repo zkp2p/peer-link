@@ -1,6 +1,7 @@
 """Host-only synthetic supervision/metrics/CF checks; no hardware or AWS calls."""
 import json
 import os
+import re
 import tempfile
 import threading
 import unittest
@@ -66,6 +67,15 @@ class ContinuousTests(unittest.TestCase):
         self.assertEqual(notified, [1])
         self.assertEqual(calls[-1], ('terminate-enclave', '--enclave-id', ID))
 
+    def test_operator_stop_signals_only_the_supervisor(self):
+        # nitro-cli's enclave process shares the unit cgroup and closes its enclave on
+        # SIGTERM. A control-group stop raced the supervisor's own terminate-enclave,
+        # which then failed, so every operator stop was recorded as status=1/FAILURE.
+        source = Path('transcripts/infra/install_release.sh').read_text()
+        durable = re.search(r'durable-state.conf <<UNIT\n(.*?)\nUNIT', source, re.S).group(1)
+        self.assertEqual(re.findall(r'^KillMode=.*$', durable, re.M), ['KillMode=mixed'])
+        self.assertEqual(re.findall(r'^ExecStop=.*$', durable, re.M), ['ExecStop='])
+
     def test_health_startup_failure_terminates_exact_id_without_ready(self):
         calls, notifications = [], []
         def run(*args):
@@ -86,6 +96,19 @@ class ContinuousTests(unittest.TestCase):
         self.assertNotIn('secret', json.dumps(metrics))
         with patch.object(publisher, 'checked_health', return_value={'accepting': False}):
             self.assertEqual([x['Value'] for x in publisher.sample({}, INSTANCE, lambda: {})], [1, 0])
+
+    def test_each_sample_is_one_fixed_journal_line_for_axiom(self):
+        def private_error():
+            raise RuntimeError('secret request data')
+        self.assertEqual(publisher.journal_line(publisher.sample({}, INSTANCE, private_error)),
+                         '{"AdmissionsOpen":0,"RuntimeHealth":0,"event":"health"}')
+        with patch.object(publisher, 'checked_health', return_value={'accepting': False}):
+            paused = publisher.sample({}, INSTANCE, lambda: {})
+        self.assertEqual(publisher.journal_line(paused), '{"AdmissionsOpen":0,"RuntimeHealth":1,"event":"health"}')
+        unit = re.search(r"peer-link-transcript-health.service <<UNIT\n(.*?)\nUNIT",
+                         Path('transcripts/infra/install_continuous.sh').read_text(), re.S).group(1)
+        self.assertEqual(re.findall(r'^Standard(?:Output|Error)=.*$', unit, re.M),
+                         ['StandardOutput=journal', 'StandardError=null'])
 
     def test_metric_cli_cannot_inherit_credentials_or_endpoint_overrides(self):
         bad = {'AWS_SECRET_ACCESS_KEY': 'private', 'AWS_PROFILE': 'other',

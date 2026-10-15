@@ -13,7 +13,7 @@ issue, a logo or this page does not guarantee remaining capacity; run
 
 | Campaign kind | Banks | Reward | Slots |
 | --- | --- | --- | --- |
-| `open_recipe` | The thirty-four banks with a `<bank>-open-v1` campaign in [`transcripts/policy.json`](../transcripts/policy.json) | $10 | 5 per bank (up to $50 per bank) |
+| `open_recipe` | The seventy-six banks with a `<bank>-open-v1` campaign in [`transcripts/policy.json`](../transcripts/policy.json) | $10 | 5 per bank (up to $50 per bank) |
 | `reviewed_descriptor` | Mercury, [`mercury-api-source-v1`](https://github.com/zkp2p/peer-link/issues/1) | $10 | 1 organization |
 
 Mercury remains first-contributor [source validation](source-validation.md):
@@ -78,7 +78,7 @@ or production approval.
 
 The architecture ceiling is **$1,000 USDC** per funded epoch, with separate
 bounded gas and no automatic refill. The open-recipe release funds one amount
-up to that ceiling, currently $120, and shares it across every campaign, first
+up to that ceiling, currently $610, and shares it across every campaign, first
 come first served; refilling
 means retiring the epoch and publishing a new measured release. The completed
 supervised Wise experiment used a measured

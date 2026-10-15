@@ -13,13 +13,13 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from verification.common import b64
 from transcripts.artifacts import validate_archive_record
 from transcripts.channel import Channel
-from transcripts.common import Rejected, canonical, digest
+from transcripts.common import Rejected, canonical, digest, strict_json
 from transcripts.epoch import CHAIN_ID, USDC_ADDRESS, MAX_GAS_FUNDING_WEI
 from transcripts.ledger import Ledger
 from transcripts.providers import SYSTEM_PROMPT
 from transcripts.payout import PayoutCoordinator
 from transcripts.runtime import Runtime, RPC, SETTLEMENT_MAX_ATTEMPTS, SETTLEMENT_RETRY_SECONDS
-from transcripts.server import route, connect_public
+from transcripts.server import route, connect_public, failure
 from transcripts.transport import HTTPResponse, HTTPTransport, tunnel_socket
 from transcripts.wire import receive
 from transcripts.tests.test_kms_signer import KEY_ID, WALLET, SyntheticBroker, transaction
@@ -495,6 +495,14 @@ class RuntimeTests(unittest.TestCase):
             self.runtime.dispatch('reserve',request(self.policy['campaigns'][0]))
         self.assertNotEqual(self.epoch.ledger.status(reservation['jobId'])['state'],'reserved')
 
+    def test_rejected_refund_rebroadcast_keeps_reconciling_until_confirmed(self):
+        from unittest.mock import Mock
+        self.runtime.retirement=Mock()
+        self.runtime.retirement.reconcile.side_effect=[{'state':'refund_pending'},Rejected('rpc_error'),{'state':'refunded'}]
+        with patch('transcripts.runtime.time.sleep') as sleep:self.runtime.reconcile_retirement()
+        self.assertEqual(self.runtime.retirement.reconcile.call_count,3)
+        self.assertEqual(sleep.call_count,2)
+
     def test_refund_waits_for_pending_archive_and_never_discards_obligation(self):
         from unittest.mock import Mock
         job_id=self.job();self.archive.fail_calls=set(range(1,2*SETTLEMENT_MAX_ATTEMPTS+1));self.process(job_id)
@@ -548,6 +556,16 @@ class RelayBoundaryTests(unittest.TestCase):
                             ("GET","/v1/jobs/"+"a"*32+"/credential"),("GET","/health?secret=x"),
                             ("GET","/%68ealth"),("DELETE","/v1/reservations")):
             with self.assertRaises(Rejected):route(method,path,{})
+    def test_only_a_failure_after_routing_reports_the_enclave_unavailable(self):
+        for method,path in (("GET","/wp-login.php"),("POST","/cgi-bin/luci"),("GET","/health?x=1"),("DELETE","/v1/reservations")):
+            with self.assertRaises(Rejected) as caught:route(method,path,{})
+            self.assertEqual(failure(None,caught.exception),(404,{"error":"route_not_found"}))
+        # The relay parses a body before routing: a non-JSON scanner POST is refused too.
+        with self.assertRaises(Rejected) as caught:strict_json(b"user=admin&password=x")
+        self.assertEqual(failure(None,caught.exception),(400,{"error":"invalid_json"}))
+        routed=route("GET","/health",{})
+        for error in (ConnectionRefusedError(),TimeoutError(),Rejected("connection_closed"),Rejected("input_size")):
+            self.assertEqual(failure(routed,error),(503,{"error":"service_unavailable"}))
     def test_egress_rejects_private_dns_and_mixed_answers_before_connect(self):
         public=(2,1,6,"",("93.184.216.34",443))
         private=(2,1,6,"",("127.0.0.1",443))

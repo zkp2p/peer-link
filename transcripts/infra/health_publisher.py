@@ -1,4 +1,4 @@
-"""Host-only fixed numeric health metrics; no requests, credentials or state logging."""
+"""Host-only fixed numeric health metrics and their journal line; no requests, credentials or state."""
 import argparse
 import json
 import os
@@ -42,6 +42,12 @@ def sample(policy, instance, health=read_health):
             for name, value in [('RuntimeHealth', available), ('AdmissionsOpen', accepting)]]
 
 
+def journal_line(metrics):
+    """The sample for Axiom through the log shipper: the same two 0/1 values, nothing else."""
+    return json.dumps({'event': 'health', **{metric['MetricName']: metric['Value'] for metric in metrics}},
+                      sort_keys=True, separators=(',', ':'))
+
+
 def publish(metrics, region):
     subprocess.run(['aws', 'cloudwatch', 'put-metric-data', '--region', region,
                     '--endpoint-url', 'https://monitoring.' + region + '.amazonaws.com',
@@ -63,8 +69,10 @@ def main():
     for number in (signal.SIGTERM, signal.SIGINT):
         signal.signal(number, lambda *_: stop.set())
     while not stop.is_set():
+        metrics = sample(policy, args.instance_id)
+        print(journal_line(metrics), flush=True)
         try:
-            publish(sample(policy, args.instance_id), args.region)
+            publish(metrics, args.region)
         except Exception:
             pass  # Missing-metric alarm catches publishing failure; no private logs.
         stop.wait(60)

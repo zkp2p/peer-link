@@ -38,6 +38,7 @@ type Integration = {
 // Mercury stays first; banks.json keeps Chase, Bank of America and Wells Fargo next.
 const PINNED_ADAPTERS = ["us/mercury"];
 const PINNED_BANKS = 3;
+const BANK_REQUEST_URL = "https://github.com/zkp2p/peer-link/issues/new?template=bank-request.md";
 type Campaign = {
   name: string;
   country: string;
@@ -172,7 +173,7 @@ function render(providers: Provider[], catalogUnavailable = false) {
         ? `First-contributor source validation: $${integration.bounty} per accepted contribution.${organizationLimit} A verified release and funded reservation are required; availability is not guaranteed.`
         : integration.campaignStatus === "open"
           ? `Open transcript campaign: $${integration.bounty} per accepted contribution${bankPool ? `, up to ${integration.maxContributorOrganizations} contributors (up to $${bankPool} for this bank)` : ""}. All banks share one funded budget; a reservation admits a job and availability is not guaranteed.`
-          : `Planned $${integration.bounty} per accepted transcript.${organizationLimit} This bank’s campaign is planned.`;
+          : `Next release: $${integration.bounty} per accepted transcript, up to ${integration.maxContributorOrganizations} contributors. Not accepting transcripts yet.`;
     card.setAttribute(
       "aria-label",
       integration.name === "Wise"
@@ -212,12 +213,34 @@ function render(providers: Provider[], catalogUnavailable = false) {
       const tag = document.createElement("span");
       tag.className = "bounty-tag";
       tag.setAttribute("aria-hidden", "true");
-      tag.textContent = bankPool ? `up to $${bankPool}` : `$${integration.bounty}`;
+      if (integration.campaignStatus === "planned") tag.classList.add("soon");
+      tag.textContent =
+        integration.campaignStatus === "planned"
+          ? "soon"
+          : bankPool
+            ? `up to $${bankPool}`
+            : `$${integration.bounty}`;
       card.title = rewardDescription;
       card.append(tag);
     }
     list.append(card);
   }
+  // Unlisted banks are welcome too: a request can add a campaign to a later release.
+  const request = document.createElement("a");
+  request.className = "integration-tile request-tile";
+  request.href = BANK_REQUEST_URL;
+  const plus = document.createElement("span");
+  plus.className = "integration-logo";
+  plus.setAttribute("aria-hidden", "true");
+  plus.textContent = "+";
+  const requestName = document.createElement("strong");
+  requestName.className = "integration-name";
+  requestName.textContent = "Your bank";
+  const requestMeta = document.createElement("span");
+  requestMeta.className = "integration-meta";
+  requestMeta.textContent = "Every bank is welcome. Request yours.";
+  request.append(plus, requestName, requestMeta);
+  list.append(request);
 }
 
 fetch("/catalog.json")

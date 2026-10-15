@@ -149,9 +149,27 @@ h2 {
   margin-bottom: 0;
 }
 
-.how-section h2,
-.integrations-section h2 {
+.how-section h2 {
   margin-bottom: 32px;
+}
+.integrations-section h2 {
+  margin-bottom: 16px;
+}
+.integrations-lead {
+  max-width: 760px;
+  margin-bottom: 32px;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.55;
+}
+.integrations-lead strong,
+.integrations-lead a {
+  color: var(--ink);
+  font-weight: 600;
+}
+.integrations-lead a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .collaboration-map {
   position: relative;
@@ -305,6 +323,44 @@ h2 {
   border-radius: 16px;
   background: var(--ignition);
 }
+.how-steps {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 1.1fr 1fr;
+  gap: 24px;
+  margin: 28px 0 0;
+  padding: 0 44px;
+  list-style: none;
+  counter-reset: step;
+}
+.how-steps li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+  text-align: center;
+  counter-increment: step;
+}
+.how-steps li::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-bottom: 6px;
+  border-radius: 999px;
+  background: #000;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.how-steps strong {
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+}
 .reward-check {
   display: grid;
   place-items: center;
@@ -417,6 +473,17 @@ h2 {
   font-size: 12px;
   font-weight: 700;
   line-height: 1.3;
+}
+.bounty-tag.soon {
+  background: #f0f0f0;
+  color: #555;
+}
+.request-tile {
+  border-style: dashed;
+}
+.request-tile .integration-logo {
+  font-size: 22px;
+  font-weight: 500;
 }
 .integration-meta {
   color: #666;
@@ -583,6 +650,10 @@ footer > div {
     gap: 12px;
     padding: 34px 24px;
   }
+  .how-steps {
+    gap: 12px;
+    padding: 0 24px;
+  }
   .contribute-grid,
   .faq-section {
     gap: 50px;
@@ -646,6 +717,11 @@ footer > div {
   }
   .collaboration-map::before {
     display: none;
+  }
+  .how-steps {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px 16px;
+    padding: 0;
   }
   .map-bank,
   .map-makers,

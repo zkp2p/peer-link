@@ -98,7 +98,9 @@ The default finite guard and Restart=no remain active. The durable installer use
 CID16/2CPU/2048MiB, records the exact host-prefixed enclave ID and requires paused
 policy-bound health within90seconds. After readiness it polls actual Nitro
 liveness every5seconds. Startup/liveness failure cleans up only that ID; each
-Nitro command is bounded30seconds and systemd stop allows75seconds. No terminate-all,
+Nitro command is bounded30seconds and systemd stop allows75seconds. Stop signals
+only the supervisor (KillMode=mixed), so an operator stop exits0 and only a
+startup or liveness failure exits1 for Restart=on-failure. No terminate-all,
 autoactivation, auto-funding or signed operator action is used. Transient HTTP
 failures produce alarms instead of monitor-driven enclave replacement.
 
@@ -127,7 +129,7 @@ After durable hardware restore, budget/nonce/payout gates and deployment review:
    closed; do not initialize blank state, lower generation or discard obligations.
 4. The separate health publisher checks only localhost public health (5second HTTP
    timeout) once per minute and emits RuntimeHealth/AdmissionsOpen numerical0/1
-   metrics with InstanceId. AWS CLI is bounded20seconds/one attempt, uses only
+   metrics with InstanceId, and the same two values as one journal line for Axiom. AWS CLI is bounded20seconds/one attempt, uses only
    instance credentials and the official regional endpoint; overrides are removed.
    Role permission is only PutMetricData in PeerLink/Transcripts. Alarms trigger
    after3unhealthy/missing samples. Paused restore produces RuntimeHealth1 and

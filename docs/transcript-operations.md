@@ -153,7 +153,24 @@ slots per campaign and remaining epoch budget.
 
 ### Rolling a release epoch
 
-The October 13 HDFC release uses `open-hdfc-v1`, 35 open-recipe campaigns plus
+The October 14 Vietnam release uses `open-vn-v1`: seven more Vietnamese banks,
+76 open-recipe campaigns plus Mercury, and the same 610 USDC, which the
+`open-p2p-v1` epoch returned in
+[this confirmed refund](https://basescan.org/tx/0xe0aed472c327e29da046197264c8f4c7c8660ccffb325de3b6ea0725a3642afd)
+and was funded again in
+[one transfer](https://basescan.org/tx/0xdf7ba6f2ce23c8337306ab8168d7b75395a05fd52b01f3d5f432886984dbc0a6).
+The host build of `1c79a1c` matched both CI builders; fresh attestation,
+unfunded operator preflight and activation passed for the signed image.
+
+Earlier on October 14, `open-p2p-v1` opened 69 open-recipe campaigns plus
+Mercury with a 610 USDC budget: the 110 USDC the HDFC epoch returned in
+[this confirmed refund](https://basescan.org/tx/0xb06d6da1a8811eeb61843e7329f56c6daa2c723bad6affe4241433b9682403c6)
+plus 500 new, funded in
+[one transfer](https://basescan.org/tx/0x258c13f029b68b4e92fb3539cc74c0e9921e140dacb2a7d41afa2c674036cf96).
+The host build of `ab9ba19` matched both CI builders; fresh attestation,
+unfunded operator preflight and activation passed for the signed image.
+
+The October 13 HDFC release used `open-hdfc-v1`, 35 open-recipe campaigns plus
 Mercury and the same 120 USDC budget. The old epoch's runtime returned 120 USDC
 in [this confirmed refund](https://basescan.org/tx/0x200f174f882b299d7f3d853e7434a078a7552f9f9cf491d26566855474acba7b)
 and finalized as `refunded` before replacement. Fresh attestation, unfunded
@@ -168,7 +185,10 @@ existing host in this order. Each step gates the next.
 
 1. Close the running epoch first: signed `pause`, confirm no obligations, return
    any unspent USDC through operator custody, then signed `retire`. Retirement
-   reports `refunded` with amount 0 when the wallet holds no USDC.
+   reports `refunded` with amount 0 when the wallet holds no USDC. The runtime
+   checks a pending refund for about a minute; if it is still `refund_pending`
+   after the refund transaction confirms, send `retire` again, which only re-runs
+   that reconcile.
 2. Create a new state stack for the new namespace and add its authority version
    and state key to the host role with an additive change set. A namespace holds
    one epoch: genesis is refused when the namespace already has a head.

@@ -40,14 +40,29 @@ the outside as the public job status the relay passes back, which is what the
 | `transactionId` | The Base payout transaction once a job is paid |
 | `action` | On `operator` only: `pause`, `resume`, `activate`, `reconcile`, `retire` or `preflight` |
 
+An `unrouted` request never reached the enclave: it is answered 404 `route_not_found`,
+or 400 with a framing code such as `input_size` or `invalid_json`. Status 503 with
+`service_unavailable` on a routed command means the enclave did not answer.
+
 `egress` events, one per outbound connection the enclave opens through the relay:
 `target`, `outcome` (`closed`, `idle`, `denied`, `unavailable`, `limit`, `error`),
 `ms` and `bytes`. `target` is a fixed service host, a named model provider, or the
 campaign's bank domain; a contributor's own model endpoint is logged as `other`.
 
+`health` events, one a minute from the health publisher's localhost probe on a
+continuous host: `RuntimeHealth` and `AdmissionsOpen`, each `0` or `1`, the same
+values it sends to CloudWatch. `RuntimeHealth` is `0` when the relay or enclave
+does not answer or its answer fails the policy-bound check; `AdmissionsOpen` is `0`
+while paused, including after every restore until a signed resume. A single `0`
+can be a probe that exceeded its 5 second timeout; like the CloudWatch alarm, treat
+three consecutive `0` samples as an outage. No sample for several minutes means the
+host, the publisher or the log path is down.
+
 Lifecycle lines from the other units (`enclave`, `credentials`, `health`,
 `archive-sync`) are forwarded as text with network addresses and long opaque runs
-masked.
+masked. On the enclave unit, `status=1/FAILURE` means the supervisor's startup or
+liveness check failed; an operator stop or restart ends with `Deactivated
+successfully`.
 
 Never logged: request or response bodies, ciphertext, signatures, bank sessions,
 inference keys, raw or redacted transcripts, notes, payout addresses, client IP
@@ -61,6 +76,7 @@ axiom query "['peerlink-transcripts-prod'] | where event == 'request' and comman
 axiom query "['peerlink-transcripts-prod'] | where event == 'request' and command == 'reserve' | project _time, campaignId, provider, model, state, error"
 axiom query "['peerlink-transcripts-prod'] | where event == 'egress' and outcome != 'closed' | summarize count() by target, outcome"
 axiom query "['peerlink-transcripts-prod'] | where unit != 'relay' | project _time, unit, message"
+axiom query "['peerlink-transcripts-prod'] | where event == 'health' | summarize samples = count(), unhealthy = countif(RuntimeHealth == 0), paused = countif(AdmissionsOpen == 0) by bin(_time, 1h)"
 ```
 
 ## Install or update
@@ -84,6 +100,11 @@ axiom query "['peerlink-transcripts-prod'] | where unit != 'relay' | project _ti
    replacing the relay file or its unit restarts the enclave: pause first,
    replace and restart, verify with the client's `preflight`, then send a
    signed `resume`.
+6. Health events need the host's `transcripts/infra/health_publisher.py` at a
+   revision that prints them and the health unit's `StandardOutput=journal`
+   (`install_continuous.sh` sets it; a host installed earlier needs a drop-in with
+   that one line). Restarting the health unit alone leaves the relay and enclave
+   running.
 
 The host role cannot read, filter or delete log events, and the Axiom token
 never reaches the host. A compromised host could add false lines to the group;

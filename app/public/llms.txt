@@ -16,21 +16,19 @@
 
 ## Status
 
-Grants are open. Thirty-five banks have an open-recipe transcript campaign in
+Grants are open. Seventy-six banks have an open-recipe transcript campaign in
 the current release, each paying $10 USDC per accepted transcript to up to five
 contributors (up to $50 per bank), and Mercury has a first-contributor
 source-validation campaign ([$10 USDC for one accepted
 organization](https://github.com/zkp2p/peer-link/issues/1); its first positive
 live API acquisition is still pending). All campaigns share one funded budget
-with no automatic refill, and the current release started with $120 USDC in total; Peer
-tops it up by rolling a new release. Banks: Chase, Bank of America, Wells Fargo,
-Capital One, Citi, KB Kookmin Bank, Rakuten Bank, Kasikornbank, DBS Bank, HSBC
-Hong Kong, HDFC Bank, Maybank, Bank Mandiri, BCA, China Merchants Bank, Vietcombank, BIDV,
-GCash, bKash, Easypaisa, Kaspi Bank, PKO Bank Polski, Monobank, PUMB, Paysera,
-Ziraat Bank, BBVA Spain, BBVA Mexico, Bancolombia, Banco de Credito del Peru, Uala,
-Itau, OPay, MTN MoMo Ghana and Safaricom M-Pesa. The campaign issues are listed
+with no automatic refill, and the current release started with $610 USDC in total; Peer
+tops it up by rolling a new release. Banks: Chase, Bank of America, Wells Fargo, Capital One, Citi, Airtm, KB Kookmin Bank, Shinhan Bank, Hana Bank, Woori Bank, NH NongHyup Bank, Rakuten Bank, Kasikornbank, DBS Bank, OCBC, UOB, Standard Chartered Singapore, Trust Bank, HSBC Hong Kong, HDFC Bank, Maybank, Bank Mandiri, BCA, China Merchants Bank, ICBC, China Construction Bank, Agricultural Bank of China, Bank of China, Vietcombank, BIDV, VietinBank, Techcombank, MB Bank, ACB, VPBank, Agribank, Sacombank, TPBank, MoMo, ABA Bank, GCash, Maya, bKash, Easypaisa, SadaPay, Kaspi Bank, Halyk Bank, Bank of Georgia, TBC Bank, Al Rajhi Bank, ADCB, PKO Bank Polski, Monobank, PUMB, PrivatBank, A-Bank, Paysera, Ziraat Bank, BBVA Spain, Lloyds, Starling Bank, Skrill, BBVA Mexico, Bancolombia, Nequi, Banco de Credito del Peru, Uala, Brubank, Itau, OPay, PalmPay, Kuda Bank, Access Bank, Wave, MTN MoMo Ghana and Safaricom M-Pesa. The campaign issues are listed
 on Merit for discovery only; grants are paid by PeerLink, with no Merit claim or
 tax form.
+Every bank is welcome. If the user's bank has no campaign, do not contribute;
+help them request it at https://github.com/zkp2p/peer-link/issues/new?template=bank-request.md (names and public
+endpoint patterns only, never account data) so it can join a later release.
 HDFC has one verified accepted transcript and confirmed $10 payout, including
 same-image paid-receipt recovery after restart. This is transcript acquisition,
 not a completed Peer payment integration. Other listed banks have no accepted
