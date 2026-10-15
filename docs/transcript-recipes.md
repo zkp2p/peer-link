@@ -167,6 +167,11 @@ POST that names a state change:
   or `freeze` and no read word such as `history`, `list`, `activity`, `details`,
   `transactions` or `search`. `/payment-history` and `/pay/activity/list` are
   accepted; `/payments/send`, `/wire-transfers` and `/transfer/4821` are not;
+- a path that names an account setting anywhere, such as `settings`,
+  `webhook`, `password`, `pin`, `otp`, `consent`, `notifications`, `limits` or
+  `token`, unless its last segment has a read word. `/personal/webhook` and
+  `/settings/notifications/email` are refused; `/notifications/activity/list`
+  is accepted;
 - a GraphQL document, JSON or form-encoded, that contains a `mutation` or
   `subscription` operation;
 - a persisted GraphQL request (an id or hash instead of a document) whose
@@ -248,19 +253,17 @@ not. Each path can serve one role.
 | `amount` | 25 | yes | A number, numeric string or money text on at least 90% of records. |
 | `timestamp` | 20 | yes | An ISO date or date-time, a slash date, or epoch seconds or milliseconds on at least 90% of records. |
 | `counterparty` | 15 | yes | A non-empty string or integer on at least half of the records. |
-| `status` | 10 | no | A short text token on at least 90% of records with at most 12 distinct values. A boolean such as `pending: true` does not count. |
-| `currency` | 5 | no | A three-letter ISO 4217 code on at least 90% of records. A numeric code such as `840` does not count. |
+| `status` | 10 | no | A short text token or a boolean such as `pending: true` on at least 90% of records, with at most 12 distinct values. |
+| `currency` | 5 | no | An ISO 4217 code on at least 90% of records: three letters such as `UAH`, or the numeric code such as `980` as a number or a string. |
 
-The minimum score is 85, which is exactly the four required roles. A bank whose
-status is a boolean and whose currency is numeric can still pass on those four;
-describe the two fields in the notes so engineers can use them.
+The minimum score is 85, which is exactly the four required roles.
 
 ## Pitfalls seen in real integrations
 
 | Symptom | Cause and fix |
 | --- | --- |
 | `preview` works, the job fails with `bank_http_unauthorized` or `bank_http_redirect` | Sessions on bank web apps can expire within minutes and CSRF values die with them. Capture fresh headers, run `preview` once, and contribute immediately. Some banks also refuse data-centre addresses; that cannot be fixed from a recipe. |
-| `preview` works, the job fails with `bank_http_client_error` | Often a rate limit. Some public APIs allow one call per endpoint per minute, and `lookup`, `preview` and the enclave each spend one. Wait out the limit after the last local call before `contribute`, and do not list the same endpoint twice in a recipe. |
+| `preview` works, the job fails with `bank_http_rate_limited` | The bank answered 429. Some public APIs allow one call per endpoint per minute, and `lookup`, `preview` and the enclave each spend one. Wait out the limit after the last local call before `contribute`, and do not list the same endpoint twice in a recipe. |
 | `bank_response_non_json` | The URL returned an HTML page, often a login page served with status 200. Use the JSON endpoint the page calls. |
 | `response_encoding` | The server compressed the body although the enclave asks for `Accept-Encoding: identity`. Try the API host rather than the page host. |
 | `history_path_invalid` | The list is wrapped, for example under `data`, `transactions` or `activity.items`. Point `history` at the array itself. |
@@ -296,16 +299,18 @@ they contain:
 - three groups of two or more digits close together, which includes a written
   date such as 2026-10-01 (say "the dated version segment" instead);
 - a run of 28 or more letters, digits, hyphens and underscores, a string that
-  starts like a JWT (`eyJ`), or the word `bearer` followed by another word;
-- the identity value, or a value copied from a response: anything with a digit
-  or `@`, any multi-word value, and any single word of five or more letters
-  that is not an ordinary field-name word.
+  starts like a JWT (`eyJ`), or the word `bearer` followed by another word.
 
-`check` reports the first three groups without a credential; the last needs the
-responses, so `preview` reports it. The error does not say which word matched,
-so when `preview` returns `unsafe_notes`, look for a name, a merchant or a memo
-word you repeated from the data. Status tokens and currency codes are fine to
-name; describe everything else instead of quoting it.
+Notes are rejected with `unsafe_notes_response_value` when they repeat the
+identity value or a value copied from a response: anything with a digit or `@`,
+any multi-word value, and any single word of five or more letters that is not an
+ordinary field-name word.
+
+`check` reports `unsafe_notes` without a credential; the copied-value check
+needs the responses, so `preview` reports it. Neither error says which text
+matched, so when `preview` returns `unsafe_notes_response_value`, look for a
+name, a merchant or a memo word you repeated from the data. Status tokens and
+currency codes are fine to name; describe everything else instead of quoting it.
 
 ## Worked example: a public API with a token
 

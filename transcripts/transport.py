@@ -78,6 +78,7 @@ def tunnel_socket(host, port=443, timeout=15):
 
 def bank_status_error(status):
     if status in (401,403): return "bank_http_unauthorized"
+    if status==429: return "bank_http_rate_limited"
     if 300<=status<400:return "bank_http_redirect"
     if 400<=status<500:return "bank_http_client_error"
     if 500<=status<600:return "bank_http_server_error"

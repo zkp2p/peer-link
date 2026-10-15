@@ -165,14 +165,15 @@ class AcquisitionTests(unittest.TestCase):
             with self.assertRaisesRegex(Rejected,'^'+code+'$'):client.acquire('job',hints(),TIME)
         for response,code in ((HTTPResponse(200,b'PRIVATE-HTML'),'bank_response_non_json'),
                               (HTTPResponse(403,b'PRIVATE-ERROR'),'bank_http_unauthorized'),
-                              (HTTPResponse(429,b'PRIVATE-ERROR'),'bank_http_client_error'),
+                              (HTTPResponse(429,b'PRIVATE-ERROR'),'bank_http_rate_limited'),
+                              (HTTPResponse(404,b'PRIVATE-ERROR'),'bank_http_client_error'),
                               (HTTPResponse(503,b'PRIVATE-ERROR'),'bank_http_server_error')):
             client,_=self.client([response])
             with self.assertRaisesRegex(Rejected,'^'+code+'$'):client.acquire('job',hints(),TIME)
 
     def test_real_bank_http_errors_never_read_or_export_private_body(self):
         for status,code in ((302,'bank_http_redirect'),(403,'bank_http_unauthorized'),
-                            (429,'bank_http_client_error'),(503,'bank_http_server_error')):
+                            (429,'bank_http_rate_limited'),(404,'bank_http_client_error'),(503,'bank_http_server_error')):
             client,server=socket.socketpair()
             server.sendall(f'HTTP/1.1 {status} Error\r\nContent-Length: 9999999\r\nConnection: close\r\n\r\n'.encode())
             context=Mock();context.wrap_socket.return_value=client

@@ -236,6 +236,10 @@ class RecipeTests(unittest.TestCase):
             (graphql, json.dumps({"query": "query A { a } mutation B { pay }", "operationName": "B"})),
             (graphql, json.dumps({"id": "a1b2"})), (graphql, json.dumps({"doc_id": "77"})),
             (graphql, json.dumps({"sha256Hash": "ab", "operationName": "MoveMoney"})),
+            # Account settings, anywhere in the path, unless the last segment reads.
+            (ORIGIN + "/personal/webhook", "{}"), (ORIGIN + "/settings/notifications/email", "{}"),
+            (ORIGIN + "/api/v1/user/preferences", "{}"), (ORIGIN + "/security/pins/4821", "{}"),
+            (ORIGIN + "/oauth/token", "{}"), (ORIGIN + "/cards/4821/limits", "{}"),
         ]
         for url, body in refused:
             with self.assertRaisesRegex(Rejected, "write_request_refused", msg=url + " " + body):
@@ -265,6 +269,7 @@ class RecipeTests(unittest.TestCase):
             (ORIGIN + "/newTransactions", "{}"), (ORIGIN + "/pay/activity/v2", "{}"),
             (ORIGIN + "/deposit/accounts/4821/postedTransactions", "{}"), (ORIGIN + "/register/entries", "{}"),
             (ORIGIN + "/rpc", json.dumps({"method": "payment.list"})),
+            (ORIGIN + "/api/notifications/activity/list", "{}"), (ORIGIN + "/settings/statements/search", "{}"),
         ]
         for url, body in allowed:
             validate_open_recipe(policy, self.post(url, body), 4)
@@ -302,7 +307,7 @@ class RecipeTests(unittest.TestCase):
         validate_notes("Amounts are decimal strings; negative means sent.")
         for text in ("account 123456789", "mail alice@example.com", "Bearer abcdef", "eyJhbGciOiJIUzI1NiJ9",
                      "token " + "a" * 30, "x" * 4001, "bell\x07"):
-            with self.assertRaisesRegex(Rejected, "unsafe_notes"):
+            with self.assertRaisesRegex(Rejected, "^unsafe_notes$"):
                 validate_notes(text)
 
 
@@ -445,9 +450,10 @@ class TranscriptTests(unittest.TestCase):
         status = artifact["requests"][1]["fields"]["$.activity.items[].status"]
         self.assertEqual((status["values"], status["valuesIncomplete"]), (["pending"], True))
     def test_notes_cannot_carry_values_seen_in_the_responses(self):
-        with self.assertRaisesRegex(Rejected, "unsafe_notes"):
+        with self.assertRaisesRegex(Rejected, "^unsafe_notes_response_value$"):
             acquired(body=payload(notes="my handle carol77 works"))
-        with self.assertRaisesRegex(Rejected, "unsafe_notes"):
+        # The digit run is refused before the responses are compared.
+        with self.assertRaisesRegex(Rejected, "^unsafe_notes$"):
             acquired(body=payload(notes="identity is user-48213377"))
     def test_validator_rejects_injected_values(self):
         policy, _, _, artifact = acquired()
@@ -610,7 +616,7 @@ class AssessmentTests(unittest.TestCase):
             with self.assertRaisesRegex(Rejected, "model_output_not_json"):
                 parse_proposal(text)
     def test_role_checks_accept_common_bank_encodings(self):
-        from transcripts.open_source import _numeric, _timestamp
+        from transcripts.open_source import CHECKS, _numeric, _timestamp
         for value in (12.5, -3, "-12.50", "12,50", "1.234,56", "1,000 USD", "Rp 150.000", "\u20ab 1.000.000",
                       "$12.50", "(45.00)", "0.10"):
             self.assertTrue(_numeric(value), value)
@@ -621,6 +627,15 @@ class AssessmentTests(unittest.TestCase):
             self.assertTrue(_timestamp(value), value)
         for value in ("12.50", "hello", 42, "4821337700123", None, True, "20269901", "9" * 5000):
             self.assertFalse(_timestamp(value), value)
+        currency, status = CHECKS["currency"][1], CHECKS["status"][1]
+        for value in ("UAH", " USD ", 980, "980", 840, 8, "008"):
+            self.assertTrue(currency(value), value)
+        for value in ("usd", "XYZ", 999, "999", "98", "0980", 980.0, True, None):
+            self.assertFalse(currency(value), value)
+        for value in (True, False, "COMPLETED", "pacs.008"):
+            self.assertTrue(status(value), value)
+        for value in (1, None, "", "x" * 41, "two words"):
+            self.assertFalse(status(value), value)
     def test_selector_through_data_keyed_siblings_and_sort_fields_still_maps(self):
         rows = copy.deepcopy(HISTORY["activity"]["items"])
         nested = {"sortBy": "createdAt", "orderBy": "amount",
@@ -663,6 +678,15 @@ class AssessmentTests(unittest.TestCase):
                                                    "currency": ".amount.currency"})
         self.assertEqual((result["score"], result["unverified"]), (90, []))
         self.assertIn("$.rows[].endToEndId", artifact["requests"][1]["fields"])
+    def test_numeric_currency_and_boolean_status_verify(self):
+        # Monobank-style rows: ISO 4217 numeric currency and a hold flag as the status.
+        rows = [{"id": "ZuHWzqkKGVo%d" % index, "time": 1759300000 + index, "amount": -1250 * index,
+                 "currencyCode": 980, "hold": index == 3, "counterName": name}
+                for index, name in ((1, "ana"), (2, "budi"), (3, "citra"))]
+        _, result = self.bank_rows(rows, {"paymentId": ".id", "amount": ".amount", "timestamp": ".time",
+                                          "counterparty": ".counterName", "currency": ".currencyCode",
+                                          "status": ".hold"})
+        self.assertEqual((result["score"], result["unverified"], result["completedStatus"]), (100, [], []))
     def test_names_seen_once_are_kept_only_when_made_of_common_words(self):
         me = copy.deepcopy(ME)
         me["user"].update(sharedWith={"alicesmith": True, "bobjones": True}, vault={"mainchecking": {"balance": 1.0}},
@@ -975,7 +999,7 @@ class HostAndCliTests(unittest.TestCase):
                              (lambda b: b["recipe"]["reads"].__setitem__(1, {
                                  "url": ORIGIN + "/api/payments/send", "method": "POST",
                                  "contentType": "application/json", "body": "{}"}), "write_request_refused"),
-                             # A settings write the enclave's list does not name yet is refused locally.
+                             # The enclave's settings rule applies locally too.
                              (lambda b: b["recipe"]["reads"].__setitem__(1, {
                                  "url": ORIGIN + "/personal/webhook", "method": "POST",
                                  "contentType": "application/json", "body": "{}"}), "write_request_refused"),

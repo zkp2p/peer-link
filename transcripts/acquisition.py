@@ -19,7 +19,7 @@ DESCRIPTOR_FIELDS = {'version','kind','origin','organizationPath','identityPath'
 SOURCE_FAILURES = {"org_id_missing","org_id_invalid","account_list_invalid","account_not_in_page",
     "account_not_eligible","transaction_account_missing","transaction_account_invalid",
     "transaction_account_mismatch","bank_response_non_json","bank_http_unauthorized",
-    "bank_http_redirect","bank_http_client_error","bank_http_server_error","bank_http_unexpected_status"}
+    "bank_http_redirect","bank_http_rate_limited","bank_http_client_error","bank_http_server_error","bank_http_unexpected_status"}
 
 
 def negative_source_checks(campaign,transport,timeout=15):

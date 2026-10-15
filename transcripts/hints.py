@@ -27,7 +27,8 @@ HINTS = {
     "anonymous_access_allowed": "The identity or history request returns the same data when only ordinary browser headers are sent; pick an endpoint that requires the session.",
     "bank_http_unauthorized": "The bank rejected the session (401/403); capture fresh headers and include every required one.",
     "bank_http_redirect": "The bank redirected; the session is probably expired or a header such as a CSRF token is missing.",
-    "bank_http_client_error": "The bank returned 4xx. On a rate-limited API (429) wait for the limit to pass after `preview` or `lookup` before contributing; otherwise replay the exact request with `preview` and fix the URL.",
+    "bank_http_rate_limited": "The bank rate limited the read (429). `lookup`, `preview` and the enclave each spend a call; wait for the limit to pass after the last local call, then contribute with a new reservation.",
+    "bank_http_client_error": "The bank returned 4xx; replay the exact request with `preview` and fix the URL.",
     "bank_http_server_error": "The bank returned 5xx; retry later with a new reservation.",
     "bank_response_non_json": "A read did not return JSON; use the JSON API the site calls, not an HTML page.",
     "response_encoding": "The bank ignored Accept-Encoding: identity and compressed the body; try the API host instead.",
@@ -35,7 +36,8 @@ HINTS = {
     "identity_path_invalid": "recipe.identity must select a stable account/user id (a number >= 100 or a 3+ character string).",
     "history_path_invalid": "recipe.history must select the JSON array of transaction records.",
     "insufficient_history": "The history array held too few object records; widen the date range or use a busier account.",
-    "unsafe_notes": "Notes may not contain ids, long digit runs, emails, tokens or values copied from the bank response.",
+    "unsafe_notes": "Notes may not contain ids, long digit runs, emails or tokens.",
+    "unsafe_notes_response_value": "Notes repeat a value from the bank response, such as an id, a name or the account identity; describe fields, not data.",
     "transcript_too_large": "The value-free transcript exceeded its size bound; drop non-essential reads or request smaller pages.",
     "model_output_not_json": "The model did not answer with a JSON object; pick a model that follows instructions.",
     "model_output_truncated": "The model hit the output limit; raise --max-output-tokens (reasoning models need more).",
@@ -59,7 +61,7 @@ HINTS = {
     "secrets_already_in_payload": "With --secrets-from-env or --prompt-secrets the stdin payload must omit credential.value and inferenceKey.",
     "payload_required": "Pipe the payload JSON on stdin, for example `< .local/payload.json`; nothing was reserved.",
     "mapping_file_unreadable": "--mapping must point to a readable JSON file of role to field path.",
-    "write_request_refused": "The POST names a state change: its last path segment has a write word (send, pay, transfer, payments, beneficiaries...) and no read word (history, list, activity, details...), its GraphQL document contains a mutation, a persisted operation's name does not end in Query, or an RPC method names a write. Replay only the request the site issues to view history.",
+    "write_request_refused": "The POST names a state change: its last path segment has a write word (send, pay, transfer, payments, beneficiaries...) and no read word (history, list, activity, details...), its path names an account setting (settings, webhook, password, notifications, limits...) without a read word in the last segment, its GraphQL document contains a mutation, a persisted operation's name does not end in Query, or an RPC method names a write. Replay only the request the site issues to view history.",
     "invalid_fields": "A JSON object has missing or extra keys; compare it with the payload shape in the skill.",
     "invalid_submission": "The payload was malformed; for open campaigns profileId must be null and transcript must be [].",
     "missing_arguments": "contribute needs --campaign, --payout, --provider and --model; preview and check need --campaign; lookup needs --campaign and --path.",
@@ -90,11 +92,11 @@ HINTS = {
     "client_failed": "Unexpected local failure; re-run `preflight` and check file paths and JSON syntax.",
     "state_required": "Pass --state with the saved job file.",
 }
-HINTS["unsafe_notes"] = ("Notes may not contain 6+ digit runs, emails, the word bearer followed by a token, any unbroken run of "
-                         "28+ letters/digits/-/_, or values copied from the bank response. Describe fields, not data.")
+HINTS["unsafe_notes"] = ("Notes may not contain 6+ digit runs, emails, the word bearer followed by a token or any unbroken run of "
+                         "28+ letters/digits/-/_. Describe fields, not data.")
 for _role, _what in (("paymentId", "a unique per-record id"), ("amount", "a numeric amount"),
                      ("timestamp", "an ISO date or epoch time"), ("counterparty", "the other party's identifier"),
-                     ("currency", "an ISO currency code"), ("status", "a short status token")):
+                     ("currency", "an ISO currency code, letters or numeric"), ("status", "a short status token or a true/false flag")):
     HINTS["mapping_missing_" + _role] = (
         "No history field was verified as " + _what + "; name the right field path in your notes and check it with "
         "`preview --mapping`.")

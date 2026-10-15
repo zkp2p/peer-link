@@ -420,10 +420,12 @@ Every error and job reason is a fixed code, and the CLI prints a `hint` for most
 | `credential_not_secret` | The credential holds only headers every browser sends, such as `User-Agent`, `Accept` and `Referer`. Include the cookie, token or CSRF header the request needs. |
 | `anonymous_access_allowed` | The identity or history request returns the same data without the session headers. Choose an authenticated endpoint. |
 | `bank_http_unauthorized`, `bank_http_redirect` | The session expired or a required header is missing. Capture fresh headers, run `preview` once so the owner sees the transcript, then contribute straight away. |
-| `bank_http_client_error` | Another 4xx. Often a rate limit: some APIs allow one call per endpoint per minute, and `lookup`, `preview` and the enclave each spend one. Wait out the limit after the last local call, then contribute. Otherwise fix the URL. |
+| `bank_http_rate_limited` | The bank answered 429. Some APIs allow one call per endpoint per minute, and `lookup`, `preview` and the enclave each spend one. Wait out the limit after the last local call, then contribute. |
+| `bank_http_client_error` | Another 4xx. Replay the exact request with `preview` and fix the URL. |
 | `bank_response_non_json`, `response_encoding` | The read returned HTML or a compressed body. Use the JSON API host the page calls. |
 | `identity_path_invalid`, `history_path_invalid`, `insufficient_history` | Fix the selector; identity is a number of at least 100 or a string of 3 to 200 characters without spaces, and history is an array of 3 to 2000 object records in one response. |
-| `unsafe_notes` | Remove ids, emails, digit runs of six or more, token-like strings of 28 or more characters, the word `bearer` before another word, and copied values from `notes`. |
+| `unsafe_notes` | Remove ids, emails, digit runs of six or more, token-like strings of 28 or more characters and the word `bearer` before another word from `notes`. |
+| `unsafe_notes_response_value` | The notes repeat the identity or a value from a response, such as a name, memo word or id. Describe the field instead of quoting it. |
 | `transcript_too_large` | Drop reads that are not needed or request a smaller page. |
 | `mapping_missing_<role>` | No field was verified for that required role. Check the path with `preview --mapping` and name it in `notes`. |
 | `model_output_not_json`, `model_output_truncated` | Use a model that follows instructions, or raise `--max-output-tokens`. |

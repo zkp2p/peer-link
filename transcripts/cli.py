@@ -108,7 +108,7 @@ def preview(policy,campaign_id,payload,mapping=None):
     context=None
     if 'openSource' in campaign:
         from .open_source import submission_context
-        context=submission_context(campaign,payload);cautious(payload['recipe'])
+        context=submission_context(campaign,payload)
     bank=BankClient(campaign,payload['credential'],transport=HTTPTransport('direct'),profile_id=payload['profileId'],
                     max_reads=campaign_limits(campaign)['maxBankReads'])
     try:
@@ -179,25 +179,6 @@ def observations(reads,context,artifact,mapping):
     return result
 
 
-# Words the measured write guard does not list yet. Checked here as well because `preview` and
-# `lookup` replay a POST from the owner's own machine. Move into the enclave's list at the next release.
-EXTRA_WRITE_WORDS=frozenset({'webhook','hook','callback','password','passcode','pin','otp','consent','setting',
-                             'preference','limit','notification','subscription','token'})
-
-
-def cautious(recipe):
-    """Refuse a POST whose path names an account setting, unless its last segment names a read."""
-    from urllib.parse import urlsplit
-    from .open_source import READ_WORDS,_words
-    for read in recipe.get('reads',[]) if isinstance(recipe,dict) and isinstance(recipe.get('reads'),list) else []:
-        if not (isinstance(read,dict) and read.get('method')=='POST' and isinstance(read.get('url'),str)):continue
-        parts=[part for part in urlsplit(read['url']).path.split('/') if part]
-        if parts and any(word in READ_WORDS for word in _words(parts[-1])):continue
-        words=[word for part in parts for word in _words(part)]
-        require(not any(word in EXTRA_WRITE_WORDS or word.rstrip('s') in EXTRA_WRITE_WORDS for word in words),
-                'write_request_refused')
-
-
 def lint(policy,campaign_id,payload):
     """Credential-free checks of a payload: its shape, read URLs and methods, the POST
     write guard, selectors and notes. It cannot check the session or the bank's answers."""
@@ -215,7 +196,6 @@ def lint(policy,campaign_id,payload):
                                                              for source in campaign['sources']),'invalid_credential')
     require(payload['profileId'] is None and payload['transcript']==[],'invalid_submission')
     recipe=validate_open_recipe(campaign,payload['recipe'],campaign_limits(campaign)['maxBankReads'])
-    cautious(recipe)
     require(all(read['url'].startswith(credential['origin']+'/') for read in recipe['reads']),'source_not_allowed')
     validate_notes(payload['notes'])
     return {'campaignId':campaign_id,'ok':True,'reads':len(recipe['reads']),
@@ -242,7 +222,6 @@ def lookup(policy,campaign_id,payload,index,path):
     require(campaign['openSource']['version']==1,'encrypted_lookup_unavailable')
     # The same URL, method and write rules the enclave applies to that read.
     validate_open_recipe(campaign,{'version':3,'reads':[read],'identity':selector,'history':selector})
-    cautious({'reads':[read]})
     require(read['url'].startswith(credential['origin']+'/'),'source_not_allowed')
     headers=credential_headers(credential,credential['origin'])
     if not any(name.lower()=='accept' for name in headers):headers['Accept']='application/json'

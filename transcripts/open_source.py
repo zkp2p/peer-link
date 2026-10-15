@@ -28,6 +28,7 @@ ROLES = tuple(ROLE_WEIGHTS)
 OPEN_FAILURES = {"recipe_invalid", "credential_headers_invalid", "credential_not_secret", "anonymous_access_allowed",
                  "bank_encryption_credential", "bank_encryption_invalid", "bank_account_mismatch",
                  "write_request_refused", "identity_path_invalid", "history_path_invalid", "unsafe_notes",
+                 "unsafe_notes_response_value",
                  "transcript_too_large", "model_output_not_json", "model_output_truncated"} | {
                      "mapping_missing_" + role for role in ROLES}
 LIMITATIONS = {"contributor_declared_identity", "no_human_identity_claim", "value_free_shapes_only",
@@ -82,6 +83,9 @@ READ_WORDS = frozenset({"history", "list", "activity", "activities", "search", "
                         "details", "detail", "statement", "statements", "export", "transactions", "entries",
                         "records", "feed", "query", "lookup", "view", "get", "fetch", "read", "find", "inquiry",
                         "enquiry"})
+# Account settings a history view never posts to: /personal/webhook, /settings/notifications.
+SETTINGS_WORDS = frozenset({"webhook", "hook", "callback", "password", "passcode", "pin", "otp", "consent", "setting",
+                            "preference", "limit", "notification", "subscription", "token"})
 PAGINATION = {"limit", "size", "page", "pagesize", "perpage", "count", "offset", "skip", "top"}
 QUERY_ENUMS = {"type", "types", "status", "order", "sort", "direction", "kind", "format", "currency", "sortby",
                "sortorder"}
@@ -128,6 +132,14 @@ ISO_CURRENCIES = frozenset(
     "LRD LSL LYD MAD MDL MGA MKD MMK MNT MOP MRU MUR MVR MWK MXN MYR MZN NAD NGN NIO NOK NPR NZD OMR PAB PEN "
     "PGK PHP PKR PLN PYG QAR RON RSD RUB RWF SAR SBD SCR SDG SEK SGD SHP SLE SOS SRD SSP STN SYP SZL THB TJS "
     "TMT TND TOP TRY TTD TWD TZS UAH UGX USD UYU UZS VES VND VUV WST XAF XCD XOF XPF YER ZAR ZMW ZWL".split())
+# The ISO 4217 numeric codes of the same currencies; some APIs return 980 for UAH.
+ISO_NUMERIC_CURRENCIES = frozenset(
+    "008 012 032 036 044 048 050 051 052 060 064 068 072 084 090 096 104 108 116 124 132 136 144 152 156 170 174 188 "
+    "192 203 208 214 230 232 238 242 262 270 292 320 324 328 332 340 344 348 352 356 360 364 368 376 388 392 398 400 "
+    "404 408 410 414 417 418 422 426 430 434 446 454 458 462 480 484 496 498 504 512 516 524 532 533 548 554 558 566 "
+    "578 586 590 598 600 604 608 634 643 646 654 682 690 702 704 706 710 728 748 752 756 760 764 776 780 784 788 800 "
+    "807 818 826 834 840 858 860 882 886 901 925 928 929 930 932 933 934 936 938 941 943 944 946 949 950 951 952 953 "
+    "967 968 969 971 972 973 975 976 977 978 980 981 985 986".split())
 ISO_DATETIME = re.compile(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,9})?)?(Z|[+-]\d{2}:?\d{2})?")
 DATE_TEXT = re.compile(r"\d{1,4}[./-]\d{1,2}[./-]\d{1,4}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AaPp][Mm])?)?")
 COMPACT_DATE = re.compile(r"(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])(?:[01]\d|2[0-3])?(?:[0-5]\d){0,2}")
@@ -288,13 +300,16 @@ def _graphql_read(document):
     return bool(kinds) and kinds <= {"query", "fragment"} and "query" in kinds | ({"query"} if "fragment" in kinds else set())
 
 
+def _singular(words):
+    return [word[:-3] + "y" if word.endswith("ies") else word.rstrip("s") for word in words]
+
+
 def _names_write(text):
     """Words naming a state change, unless a read word such as history or list is present."""
     words = _words(text)
     if not words or any(word in READ_WORDS for word in words):
         return False
-    singular = [word[:-3] + "y" if word.endswith("ies") else word.rstrip("s") for word in words]
-    return any(word in WRITE_VERBS or word in WRITE_NOUNS for word in words + singular)
+    return any(word in WRITE_VERBS or word in WRITE_NOUNS for word in words + _singular(words))
 
 
 def _write_guard(read):
@@ -309,6 +324,8 @@ def _write_guard(read):
     require(not _names_write(last), "write_request_refused")
     if not any(word in READ_WORDS for word in _words(last)):
         require(not any(_words(part) and _words(part)[0] in WRITE_VERBS for part in parts), "write_request_refused")
+        words = [word for part in parts for word in _words(part)]
+        require(not SETTINGS_WORDS.intersection(words + _singular(words)), "write_request_refused")
     if read["contentType"] == "application/json":
         try:
             body = strict_json(read["body"], maximum=65536)
@@ -926,16 +943,16 @@ def extract_transcript(campaign, reads, context):
     notes = validate_notes(context["notes"])
     lowered, squeezed = notes.lower(), _alnum(notes)
     words = set(re.findall(r"[a-z]+", lowered))
-    require(str(identity_value).lower() not in lowered, "unsafe_notes")
+    require(str(identity_value).lower() not in lowered, "unsafe_notes_response_value")
     for value in tainted:
         # Identifier-like values, multi-word values such as names, and the same
         # text re-spaced or re-punctuated may not be copied into retained notes.
         if (len(value) >= 6 and re.search(r"[\d@]", value) or len(value) >= 5 and " " in value) and value in lowered:
-            raise Rejected("unsafe_notes")
+            raise Rejected("unsafe_notes_response_value")
         if len(value) >= 8 and re.search(r"\d", value) and len(_alnum(value)) >= 8 and _alnum(value) in squeezed:
-            raise Rejected("unsafe_notes")
+            raise Rejected("unsafe_notes_response_value")
         if len(value) >= 5 and value.isalpha() and value not in FIELD_WORDS and value in words:
-            raise Rejected("unsafe_notes")
+            raise Rejected("unsafe_notes_response_value")
     selectors = {name: shape_path(bodies[recipe[name]["read"]], recipe[name]["path"], tainted)
                  for name in ("identity", "history")}
     requests, total = [], 0
@@ -1134,8 +1151,11 @@ CHECKS = {
     "amount": (0.9, _numeric),
     "timestamp": (0.9, _timestamp),
     "counterparty": (0.5, _scalar),
-    "currency": (0.9, lambda value: isinstance(value, str) and value.strip() in ISO_CURRENCIES),
-    "status": (0.9, lambda value: isinstance(value, str) and STATUS_VALUE.fullmatch(value.strip()) is not None),
+    "currency": (0.9, lambda value: isinstance(value, str) and value.strip() in ISO_CURRENCIES | ISO_NUMERIC_CURRENCIES
+                 or type(value) is int and f"{value:03d}" in ISO_NUMERIC_CURRENCIES),
+    # A flag such as pending or hold is a payment state too.
+    "status": (0.9, lambda value: type(value) is bool
+               or isinstance(value, str) and STATUS_VALUE.fullmatch(value.strip()) is not None),
 }
 
 
