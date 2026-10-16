@@ -153,6 +153,17 @@ slots per campaign and remaining epoch budget.
 
 ### Rolling a release epoch
 
+The October 16 Canada release uses `open-ca-v1`: RBC, TD, Scotiabank, BMO and
+CIBC, 81 open-recipe campaigns plus Mercury, and the same 610 USDC, which the
+`open-vn-v1` epoch returned in
+[this confirmed refund](https://basescan.org/tx/0xcbe7b2ae549183c6c2839e26088fe5e530548f260a8af34d18039c8628dd65a9)
+and was funded again in
+[one transfer](https://basescan.org/tx/0xb1e636e9400f8f23687874abb4741976bf0dd11e64641f309af05003e8a36bea).
+The host build of `391a370` matched both CI builders (PCR0 `968d19d7…`, PCR2
+`2edc9f43…`, PCR1 and the PCR8 signer unchanged); fresh attestation, unfunded
+operator preflight and activation passed for the signed image. The previous
+image is kept on the host as `releases/open-vn-v1-before-ca`.
+
 On October 15 `open-vn-v1` took a code-only release (#248 follow-ups: settings
 words in the enclave's POST write guard, numeric currency and boolean status
 roles, `bank_http_rate_limited`, `unsafe_notes_response_value`). The policy was
