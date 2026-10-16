@@ -4719,11 +4719,11 @@
   "stateAuthority": {
     "kind": "aws_lambda_dynamodb",
     "region": "us-east-1",
-    "functionArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-vn-v1-authority:1",
-    "namespace": "open-vn-v1",
-    "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/8762b68e-676e-4d63-abdc-629540a6f095",
+    "functionArn": "arn:aws:lambda:us-east-1:411399509833:function:peerlink-transcript-state-ca-v1-authority:1",
+    "namespace": "open-ca-v1",
+    "wrappingKeyId": "arn:aws:kms:us-east-1:411399509833:key/6e70b011-f081-4d73-8b2a-c81511d5528c",
     "credentialRoleArn": "arn:aws:iam::411399509833:role/peerlink-transcript-kms-pilot-HostRole-CtMw2KLCWL9c",
     "maxCiphertextBytes": 327680,
-    "initialWalletNonce": 15
+    "initialWalletNonce": 16
   }
 }
