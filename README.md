@@ -26,7 +26,7 @@ contributors**: up to **$50 per bank**.
 
 | Region | Banks |
 | --- | --- |
-| Americas | Chase, Bank of America, Wells Fargo, Capital One, Citi, Airtm, BBVA Mexico, Bancolombia and Nequi (Colombia), Banco de Credito del Peru, Uala Argentina and Brubank (Argentina), Itau Brazil |
+| Americas | Chase, Bank of America, Wells Fargo, Capital One, Citi, Airtm, RBC Royal Bank, TD Canada Trust, Scotiabank, BMO and CIBC (Canada), BBVA Mexico, Bancolombia and Nequi (Colombia), Banco de Credito del Peru, Uala Argentina and Brubank (Argentina), Itau Brazil |
 | Asia | [HDFC Bank (India)](https://github.com/zkp2p/peer-link/issues/272), KB Kookmin Bank, Shinhan Bank, Hana Bank, Woori Bank and NH NongHyup Bank (Korea), Rakuten Bank (Japan), Kasikornbank (Thailand), DBS Bank, OCBC, UOB, Standard Chartered and Trust Bank (Singapore), HSBC Hong Kong, Maybank (Malaysia), Bank Mandiri and BCA (Indonesia), China Merchants Bank, ICBC, China Construction Bank, Agricultural Bank of China and Bank of China, Vietcombank, BIDV, VietinBank, Techcombank, MB Bank, ACB, VPBank, Agribank, Sacombank, TPBank and MoMo (Vietnam), ABA Bank (Cambodia), GCash and Maya (Philippines), bKash (Bangladesh), Easypaisa and SadaPay (Pakistan), Kaspi Bank and Halyk Bank (Kazakhstan), Bank of Georgia and TBC Bank (Georgia) |
 | Middle East | Al Rajhi Bank (Saudi Arabia), ADCB (UAE) |
 | Europe | PKO Bank Polski (Poland), Monobank, PUMB, PrivatBank and A-Bank (Ukraine), Paysera (Lithuania), Ziraat Bank (Turkey), BBVA Spain, Lloyds, Starling Bank and Skrill (UK) |
@@ -151,7 +151,7 @@ enclave, usually in under a minute.
 
 ### In detail
 
-1. **Pick a campaign.** Seventy-six banks have an `open_recipe` campaign in which the
+1. **Pick a campaign.** Eighty-one banks have an `open_recipe` campaign in which the
    contributor's agent supplies the read route. Mercury has a
    `reviewed_descriptor` campaign with a fixed API route. After
    `npm run transcripts:setup`, run

@@ -13,7 +13,7 @@ issue, a logo or this page does not guarantee remaining capacity; run
 
 | Campaign kind | Banks | Reward | Slots |
 | --- | --- | --- | --- |
-| `open_recipe` | The seventy-six banks with a `<bank>-open-v1` campaign in [`transcripts/policy.json`](../transcripts/policy.json) | $10 | 5 per bank (up to $50 per bank) |
+| `open_recipe` | The eighty-one banks with a `<bank>-open-v1` campaign in [`transcripts/policy.json`](../transcripts/policy.json) | $10 | 5 per bank (up to $50 per bank) |
 | `reviewed_descriptor` | Mercury, [`mercury-api-source-v1`](https://github.com/zkp2p/peer-link/issues/1) | $10 | 1 organization |
 
 Mercury remains first-contributor [source validation](source-validation.md):

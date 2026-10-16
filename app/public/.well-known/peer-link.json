@@ -152,7 +152,7 @@
   },
   "openCampaigns": {
     "kind": "open-json-read-v1",
-    "count": 76,
+    "count": 81,
     "campaignIds": [
       "chase-open-v1",
       "bank-of-america-open-v1",
@@ -229,7 +229,12 @@
       "vpbank-open-v1",
       "agribank-open-v1",
       "sacombank-open-v1",
-      "tpbank-open-v1"
+      "tpbank-open-v1",
+      "rbc-open-v1",
+      "td-open-v1",
+      "scotiabank-open-v1",
+      "bmo-open-v1",
+      "cibc-open-v1"
     ],
     "rewardUSDC": [10],
     "maximumContributorsPerBank": 5,
