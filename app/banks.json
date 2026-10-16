@@ -608,6 +608,46 @@
     "mark": "T"
   },
   {
+    "name": "RBC Royal Bank",
+    "country": "CA",
+    "currency": "CAD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/296",
+    "logo": "/logos/rbc.png",
+    "mark": "R"
+  },
+  {
+    "name": "TD Canada Trust",
+    "country": "CA",
+    "currency": "CAD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/297",
+    "logo": "/logos/td.png",
+    "mark": "T"
+  },
+  {
+    "name": "Scotiabank",
+    "country": "CA",
+    "currency": "CAD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/298",
+    "logo": "/logos/scotiabank.png",
+    "mark": "S"
+  },
+  {
+    "name": "BMO",
+    "country": "CA",
+    "currency": "CAD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/299",
+    "logo": "/logos/bmo.png",
+    "mark": "B"
+  },
+  {
+    "name": "CIBC",
+    "country": "CA",
+    "currency": "CAD",
+    "issue": "https://github.com/zkp2p/peer-link/issues/300",
+    "logo": "/logos/cibc.png",
+    "mark": "C"
+  },
+  {
     "name": "Wise",
     "country": "GB",
     "currency": "GBP, EUR, USD",
@@ -630,14 +670,6 @@
     "issue": "https://github.com/zkp2p/peer-link/issues/27",
     "logo": "/logos/27.png",
     "mark": "AA"
-  },
-  {
-    "name": "TD Canada",
-    "country": "CA",
-    "currency": "CAD",
-    "issue": "https://github.com/zkp2p/peer-link/issues/28",
-    "logo": "/logos/td.png",
-    "mark": "TC"
   },
   {
     "name": "TrueMoney Thailand",

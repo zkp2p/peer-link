@@ -998,5 +998,70 @@
     "status": "open",
     "campaign": "tpbank-open-v1",
     "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 296,
+    "name": "RBC Royal Bank",
+    "country": "CA",
+    "currency": "CAD",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/296",
+    "logo": "/logos/rbc.png",
+    "adapter": "ca/rbc",
+    "status": "open",
+    "campaign": "rbc-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 297,
+    "name": "TD Canada Trust",
+    "country": "CA",
+    "currency": "CAD",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/297",
+    "logo": "/logos/td.png",
+    "adapter": "ca/td",
+    "status": "open",
+    "campaign": "td-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 298,
+    "name": "Scotiabank",
+    "country": "CA",
+    "currency": "CAD",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/298",
+    "logo": "/logos/scotiabank.png",
+    "adapter": "ca/scotiabank",
+    "status": "open",
+    "campaign": "scotiabank-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 299,
+    "name": "BMO",
+    "country": "CA",
+    "currency": "CAD",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/299",
+    "logo": "/logos/bmo.png",
+    "adapter": "ca/bmo",
+    "status": "open",
+    "campaign": "bmo-open-v1",
+    "maxContributorOrganizations": 5
+  },
+  {
+    "issue": 300,
+    "name": "CIBC",
+    "country": "CA",
+    "currency": "CAD",
+    "amount": 10,
+    "url": "https://github.com/zkp2p/peer-link/issues/300",
+    "logo": "/logos/cibc.png",
+    "adapter": "ca/cibc",
+    "status": "open",
+    "campaign": "cibc-open-v1",
+    "maxContributorOrganizations": 5
   }
 ]
