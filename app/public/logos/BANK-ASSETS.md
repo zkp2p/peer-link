@@ -163,3 +163,29 @@ SHA-256 of the stored files:
 - `agribank.png`: `23d161150df3e2aaa88bcf6c819615f3d57abd282b741681eb5020f1f93983c8`
 - `sacombank.png`: `95330a5ce1376b149be1e86fa9503dfb8c040bf491b9621bfcdcef41df6feed9`
 - `tpbank.png`: `aa4d15f151627f1f0dcc1f890de4080251ff80a1e8a1195adcd75f23f5aebd35`
+
+## Canadian banks — October 16, 2026
+
+These assets were retrieved unchanged on October 16, 2026. CIBC links its icon
+as the apple-touch-icon from its official homepage. RBC Royal Bank, TD and
+Scotiabank publish only ICO favicons and non-square logos or share images on
+their homepages, and BMO's touch icon is a 96 px wordmark, so their icons come
+from each bank's own Apple App Store listing (seller verified through the App
+Store lookup API), served by Apple at 128 × 128. TD's file replaces the earlier
+`td.png`, which predated this register and had no recorded source:
+
+| Local file | Official source | Asset URL |
+| --- | --- | --- |
+| `rbc.png` | [RBC Mobile App Store listing](https://apps.apple.com/ca/app/id407597290), seller Royal Bank of Canada | https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/78/6c/f3/786cf315-f19e-547f-3de1-f2c93ad8a245/RBCMobile-0-0-1x_U007epad-0-1-0-85-220.png/128x128bb.png |
+| `td.png` | [TD Canada App Store listing](https://apps.apple.com/ca/app/id358790776), seller Toronto Dominion Bank Financial Group | https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/89/53/01/8953016a-aef7-0f1d-04b0-b0aa2781294a/AppIcon-0-0-1x_U007epad-0-0-0-1-0-0-sRGB-85-220.png/128x128bb.png |
+| `scotiabank.png` | [Scotiabank App Store listing](https://apps.apple.com/ca/app/id341151570), seller The Bank of Nova Scotia | https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/e3/51/ad/e351adbe-f904-c844-1c22-52e73cf1d236/AppIcon-0-0-1x_U007epad-0-9-0-85-220.png/128x128bb.png |
+| `bmo.png` | [BMO Mobile Banking App Store listing](https://apps.apple.com/ca/app/id429080319), seller Bank of Montreal | https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/54/f4/16/54f416f5-4ec2-5567-808a-5d21ab504d62/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/128x128bb.png |
+| `cibc.png` | https://www.cibc.com/ | https://www.cibc.com/content/dam/global-assets/logos/partner-logos/apple/apple-touch-icon.png |
+
+SHA-256 of the stored files:
+
+- `rbc.png`: `66e64b486ddeb072504d727aa6aea0573bb6d46e481017c2e26ba355d89e1c72`
+- `td.png`: `e1fd2a32c09de762eaa684e35342a5d55bbe067b06e70c9df5e0d2dcd0e780f0`
+- `scotiabank.png`: `e04e06deca086e783bdd4c50a49e8861302defc440184e2286426bcab7225dca`
+- `bmo.png`: `00e9d81d1834e21c69f5c9afca832632342fe573e96955f52480aad88af49fc4`
+- `cibc.png`: `e8e7d33bf324bf32b7fa045470ff4e7ac2d6fbd78b9f80b674f5fb10358291a1`
