@@ -1,0 +1,46 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented identifiers, amount and date; minimal shape based on TPBank (ebank.tpb.vn) transaction history surface. Not a real payment.",
+  "transactionId": "tpb-tx-20261016-001",
+  "input": {
+    "data": {
+      "transactions": [
+        {
+          "id": "tpb-tx-20261016-001",
+          "accountId": "vn-tpb-00012345678",
+          "amount": -500000,
+          "currency": "VND",
+          "status": "SUCCESS",
+          "pending": false,
+          "holds": [],
+          "disputed": false,
+          "postedAt": "2026-10-16T08:30:00.000Z",
+          "description": "Chuyen tien Napas 247 toi 19034567890",
+          "details": {
+            "kind": "napas247Transfer",
+            "recipientAccount": "19034567890",
+            "recipientBankCode": "970415"
+          }
+        }
+      ],
+      "accounts": [
+        {
+          "id": "vn-tpb-00012345678",
+          "type": "paymentChecking",
+          "accountNumber": "00012345678",
+          "currency": "VND",
+          "status": "ACTIVE"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "outcome": "supported",
+    "amountMinor": "500000",
+    "currency": "VND",
+    "status": "sent",
+    "payerId": "vn-tpb-00012345678",
+    "payeeId": "970415:19034567890",
+    "timestamp": "2026-10-16T08:30:00.000Z"
+  }
+}

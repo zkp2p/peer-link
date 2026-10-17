@@ -1,0 +1,10 @@
+{
+  "date": "2026-10-17",
+  "contributor": "PINYOPATTANAWASANPORN",
+  "adapter": "vn/tpbank",
+  "surface": "web-portal-transaction-history",
+  "capability": "Interpret completed outgoing domestic VND TPBank account and Napas 247 transfers as sender-bank-reported sent payments",
+  "status": "experimental",
+  "testedWith": "Node.js 26.7.0 test harness",
+  "provenance": "synthetic"
+}
