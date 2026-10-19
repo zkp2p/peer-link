@@ -32,8 +32,10 @@ the outside as the public job status the relay passes back, which is what the
 
 | Field | Meaning |
 | --- | --- |
-| `command` | `health`, `campaigns`, `release`, `attest`, `reserve`, `challenge`, `submit`, `status`, `receipt`, `operator`, `unrouted`, or `busy` |
+| `command` | `health`, `campaigns`, `release`, `attest`, `reserve`, `challenge`, `submit`, `status`, `receipt`, `artifact`, `operator`, `unrouted`, or `busy` |
+| `method` | `GET`, `POST` or `other` |
 | `status`, `ms`, `requestBytes`, `responseBytes` | HTTP status, time and sizes |
+| `accepting` | On `health` only: whether admissions are open |
 | `jobId`, `campaignId` | The public random job id and the campaign |
 | `provider`, `model` | On `reserve` only: the named provider and model id the contributor chose |
 | `state`, `reportedState`, `reason`, `error` | The public job state and fixed reason or error code |
