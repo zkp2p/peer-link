@@ -384,7 +384,7 @@ class AcquisitionTests(unittest.TestCase):
         self.assertEqual(request["body"]["fields"]["$.operationName"]["values"], ["GetActivityQuery"])
         self.assertNotIn("query GetActivityQuery", canonical(artifact).decode())
     def test_slow_peer_cannot_hold_a_request_past_its_deadline(self):
-        from transcripts import transport as module
+        from verification import https as module
         from transcripts.transport import HTTPTransport
         client, server = socket.socketpair()
         class PassThrough:

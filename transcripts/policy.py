@@ -1,4 +1,5 @@
 """Versioned campaign and reservation bindings; model output cannot edit terms."""
+from verification.https import origin
 from urllib.parse import urlsplit
 import re
 from .common import address, canonical, digest, fields, integer, opaque_id, require
@@ -50,14 +51,6 @@ def validate_payout_authority(value):
     return value
 
 
-def origin(value):
-    require(isinstance(value, str), "invalid_source")
-    parsed = urlsplit(value)
-    require(parsed.scheme == "https" and parsed.hostname and parsed.username is None
-            and parsed.password is None and parsed.port in (None, 443)
-            and parsed.path in ("", "/") and not parsed.query and not parsed.fragment
-            and value == "https://" + parsed.hostname, "invalid_source")
-    return value
 
 
 def safe_name(value):
