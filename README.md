@@ -288,6 +288,6 @@ The dev attestor reuses `verification/envelope.py`, `verification/https.py` and
 NSM primitives at a pinned source revision. Those modules have no campaign,
 wallet or payout dependency. Cross-language fixtures in
 `verification/tests/fixtures/envelope.json` contain generated synthetic keys
-only and are shared with the browser SDK. Extraction changes the transcript
+only and are shared with the portal tooling. Extraction changes the transcript
 image's import closure; deploying that service still requires its own reviewed
 release. This contribution does not deploy the PeerLink reward service.
