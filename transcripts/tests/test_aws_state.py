@@ -85,7 +85,7 @@ class AWSStateTests(unittest.TestCase):
         server.sendall(b'HTTP/1.1 200 OK\r\nContent-Type: application/x-amz-json-1.1\r\nConnection: close\r\nContent-Length: '+str(len(body)).encode()+b'\r\n\r\n'+body)
         server.shutdown(socket.SHUT_WR);context=Mock();context.wrap_socket.return_value=client
         try:
-            with patch('transcripts.transport.public_socket',return_value=client),patch('ssl.create_default_context',return_value=context):
+            with patch('verification.https.public_socket',return_value=client),patch('ssl.create_default_context',return_value=context):
                 response=HTTPTransport('direct').request('POST','https://kms.us-east-1.amazonaws.com/',
                     headers={'Content-Type':'application/x-amz-json-1.1','X-Amz-Date':'20990101T000000Z',
                              'X-Amz-Security-Token':'synthetic','X-Amz-Target':'TrentService.Decrypt'},body=b'{}')
@@ -94,7 +94,7 @@ class AWSStateTests(unittest.TestCase):
         for url,target in [('https://bank.example/','TrentService.Decrypt'),
                            ('https://kms.us-east-1.amazonaws.com/','TrentService.Encrypt'),
                            ('https://lambda.us-east-1.amazonaws.com/','TrentService.Decrypt')]:
-            with patch('transcripts.transport.public_socket') as connect:
+            with patch('verification.https.public_socket') as connect:
                 with self.assertRaisesRegex(Rejected,'unsafe_headers'):
                     HTTPTransport('direct').request('POST',url,headers={'X-Amz-Target':target})
                 connect.assert_not_called()

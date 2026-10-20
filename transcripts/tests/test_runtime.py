@@ -20,7 +20,8 @@ from transcripts.providers import SYSTEM_PROMPT
 from transcripts.payout import PayoutCoordinator
 from transcripts.runtime import Runtime, RPC, SETTLEMENT_MAX_ATTEMPTS, SETTLEMENT_RETRY_SECONDS
 from transcripts.server import route, connect_public, failure
-from transcripts.transport import HTTPResponse, HTTPTransport, tunnel_socket
+from transcripts.transport import HTTPResponse, HTTPTransport
+from verification.https import tunnel_socket
 from transcripts.wire import receive
 from transcripts.tests.test_kms_signer import KEY_ID, WALLET, SyntheticBroker, transaction
 from transcripts.kms_signer import KmsSigner
@@ -280,7 +281,7 @@ class RuntimeTests(unittest.TestCase):
         server.shutdown(socket.SHUT_WR)
         context=Mock();context.wrap_socket.return_value=client
         try:
-            with patch('transcripts.transport.public_socket',return_value=client), \
+            with patch('verification.https.public_socket',return_value=client), \
                  patch('ssl.create_default_context',return_value=context):
                 HTTPTransport('direct').request('POST','https://rpc.example/',body=b'{}')
         finally:
@@ -292,8 +293,8 @@ class RuntimeTests(unittest.TestCase):
     def test_actual_enclave_relay_refusal_retries_without_another_payment(self):
         def refused():
             stream=Mock();stream.recv.return_value=b''
-            with patch('transcripts.transport.socket.AF_VSOCK',40,create=True), \
-                 patch('transcripts.transport.socket.socket',return_value=stream):
+            with patch('verification.https.socket.AF_VSOCK',40,create=True), \
+                 patch('verification.https.socket.socket',return_value=stream):
                 tunnel_socket('rpc.example')
         self.assert_mined_failure_recovers(refused)
     def test_actual_archive_connection_closed_retries_final_archive_without_another_payment(self):

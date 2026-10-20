@@ -178,7 +178,7 @@ class AcquisitionTests(unittest.TestCase):
             server.sendall(f'HTTP/1.1 {status} Error\r\nContent-Length: 9999999\r\nConnection: close\r\n\r\n'.encode())
             context=Mock();context.wrap_socket.return_value=client
             try:
-                with patch('transcripts.transport.public_socket',return_value=client),patch('ssl.create_default_context',return_value=context):
+                with patch('verification.https.public_socket',return_value=client),patch('ssl.create_default_context',return_value=context):
                     with self.assertRaisesRegex(Rejected,'^'+code+'$'):
                         HTTPTransport('direct').request_bank(ORIGIN+'/api/v1/organization',
                             headers={'Authorization':'Bearer SYNTHETIC'},timeout=.2)
@@ -190,7 +190,7 @@ class AcquisitionTests(unittest.TestCase):
         server.sendall(b'HTTP/1.1 401 Unauthorized\r\nContent-Length: 9999999\r\nConnection: close\r\n\r\n')
         context=Mock();context.wrap_socket.return_value=client
         try:
-            with patch('transcripts.transport.public_socket',return_value=client),patch('ssl.create_default_context',return_value=context):
+            with patch('verification.https.public_socket',return_value=client),patch('ssl.create_default_context',return_value=context):
                 result=HTTPTransport('direct').probe_authentication(ORIGIN+'/api/v1/organization',timeout=.2)
             self.assertEqual((result.status,result.body,result.headers),(401,b'',()))
             sent=server.recv(4096)

@@ -11,7 +11,7 @@ COPY transcripts/requirements.lock /tmp/transcript-requirements.lock
 RUN pip install --no-cache-dir --no-compile --require-hashes --only-binary=:all: -r /tmp/verification-requirements.lock \
     && pip install --no-cache-dir --no-compile --require-hashes --only-binary=:all: -r /tmp/transcript-requirements.lock
 # Shared primitives only: no previous verifier controller or release policy.
-COPY verification/__init__.py verification/common.py verification/nsm.py verification/attestation.py /opt/peer-link/verification/
+COPY verification/__init__.py verification/common.py verification/nsm.py verification/attestation.py verification/envelope.py verification/https.py /opt/peer-link/verification/
 COPY verification/trust/aws-nitro-root.pem /opt/peer-link/verification/trust/aws-nitro-root.pem
 # Exact enclave import closure. Never copy release.json: its PCR manifest is
 # independently pinned discovery metadata and cannot recursively measure itself.

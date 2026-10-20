@@ -272,3 +272,21 @@ change does not cancel an accepted obligation or decide a disputed claim.
 PeerLink is independent of Plaid and the named banks; bank names identify source
 campaigns and reference integrations. Copyright (c) 2026 Sachin Kumar and contributors.
 [MIT](LICENSE).
+
+## Build an integration
+
+The [developer workbench](https://developer.peer.xyz/transformer-lab) guides
+local HAR discovery, value-free AI handoff, capture JS, a pure transformer,
+fixture tests and extension-backed dev-enclave replay. Use its shared Copy,
+Cursor, ChatGPT and Claude prompt actions, then submit a reviewed private draft.
+Read the [contribution guide](https://developer.peer.xyz/contribute.md).
+This authoring workflow is separate from transcript rewards and does not
+automatically approve or activate a payment provider. Repositories stay separate.
+
+The dev attestor reuses `verification/envelope.py`, `verification/https.py` and
+NSM primitives at a pinned source revision. Those modules have no campaign,
+wallet or payout dependency. Cross-language fixtures in
+`verification/tests/fixtures/envelope.json` contain generated synthetic keys
+only and are shared with the browser SDK. Extraction changes the transcript
+image's import closure; deploying that service still requires its own reviewed
+release. This contribution does not deploy the PeerLink reward service.

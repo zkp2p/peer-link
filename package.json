@@ -33,7 +33,7 @@
     "verify:status": ".local/verifier-venv/bin/python -m verification.cli status",
     "verify:readiness": ".local/verifier-venv/bin/python -m verification.readiness",
     "transcripts:setup": "python3 -m venv .local/transcript-venv && .local/transcript-venv/bin/pip install -r verification/requirements.lock && .local/transcript-venv/bin/pip install -r transcripts/requirements.lock",
-    "transcripts:test": ".local/transcript-venv/bin/python -m unittest discover -s transcripts/tests -v"
+    "transcripts:test": ".local/transcript-venv/bin/python -m unittest discover -s transcripts/tests -v && .local/transcript-venv/bin/python -m unittest verification.tests.test_envelope"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
