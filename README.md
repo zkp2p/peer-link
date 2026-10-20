@@ -275,10 +275,11 @@ campaigns and reference integrations. Copyright (c) 2026 Sachin Kumar and contri
 
 ## Build an integration
 
-The [developer workbench](https://developer.peer.xyz/transformer-lab) guides
-local HAR discovery, value-free AI handoff, capture JS, a pure transformer,
-fixture tests and extension-backed dev-enclave replay. Use its shared Copy,
-Cursor, ChatGPT and Claude prompt actions, then submit a reviewed private draft.
+The [integration builder](https://developer.peer.xyz/build) starts with one
+copyable AI prompt, then guides file review, extension capture and dev-enclave
+testing. A verified successful test shares the public source files and test
+receipt for community testing. HAR discovery stays in local DevTools or a
+reviewed manual export.
 Read the [contribution guide](https://developer.peer.xyz/contribute.md).
 This authoring workflow is separate from transcript rewards and does not
 automatically approve or activate a payment provider. Repositories stay separate.
