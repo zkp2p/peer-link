@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1",
+  "id": "ng/kuda",
+  "name": "Kuda Bank",
+  "country": "NG",
+  "status": "experimental",
+  "version": "0.1.0",
+  "surface": "transaction-detail",
+  "capability": "Interpret outgoing domestic NGN transfers as sender-bank-reported sent payments",
+  "entrypoint": "interpretKuda",
+  "maintainers": ["gttps"],
+  "currencies": ["NGN"],
+  "unsupported": [
+    "cards",
+    "cash deposits",
+    "remittances",
+    "bill payments",
+    "merchant collections",
+    "incoming transfers"
+  ],
+  "fixtureProvenance": "synthetic",
+  "logo": "/logos/kuda.png"
+}
