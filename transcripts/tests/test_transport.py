@@ -7,7 +7,8 @@ from unittest.mock import Mock, patch
 
 from transcripts.common import Rejected, canonical
 from transcripts.recipe import validate_live_reads
-from transcripts.transport import BankClient, HTTPResponse, HTTPTransport, public_socket, tunnel_socket
+from transcripts.transport import BankClient, HTTPResponse, HTTPTransport
+from verification.https import public_socket, tunnel_socket
 from transcripts.tests.test_core import campaign
 
 
@@ -117,7 +118,7 @@ class PlumbingTests(unittest.TestCase):
         server.shutdown(socket.SHUT_WR)
         context=Mock();context.wrap_socket.return_value=client
         try:
-            with patch('transcripts.transport.public_socket',return_value=client), \
+            with patch('verification.https.public_socket',return_value=client), \
                  patch('ssl.create_default_context',return_value=context):
                 return HTTPTransport('direct').request('POST','https://rpc.example/',body=b'{}',max_bytes=max_bytes)
         finally:
@@ -144,7 +145,7 @@ class PlumbingTests(unittest.TestCase):
                 ('POST', 'https://cloud-api.near.ai/v1/check_api_key', 'true'),
                 ('POST', 'https://cloud-api.near.ai/v1/chat/completions?route=other', 'true'),
                 ('POST', 'https://cloud-api.near.ai/v1/chat/completions', 'false')]:
-            with patch('transcripts.transport.public_socket') as connector:
+            with patch('verification.https.public_socket') as connector:
                 with self.assertRaisesRegex(Rejected, 'unsafe_headers'):
                     HTTPTransport('direct').request(method, url, headers={'x-no-aliasing': value})
                 connector.assert_not_called()
@@ -153,7 +154,7 @@ class PlumbingTests(unittest.TestCase):
         response.getheaders.return_value = [('Content-Type', 'application/json')]
         response.read1.side_effect = [b'{}', b'']
         connection = Mock();connection.getresponse.return_value = response
-        with patch('transcripts.transport.public_socket'), patch('ssl.create_default_context'), \
+        with patch('verification.https.public_socket'), patch('ssl.create_default_context'), \
              patch('http.client.HTTPSConnection', return_value=connection):
             HTTPTransport('direct').request('POST', 'https://cloud-api.near.ai/v1/chat/completions',
                 headers={'x-no-aliasing': 'true'}, body=b'{}')
@@ -181,7 +182,7 @@ class PlumbingTests(unittest.TestCase):
         response.read1.side_effect = [b'{"safe":true}', b'']
         connection = Mock()
         connection.getresponse.return_value = response
-        with patch('transcripts.transport.public_socket', return_value=sock), \
+        with patch('verification.https.public_socket', return_value=sock), \
              patch('ssl.create_default_context', return_value=context), \
              patch('http.client.HTTPSConnection', return_value=connection):
             result = HTTPTransport('direct').request('GET', WISE + '/v1/profiles')
@@ -197,7 +198,7 @@ class PlumbingTests(unittest.TestCase):
             response.isclosed.return_value=False;response.length=None
             response.read1.side_effect = chunks
             connection = Mock(); connection.getresponse.return_value = response
-            with patch('transcripts.transport.public_socket'), patch('ssl.create_default_context'), \
+            with patch('verification.https.public_socket'), patch('ssl.create_default_context'), \
                  patch('http.client.HTTPSConnection', return_value=connection):
                 with self.assertRaises(Rejected): HTTPTransport('direct').request('GET', WISE + '/v1/profiles', max_bytes=10)
                 self.assertEqual(connection.request.call_count, 1)
@@ -208,7 +209,7 @@ class PlumbingTests(unittest.TestCase):
         stream.connect.assert_called_once_with((3, 5101))
         self.assertEqual(stream.sendall.call_args.args[0], b'{"host":"api.wise.com","port":443}\n')
     def test_raw_network_exception_sanitized(self):
-        with patch('transcripts.transport.public_socket', side_effect=OSError('synthetic-private-session')):
+        with patch('verification.https.public_socket', side_effect=OSError('synthetic-private-session')):
             with self.assertRaisesRegex(Rejected, '^http_transport_failed$'):
                 HTTPTransport('direct').request('GET', WISE + '/v1/profiles')
 
