@@ -1,0 +1,38 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented identifiers, amount and date; minimal shape based on Kuda Bank transaction details. Not a real payment.",
+  "input": {
+    "account": {
+      "accountNumber": "0000000001"
+    },
+    "transactions": [
+      {
+        "id": "synthetic-kuda-tx-001",
+        "type": "domesticTransfer",
+        "direction": "debit",
+        "status": "completed",
+        "amount": "5000.00",
+        "currency": "NGN",
+        "postedAt": "2026-01-15T12:00:00.000Z",
+        "recipient": {
+          "accountNumber": "0000000002",
+          "bankCode": "058",
+          "name": "Synthetic Payee"
+        },
+        "reference": "SYNTHETIC-REF-001"
+      }
+    ]
+  },
+  "transactionId": "synthetic-kuda-tx-001",
+  "expected": {
+    "outcome": "supported",
+    "payerId": "0000000001",
+    "payeeId": "058:0000000002",
+    "amountMinor": "500000",
+    "currency": "NGN",
+    "currencyExponent": 2,
+    "direction": "outgoing",
+    "status": "completed",
+    "timestamp": "2026-01-15T12:00:00.000Z"
+  }
+}
