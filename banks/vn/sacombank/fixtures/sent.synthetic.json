@@ -1,0 +1,46 @@
+{
+  "provenance": "synthetic",
+  "description": "Invented identifiers, amount and date; minimal shape based on Sacombank (isacombank.com.vn) transaction history surface. Not a real payment.",
+  "transactionId": "stb-tx-20261016-001",
+  "input": {
+    "data": {
+      "transactions": [
+        {
+          "id": "stb-tx-20261016-001",
+          "accountId": "vn-stb-030012345678",
+          "amount": -750000,
+          "currency": "VND",
+          "status": "SUCCESS",
+          "pending": false,
+          "holds": [],
+          "disputed": false,
+          "postedAt": "2026-10-16T09:15:00.000Z",
+          "description": "Chuyen tien Napas 247 toi 0071000123456",
+          "details": {
+            "kind": "napas247Transfer",
+            "recipientAccount": "0071000123456",
+            "recipientBankCode": "970436"
+          }
+        }
+      ],
+      "accounts": [
+        {
+          "id": "vn-stb-030012345678",
+          "type": "paymentChecking",
+          "accountNumber": "030012345678",
+          "currency": "VND",
+          "status": "ACTIVE"
+        }
+      ]
+    }
+  },
+  "expected": {
+    "outcome": "supported",
+    "amountMinor": "750000",
+    "currency": "VND",
+    "status": "sent",
+    "payerId": "vn-stb-030012345678",
+    "payeeId": "970436:0071000123456",
+    "timestamp": "2026-10-16T09:15:00.000Z"
+  }
+}
