@@ -272,3 +272,5 @@ change does not cancel an accepted obligation or decide a disputed claim.
 PeerLink is independent of Plaid and the named banks; bank names identify source
 campaigns and reference integrations. Copyright (c) 2026 Sachin Kumar and contributors.
 [MIT](LICENSE).
+
+<!-- docs: clarify CI troubleshooting note -->
